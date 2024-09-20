@@ -1,0 +1,10 @@
+# 忽略所有文件
+*
+
+# 不忽略代码， json文件
+!/src/
+!/config.json
+!/.gitignore
+
+# 忽略src文件夹中内容
+src/META-INF
