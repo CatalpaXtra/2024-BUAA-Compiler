@@ -20,14 +20,12 @@ public class Token {
         return this.type;
     }
 
-    public void printToken() {
+    public String toString() {
         switch (type) {
             case ERRA:
-                System.out.println(content + " a");
-                break;
+                return content + " a";
             default:
-                System.out.println(type + " " + content);
-                break;
+                return type + " " + content;
         }
     }
 }

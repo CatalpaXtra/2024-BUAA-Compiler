@@ -1,3 +1,5 @@
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashSet;
 
@@ -6,37 +8,42 @@ public class Lexer {
     private final ArrayList<Token> tokens;
     private final ArrayList<Token> errors;
     private final HashSet<String> identifiers;
+    private boolean annotate;
+    private boolean declareVar;
+
     public Lexer() {
         tokens = new ArrayList<>();
         errors = new ArrayList<>();
         identifiers = new HashSet<>();
+        annotate = false;
+        declareVar = false;
     }
 
     public void lexer(String input, int line) {
         int loc = 0;
         while (loc < input.length()) {
+            if (annotate) {
+                if (input.charAt(loc) == '*' && loc + 1 < input.length() && input.charAt(loc + 1) == '/') {
+                    annotate = false;
+                    loc += 2;
+                    continue;
+                } else {
+                    loc++;
+                    continue;
+                }
+            }
             StringBuilder content = new StringBuilder();
             if (input.charAt(loc) == ' ' || input.charAt(loc) == '\t') {
                 loc++;
                 continue;
+            } else if (input.charAt(loc) == '/' && loc + 1 < input.length() && input.charAt(loc + 1) == '/') {
+                break;
+            } else if (input.charAt(loc) == '/' && loc + 1 < input.length() && input.charAt(loc + 1) == '*') {
+                annotate = true;
+                continue;
             }
 
-            if (!tokens.isEmpty() && (tokens.get(tokens.size() - 1).getType() == Token.Type.INTTK ||
-                    tokens.get(tokens.size() - 1).getType() == Token.Type.CHARTK ||
-                    tokens.get(tokens.size() - 1).getType() == Token.Type.VOIDTK)) {
-                content.append(input.charAt(loc));
-                loc++;
-                while (loc < input.length() && (input.charAt(loc) == '_' ||
-                        (input.charAt(loc) >= 'A' && input.charAt(loc) <= 'Z') ||
-                        (input.charAt(loc) >= 'a' && input.charAt(loc) <= 'z') ||
-                        (input.charAt(loc) >= '0' && input.charAt(loc) <= '9'))) {
-                    content.append(input.charAt(loc));
-                    loc++;
-                }
-                tokens.add(new Token(Token.Type.IDENFR, content.toString()));
-                identifiers.add(content.toString());
-                loc--;
-            } else if (input.charAt(loc) == '_' ||
+            if (input.charAt(loc) == '_' ||
                     (input.charAt(loc) >= 'A' && input.charAt(loc) <= 'Z') ||
                     (input.charAt(loc) >= 'a' && input.charAt(loc) <= 'z')) {
                 content.append(input.charAt(loc));
@@ -48,10 +55,13 @@ public class Lexer {
                     content.append(input.charAt(loc));
                     loc++;
                 }
-                if (identifiers.contains(content.toString())) {
-                    tokens.add(new Token(Token.Type.IDENFR, content.toString()));
-                } else {
-                    matchWord(content.toString());
+                if (!matchWord(content.toString())) {
+                    if (declareVar) {
+                        identifiers.add(content.toString());
+                        tokens.add(new Token(Token.Type.IDENFR, content.toString()));
+                    } else if (identifiers.contains(content.toString())) {
+                        tokens.add(new Token(Token.Type.IDENFR, content.toString()));
+                    }
                 }
                 loc--;
             } else if (input.charAt(loc) >= '0' && input.charAt(loc) <= '9') {
@@ -64,21 +74,22 @@ public class Lexer {
                 }
                 tokens.add(new Token(Token.Type.INTCON, content.toString()));
                 loc--;
-            } else if (input.charAt(loc) == '\''){
+            } else if (input.charAt(loc) == '\'') {
+                content.append(input.charAt(loc));
                 loc++;
                 if (input.charAt(loc) == '\\') {
-                    content.append(input.charAt(++loc));
+                    content.append(input.charAt(loc++)).append(input.charAt(loc));
                 } else {
                     content.append(input.charAt(loc));
                 }
+                content.append(input.charAt(++loc));
                 tokens.add(new Token(Token.Type.CHRCON, content.toString()));
-                loc++;
-            } else if (input.charAt(loc) == '\"'){
+            } else if (input.charAt(loc) == '\"') {
                 content.append(input.charAt(loc));
                 loc++;
-                while (input.charAt(loc) != '\"' ) {
+                while (input.charAt(loc) != '\"') {
                     if (input.charAt(loc) == '\\') {
-                        content.append(input.charAt(++loc));
+                        content.append(input.charAt(loc++)).append(input.charAt(loc));
                     } else {
                         content.append(input.charAt(loc));
                     }
@@ -158,12 +169,14 @@ public class Lexer {
                         tokens.add(new Token(Token.Type.MOD, "%"));
                         break;
                     case ';':
+                        declareVar = false;
                         tokens.add(new Token(Token.Type.SEMICN, ";"));
                         break;
                     case ',':
                         tokens.add(new Token(Token.Type.COMMA, ","));
                         break;
                     case '(':
+                        declareVar = false;
                         tokens.add(new Token(Token.Type.LPARENT, "("));
                         break;
                     case ')':
@@ -189,13 +202,19 @@ public class Lexer {
         }
     }
 
-    private void matchWord(String word) {
+    private boolean matchWord(String word) {
         switch (word) {
             case "int":
+                declareVar = true;
                 tokens.add(new Token(Token.Type.INTTK, word));
                 break;
             case "char":
+                declareVar = true;
                 tokens.add(new Token(Token.Type.CHARTK, word));
+                break;
+            case "void":
+                declareVar = true;
+                tokens.add(new Token(Token.Type.VOIDTK, word));
                 break;
             case "main":
                 tokens.add(new Token(Token.Type.MAINTK, word));
@@ -230,24 +249,28 @@ public class Lexer {
             case "return":
                 tokens.add(new Token(Token.Type.RETURNTK, word));
                 break;
-            case "void":
-                tokens.add(new Token(Token.Type.VOIDTK, word));
-                break;
             default:
-                break;
+                return false;
         }
+        return true;
     }
 
-
     public void printTokens() {
+        StringBuilder output = new StringBuilder();
         if (!errors.isEmpty()) {
-            for (Token token : errors) {
-                token.printToken();
+            for (Token error : errors) {
+                output.append(error.toString()).append("\n");
             }
+            try (PrintWriter writer = new PrintWriter("error.txt")) {
+                writer.println(output);
+            } catch (FileNotFoundException ignored) {}
         } else {
             for (Token token : tokens) {
-                token.printToken();
+                output.append(token.toString()).append("\n");
             }
+            try (PrintWriter writer = new PrintWriter("lexer.txt")) {
+                writer.println(output);
+            } catch (FileNotFoundException ignored) {}
         }
     }
 }
