@@ -1,11 +1,8 @@
-# 忽略所有文件
-*
-
-# 不忽略代码， json文件
-!/src/
-!/src/frontend
-!/config.json
-!/.gitignore
-
-# 忽略src文件夹中内容
+# 忽略非必要文件夹
+.idea/
+out/
 src/META-INF
+
+# 忽略文件
+2024-BUAA-Compiler.iml
+*.txt
