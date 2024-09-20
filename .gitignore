@@ -3,6 +3,7 @@
 
 # 不忽略代码， json文件
 !/src/
+!/src/frontend
 !/config.json
 !/.gitignore
 
