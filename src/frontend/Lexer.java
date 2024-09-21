@@ -3,22 +3,34 @@ package frontend;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.Map;
 
 public class Lexer {
 
     private final ArrayList<Token> tokens;
     private final ArrayList<Token> errors;
-    private final HashSet<String> identifiers;
     private boolean annotate;
-    private boolean declareVar;
+    private final static Map<String, Token.Type> reserveWords = Map.ofEntries(
+            Map.entry("main", Token.Type.MAINTK),
+            Map.entry("const", Token.Type.CONSTTK),
+            Map.entry("int", Token.Type.INTTK),
+            Map.entry("char", Token.Type.CHARTK),
+            Map.entry("break", Token.Type.BREAKTK),
+            Map.entry("continue", Token.Type.CONTINUETK),
+            Map.entry("if", Token.Type.IFTK),
+            Map.entry("else", Token.Type.ELSETK),
+            Map.entry("for", Token.Type.FORTK),
+            Map.entry("getint", Token.Type.GETINTTK),
+            Map.entry("getchar", Token.Type.GETCHARTK),
+            Map.entry("printf", Token.Type.PRINTFTK),
+            Map.entry("return", Token.Type.RETURNTK),
+            Map.entry("void", Token.Type.VOIDTK)
+    );
 
     public Lexer() {
         tokens = new ArrayList<>();
         errors = new ArrayList<>();
-        identifiers = new HashSet<>();
         annotate = false;
-        declareVar = false;
     }
 
     public void lexer(String input, int line) {
@@ -27,54 +39,42 @@ public class Lexer {
             if (annotate) {
                 if (input.charAt(loc) == '*' && loc + 1 < input.length() && input.charAt(loc + 1) == '/') {
                     annotate = false;
-                    loc += 2;
-                    continue;
-                } else {
                     loc++;
-                    continue;
                 }
+                loc++;
+                continue;
             }
-            StringBuilder content = new StringBuilder();
-            if (input.charAt(loc) == ' ' || input.charAt(loc) == '\t') {
+
+            if (input.charAt(loc) == ' ' || input.charAt(loc) == '\n') {
                 loc++;
                 continue;
             } else if (input.charAt(loc) == '/' && loc + 1 < input.length() && input.charAt(loc + 1) == '/') {
                 break;
             } else if (input.charAt(loc) == '/' && loc + 1 < input.length() && input.charAt(loc + 1) == '*') {
                 annotate = true;
+                loc += 2;
                 continue;
             }
 
-            if (input.charAt(loc) == '_' ||
-                    (input.charAt(loc) >= 'A' && input.charAt(loc) <= 'Z') ||
-                    (input.charAt(loc) >= 'a' && input.charAt(loc) <= 'z')) {
+            StringBuilder content = new StringBuilder();
+            if (isCharacter(input.charAt(loc))) {
                 content.append(input.charAt(loc));
                 loc++;
-                while (loc < input.length() && (input.charAt(loc) == '_' ||
-                        (input.charAt(loc) >= 'A' && input.charAt(loc) <= 'Z') ||
-                        (input.charAt(loc) >= 'a' && input.charAt(loc) <= 'z') ||
-                        (input.charAt(loc) >= '0' && input.charAt(loc) <= '9'))) {
+                while (loc < input.length() && (isCharacter(input.charAt(loc)) || isDigit(input.charAt(loc)))) {
                     content.append(input.charAt(loc));
                     loc++;
                 }
-                if (!matchWord(content.toString())) {
-                    if (declareVar) {
-                        identifiers.add(content.toString());
-                        tokens.add(new Token(Token.Type.IDENFR, content.toString()));
-                    } else if (identifiers.contains(content.toString())) {
-                        tokens.add(new Token(Token.Type.IDENFR, content.toString()));
-                    }
-                }
+                Token.Type type = reserveWords.getOrDefault(content.toString(), Token.Type.IDENFR);
+                tokens.add(new Token(type, content.toString(), line));
                 loc--;
-            } else if (input.charAt(loc) >= '0' && input.charAt(loc) <= '9') {
+            } else if (isDigit(input.charAt(loc))) {
                 content.append(input.charAt(loc));
                 loc++;
-                while (loc < input.length() &&
-                        (input.charAt(loc) >= '0' && input.charAt(loc) <= '9')) {
+                while (loc < input.length() && isDigit(input.charAt(loc))) {
                     content.append(input.charAt(loc));
                     loc++;
                 }
-                tokens.add(new Token(Token.Type.INTCON, content.toString()));
+                tokens.add(new Token(Token.Type.INTCON, content.toString(), line));
                 loc--;
             } else if (input.charAt(loc) == '\'') {
                 content.append(input.charAt(loc));
@@ -85,7 +85,7 @@ public class Lexer {
                     content.append(input.charAt(loc));
                 }
                 content.append(input.charAt(++loc));
-                tokens.add(new Token(Token.Type.CHRCON, content.toString()));
+                tokens.add(new Token(Token.Type.CHRCON, content.toString(), line));
             } else if (input.charAt(loc) == '\"') {
                 content.append(input.charAt(loc));
                 loc++;
@@ -98,103 +98,101 @@ public class Lexer {
                     loc++;
                 }
                 content.append(input.charAt(loc));
-                tokens.add(new Token(Token.Type.STRCON, content.toString()));
+                tokens.add(new Token(Token.Type.STRCON, content.toString(), line));
             } else {
                 switch (input.charAt(loc)) {
                     case '&':
                         loc++;
                         if (loc < input.length() && input.charAt(loc) == '&') {
-                            tokens.add(new Token(Token.Type.AND, "&&"));
+                            tokens.add(new Token(Token.Type.AND, "&&", line));
                         } else {
-                            errors.add(new Token(Token.Type.ERRA, line + ""));
+                            errors.add(new Token(Token.Type.ERRA, "&", line));
                             loc--;
                         }
                         break;
                     case '|':
                         loc++;
                         if (loc < input.length() && input.charAt(loc) == '|') {
-                            tokens.add(new Token(Token.Type.OR, "||"));
+                            tokens.add(new Token(Token.Type.OR, "||", line));
                         } else {
-                            errors.add(new Token(Token.Type.ERRA, line + ""));
+                            errors.add(new Token(Token.Type.ERRA, "|", line));
                             loc--;
                         }
                         break;
                     case '!':
                         loc++;
                         if (loc < input.length() && input.charAt(loc) == '=') {
-                            tokens.add(new Token(Token.Type.NEQ, "!="));
+                            tokens.add(new Token(Token.Type.NEQ, "!=", line));
                         } else {
-                            tokens.add(new Token(Token.Type.NOT, "!"));
+                            tokens.add(new Token(Token.Type.NOT, "!", line));
                             loc--;
                         }
                         break;
                     case '<':
                         loc++;
                         if (loc < input.length() && input.charAt(loc) == '=') {
-                            tokens.add(new Token(Token.Type.LEQ, "<="));
+                            tokens.add(new Token(Token.Type.LEQ, "<=", line));
                         } else {
-                            tokens.add(new Token(Token.Type.LSS, "<"));
+                            tokens.add(new Token(Token.Type.LSS, "<", line));
                             loc--;
                         }
                         break;
                     case '>':
                         loc++;
                         if (loc < input.length() && input.charAt(loc) == '=') {
-                            tokens.add(new Token(Token.Type.GEQ, ">="));
+                            tokens.add(new Token(Token.Type.GEQ, ">=", line));
                         } else {
-                            tokens.add(new Token(Token.Type.GRE, ">"));
+                            tokens.add(new Token(Token.Type.GRE, ">", line));
                             loc--;
                         }
                         break;
                     case '=':
                         loc++;
                         if (loc < input.length() && input.charAt(loc) == '=') {
-                            tokens.add(new Token(Token.Type.EQL, "=="));
+                            tokens.add(new Token(Token.Type.EQL, "==", line));
                         } else {
-                            tokens.add(new Token(Token.Type.ASSIGN, "="));
+                            tokens.add(new Token(Token.Type.ASSIGN, "=", line));
                             loc--;
                         }
                         break;
                     case '+':
-                        tokens.add(new Token(Token.Type.PLUS, "+"));
+                        tokens.add(new Token(Token.Type.PLUS, "+", line));
                         break;
                     case '-':
-                        tokens.add(new Token(Token.Type.MINU, "-"));
+                        tokens.add(new Token(Token.Type.MINU, "-", line));
                         break;
                     case '*':
-                        tokens.add(new Token(Token.Type.MULT, "*"));
+                        tokens.add(new Token(Token.Type.MULT, "*", line));
                         break;
                     case '/':
-                        tokens.add(new Token(Token.Type.DIV, "/"));
+                        tokens.add(new Token(Token.Type.DIV, "/", line));
                         break;
                     case '%':
-                        tokens.add(new Token(Token.Type.MOD, "%"));
+                        tokens.add(new Token(Token.Type.MOD, "%", line));
                         break;
                     case ';':
-                        declareVar = false;
-                        tokens.add(new Token(Token.Type.SEMICN, ";"));
+                        tokens.add(new Token(Token.Type.SEMICN, ";", line));
                         break;
                     case ',':
-                        tokens.add(new Token(Token.Type.COMMA, ","));
+                        tokens.add(new Token(Token.Type.COMMA, ",", line));
                         break;
                     case '(':
-                        declareVar = false;
-                        tokens.add(new Token(Token.Type.LPARENT, "("));
+                        tokens.add(new Token(Token.Type.LPARENT, "(", line));
                         break;
                     case ')':
-                        tokens.add(new Token(Token.Type.RPARENT, ")"));
+                        tokens.add(new Token(Token.Type.RPARENT, ")", line));
                         break;
                     case '[':
-                        tokens.add(new Token(Token.Type.LBRACK, "["));
+                        tokens.add(new Token(Token.Type.LBRACK, "[", line));
                         break;
                     case ']':
-                        tokens.add(new Token(Token.Type.RBRACK, "]"));
+                        tokens.add(new Token(Token.Type.RBRACK, "]", line));
                         break;
                     case '{':
-                        tokens.add(new Token(Token.Type.LBRACE, "{"));
+                        tokens.add(new Token(Token.Type.LBRACE, "{", line));
                         break;
                     case '}':
-                        tokens.add(new Token(Token.Type.RBRACE, "}"));
+                        tokens.add(new Token(Token.Type.RBRACE, "}", line));
                         break;
                     default:
                         break;
@@ -204,57 +202,12 @@ public class Lexer {
         }
     }
 
-    private boolean matchWord(String word) {
-        switch (word) {
-            case "int":
-                declareVar = true;
-                tokens.add(new Token(Token.Type.INTTK, word));
-                break;
-            case "char":
-                declareVar = true;
-                tokens.add(new Token(Token.Type.CHARTK, word));
-                break;
-            case "void":
-                declareVar = true;
-                tokens.add(new Token(Token.Type.VOIDTK, word));
-                break;
-            case "main":
-                tokens.add(new Token(Token.Type.MAINTK, word));
-                break;
-            case "const":
-                tokens.add(new Token(Token.Type.CONSTTK, word));
-                break;
-            case "break":
-                tokens.add(new Token(Token.Type.BREAKTK, word));
-                break;
-            case "continue":
-                tokens.add(new Token(Token.Type.CONTINUETK, word));
-                break;
-            case "if":
-                tokens.add(new Token(Token.Type.IFTK, word));
-                break;
-            case "else":
-                tokens.add(new Token(Token.Type.ELSETK, word));
-                break;
-            case "for":
-                tokens.add(new Token(Token.Type.FORTK, word));
-                break;
-            case "getint":
-                tokens.add(new Token(Token.Type.GETINTTK, word));
-                break;
-            case "getchar":
-                tokens.add(new Token(Token.Type.GETCHARTK, word));
-                break;
-            case "printf":
-                tokens.add(new Token(Token.Type.PRINTFTK, word));
-                break;
-            case "return":
-                tokens.add(new Token(Token.Type.RETURNTK, word));
-                break;
-            default:
-                return false;
-        }
-        return true;
+    private boolean isCharacter(char ch) {
+        return ch == '_' || (ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z');
+    }
+
+    private boolean isDigit(char ch) {
+        return ch >= '0' && ch <= '9';
     }
 
     public void printTokens() {

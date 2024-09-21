@@ -12,16 +12,18 @@ public class Token {
 
     private final Type type;
     private final String content;
+    private final int line;
 
-    public Token(Type type, String content) {
+    public Token(Type type, String content, int line) {
         this.type = type;
         this.content = content;
+        this.line = line;
     }
 
     public String toString() {
         switch (type) {
             case ERRA:
-                return content + " a";
+                return line + " a";
             default:
                 return type + " " + content;
         }
