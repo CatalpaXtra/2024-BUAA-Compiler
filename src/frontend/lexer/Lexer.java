@@ -1,16 +1,18 @@
-package frontend;
+package frontend.lexer;
+
+import frontend.Error;
 
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.Scanner;
 
 public class Lexer {
-
     private final ArrayList<Token> tokens;
-    private final ArrayList<Token> errors;
+    private final ArrayList<Error> errors;
     private boolean annotate;
-    private final static Map<String, Token.Type> reserveWords = Map.ofEntries(
+    private static final Map<String, Token.Type> reserveWords = Map.ofEntries(
             Map.entry("main", Token.Type.MAINTK),
             Map.entry("const", Token.Type.CONSTTK),
             Map.entry("int", Token.Type.INTTK),
@@ -27,10 +29,16 @@ public class Lexer {
             Map.entry("void", Token.Type.VOIDTK)
     );
 
-    public Lexer() {
+    public Lexer(Scanner scanner) {
         tokens = new ArrayList<>();
         errors = new ArrayList<>();
         annotate = false;
+
+        int line = 1;
+        while (scanner.hasNextLine()) {
+            String input = scanner.nextLine();
+            lexer(input, line++);
+        }
     }
 
     public void lexer(String input, int line) {
@@ -106,7 +114,7 @@ public class Lexer {
                         if (loc < input.length() && input.charAt(loc) == '&') {
                             tokens.add(new Token(Token.Type.AND, "&&", line));
                         } else {
-                            errors.add(new Token(Token.Type.ERRA, "&", line));
+                            errors.add(new Error(Error.Type.a, "&", line));
                             loc--;
                         }
                         break;
@@ -115,7 +123,7 @@ public class Lexer {
                         if (loc < input.length() && input.charAt(loc) == '|') {
                             tokens.add(new Token(Token.Type.OR, "||", line));
                         } else {
-                            errors.add(new Token(Token.Type.ERRA, "|", line));
+                            errors.add(new Error(Error.Type.a, "|", line));
                             loc--;
                         }
                         break;
@@ -213,7 +221,7 @@ public class Lexer {
     public void printTokens() {
         StringBuilder output = new StringBuilder();
         if (!errors.isEmpty()) {
-            for (Token error : errors) {
+            for (Error error : errors) {
                 output.append(error.toString()).append("\n");
             }
             try (PrintWriter writer = new PrintWriter("error.txt")) {
@@ -227,5 +235,13 @@ public class Lexer {
                 writer.println(output);
             } catch (FileNotFoundException ignored) {}
         }
+    }
+
+    public ArrayList<Token> getTokens() {
+        return tokens;
+    }
+
+    public ArrayList<Error> getErrors() {
+        return errors;
     }
 }

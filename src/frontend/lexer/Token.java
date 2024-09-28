@@ -1,4 +1,4 @@
-package frontend;
+package frontend.lexer;
 
 public class Token {
     public enum Type {
@@ -21,11 +21,6 @@ public class Token {
     }
 
     public String toString() {
-        switch (type) {
-            case ERRA:
-                return line + " a";
-            default:
-                return type + " " + content;
-        }
+        return type + " " + content;
     }
 }
