@@ -1,8 +1,9 @@
 package frontend.parser.expression;
 
+import frontend.parser.declaration.varDecl.initVal.InitValEle;
 import frontend.parser.expression.add.AddExp;
 
-public class Exp {
+public class Exp implements InitValEle {
     private final String name = "<Exp>";
     private final AddExp addExp;
 
