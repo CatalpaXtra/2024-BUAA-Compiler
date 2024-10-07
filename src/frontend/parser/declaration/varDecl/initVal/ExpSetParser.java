@@ -2,7 +2,6 @@ package frontend.parser.declaration.varDecl.initVal;
 
 import frontend.lexer.Token;
 import frontend.lexer.TokenIterator;
-import frontend.parser.expression.ConstExpParser;
 import frontend.parser.expression.Exp;
 import frontend.parser.expression.ExpParser;
 
