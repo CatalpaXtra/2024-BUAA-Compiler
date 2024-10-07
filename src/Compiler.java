@@ -13,7 +13,8 @@ public class Compiler {
         } catch (FileNotFoundException ignored) {}
 
         Lexer lexer = new Lexer(scanner);
-        lexer.printTokens();
-        Parser parser = new Parser(lexer.getTokens());
+        Parser parser = new Parser(lexer);
+        parser.parseDecls();
+        parser.print();
     }
 }

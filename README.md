@@ -17,3 +17,27 @@
 
 新建 `Token` 类，含单词内容、单词类别、所在的行数。 词法分析时正常将解析到的每一token存入tokens； 若遇到错误 `a` ，将单词类别改为 `Token.Type.ERRA` ，存入error<br>
 最后若error不为空则报错，否则输出tokens中全部内容
+
+### 语法分析
+按 `CompUnit → {Decl} {FuncDef} MainFuncDef` 的顺序，首先对声明 `Decl` 进行分析
+有 `Decl → ConstDecl | VarDecl` 
+
+对`ConstDecl`，有 `ConstDecl → 'const' BType ConstDef { ',' ConstDef } ';'`
+基本类型 `BType → 'int' | 'char'`
+常量定义 `ConstDef → Ident [ '[' ConstExp ']' ] '=' ConstInitVal`
+若读到`[`，进行对ConstExp的分析，在读到`=`之后进行对ConstInitVal的分析
+
+对ConstExp，有ConstExp → AddExp
+AddExp → MulExp | AddExp ('+' | '−') MulExp 
+MulExp → UnaryExp | MulExp ('*' | '/' | '%') UnaryExp 
+UnaryExp → PrimaryExp | Ident '(' [FuncRParams] ')' | UnaryOp UnaryExp
+
+PrimaryExp → '(' Exp ')' | LVal | Number | Character
+Exp → AddExp
+LVal → Ident ['[' Exp ']']
+Number → IntConst 
+Character → CharConst 
+
+FuncRParams → Exp { ',' Exp }
+
+UnaryOp → '+' | '−' | '!'

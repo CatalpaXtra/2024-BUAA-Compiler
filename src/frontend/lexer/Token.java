@@ -20,7 +20,11 @@ public class Token {
         this.line = line;
     }
 
+    public Type getType() {
+        return type;
+    }
+
     public String toString() {
-        return type + " " + content;
+        return type + " " + content + "\n";
     }
 }
