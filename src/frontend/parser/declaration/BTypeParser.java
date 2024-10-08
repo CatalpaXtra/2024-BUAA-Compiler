@@ -11,10 +11,8 @@ public class BTypeParser {
     }
 
     public BType parseBtype() {
-        Token first = iterator.getNextToken();
-        if (!first.getType().equals(Token.Type.INTTK) && !first.getType().equals(Token.Type.CHARTK)) {
-            System.out.println("ERROR : EXPECT INTTK OR CHARTK");
-        }
-        return new BType(first);
+        Token token = iterator.getNextToken();
+        BType bType = new BType(token);
+        return bType;
     }
 }

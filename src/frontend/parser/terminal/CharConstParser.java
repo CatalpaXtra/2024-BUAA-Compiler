@@ -13,7 +13,7 @@ public class CharConstParser {
     public CharConst parseCharConst() {
         Token token = iterator.getNextToken();
         if (!token.getType().equals(Token.Type.CHRCON)) {
-            System.out.println("EXPECT INTCON HERE");
+            System.out.println("EXPECT CHRCON HERE");
         }
         CharConst charConst = new CharConst(token);
         return charConst;

@@ -11,7 +11,7 @@ public class IdentParser {
     }
 
     public Ident parseIdent() {
-        Token token = this.iterator.getNextToken();
+        Token token = iterator.getNextToken();
         if (!token.getType().equals(Token.Type.IDENFR)) {
             System.out.println("EXPECT IDENFR HERE");
         }

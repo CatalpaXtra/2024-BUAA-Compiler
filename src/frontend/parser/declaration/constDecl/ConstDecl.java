@@ -28,7 +28,8 @@ public class ConstDecl implements DeclEle {
         sb.append(constTk.toString());
         sb.append(btype.toString());
         sb.append(constDefs.get(0).toString());
-        for (int i = 0; i < commas.size(); i++) {
+        int len = commas.size();
+        for (int i = 0; i < len; i++) {
             sb.append(commas.get(i).toString());
             sb.append(constDefs.get(i + 1).toString());
         }

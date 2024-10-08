@@ -1,6 +1,8 @@
 package frontend.parser.declaration;
 
-public class Decl {
+import frontend.parser.block.BlockItemEle;
+
+public class Decl implements BlockItemEle {
     private final DeclEle declEle;
 
     public Decl(DeclEle declEle) {

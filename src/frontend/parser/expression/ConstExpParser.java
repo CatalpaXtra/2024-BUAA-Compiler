@@ -6,6 +6,7 @@ import frontend.parser.expression.add.AddExpParser;
 
 public class ConstExpParser {
     private final TokenIterator iterator;
+    private AddExp addExp;
 
     public ConstExpParser(TokenIterator iterator) {
         this.iterator = iterator;
@@ -13,7 +14,7 @@ public class ConstExpParser {
 
     public ConstExp parseConstExp() {
         AddExpParser addExpParser = new AddExpParser(iterator);
-        AddExp addExp = addExpParser.parseAddExp();
+        addExp = addExpParser.parseAddExp();
         ConstExp constExp = new ConstExp(addExp);
         return constExp;
     }

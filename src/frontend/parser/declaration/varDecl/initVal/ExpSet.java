@@ -23,7 +23,8 @@ public class ExpSet implements InitValEle{
         StringBuilder sb = new StringBuilder();
         sb.append(lBrace.toString());
         sb.append(exps.get(0).toString());
-        for (int i = 0; i < commas.size(); i++) {
+        int len = commas.size();
+        for (int i = 0; i < len; i++) {
             sb.append(commas.get(i).toString());
             sb.append(exps.get(i + 1).toString());
         }
