@@ -56,6 +56,8 @@ public class StmtParser {
                 stmtEle = stmtPrintParser.parseStmtPrint();
                 break;
             default:
+                System.out.println(token.toString());
+                System.out.println(token.getLine());
                 System.out.println("STMTPARSER ARRIVE UNEXPECTED BRANCH");
         }
         Stmt stmt = new Stmt(stmtEle);

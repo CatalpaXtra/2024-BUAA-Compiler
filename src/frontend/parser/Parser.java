@@ -8,6 +8,8 @@ import frontend.parser.declaration.Decl;
 import frontend.parser.declaration.DeclParser;
 import frontend.parser.function.FuncDef;
 import frontend.parser.function.FuncDefParser;
+import frontend.parser.function.MainFuncDef;
+import frontend.parser.function.MainFuncDefParser;
 
 import java.util.ArrayList;
 
@@ -16,25 +18,24 @@ public class Parser {
     private final ArrayList<Error> errors;
     private final ArrayList<Decl> decls;
     private final ArrayList<FuncDef> funcDefs;
-//    private MainFuncDef mainFunc;
+    private MainFuncDef mainFuncDef;
 
     public Parser(Lexer lexer) {
         this.iterator = new TokenIterator(lexer.getTokens());
         this.errors = new ArrayList<>();
         this.decls = new ArrayList<>();
         this.funcDefs = new ArrayList<>();
-//        this.mainFunc = null;
     }
 
     public CompUnit parse() {
         parseDecls();
         parseFuncDefs();
-//        parseMainFuncDef();
-        CompUnit compUnit = new CompUnit(decls, funcDefs);
+        parseMainFuncDef();
+        CompUnit compUnit = new CompUnit(decls, funcDefs, mainFuncDef);
         return compUnit;
     }
 
-    public void parseDecls() {
+    private void parseDecls() {
         Token first = iterator.getNextToken();
         Token second = iterator.getNextToken();
         while (iterator.hasNext()) {
@@ -59,7 +60,7 @@ public class Parser {
         }
     }
 
-    public void parseFuncDefs() {
+    private void parseFuncDefs() {
         Token first = iterator.getNextToken();
         Token second = iterator.getNextToken();
         while (iterator.hasNext()) {
@@ -84,9 +85,9 @@ public class Parser {
         }
     }
 
-//    private void parseMainFuncDef() {
-//        MainFuncDefParser mainFuncDefParser = new MainFuncDefParser(iterator);
-//        this.mainFunc = mainFuncDefParser.parseMainFuncDef();
-//    }
+    private void parseMainFuncDef() {
+        MainFuncDefParser mainFuncDefParser = new MainFuncDefParser(iterator);
+        mainFuncDef = mainFuncDefParser.parseMainFuncDef();
+    }
 
 }
