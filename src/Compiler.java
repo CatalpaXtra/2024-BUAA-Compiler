@@ -19,7 +19,7 @@ public class Compiler {
         CompUnit compUnit = parser.parse();
 
         String output = compUnit.toString();
-        try (PrintWriter writer = new PrintWriter("lexer.txt")) {
+        try (PrintWriter writer = new PrintWriter("parser.txt")) {
             writer.println(output);
         } catch (FileNotFoundException ignored) {}
     }

@@ -22,7 +22,9 @@ public class ConstExpSet implements ConstInitValEle{
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(lBrace.toString());
-        sb.append(constExps.get(0).toString());
+        if (!constExps.isEmpty()) {
+            sb.append(constExps.get(0).toString());
+        }
         int len = commas.size();
         for (int i = 0; i < len; i++) {
             sb.append(commas.get(i).toString());
