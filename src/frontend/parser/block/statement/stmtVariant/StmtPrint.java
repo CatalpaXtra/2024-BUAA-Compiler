@@ -1,6 +1,7 @@
-package frontend.parser.block.statement;
+package frontend.parser.block.statement.stmtVariant;
 
 import frontend.lexer.Token;
+import frontend.parser.block.statement.StmtEle;
 import frontend.parser.expression.Exp;
 import frontend.parser.terminal.StringConst;
 
@@ -31,7 +32,6 @@ public class StmtPrint implements StmtEle {
         sb.append(printf.toString());
         sb.append(lParent.toString());
         sb.append(stringConst.toString());
-
         int len = commas.size();
         for (int i = 0; i < len; i++) {
             sb.append(commas.get(i).toString());

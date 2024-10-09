@@ -33,52 +33,32 @@ public class Parser {
     }
 
     private void parseDecls() {
-        Token first = iterator.getNextToken();
-        Token second = iterator.getNextToken();
         while (iterator.hasNext()) {
+            Token first = iterator.getNextToken();
+            Token second = iterator.getNextToken();
             Token third = iterator.getNextToken();
+            iterator.traceBack(3);
             if (third.getType().equals(Token.Type.LPARENT)) {
                 /* def function */
-                iterator.traceBack(3);
                 break;
             }
-            if (first.getType().equals(Token.Type.CONSTTK) || first.getType().equals(Token.Type.CHARTK) ||
-                    (first.getType().equals(Token.Type.INTTK) && second.getType().equals(Token.Type.IDENFR))) {
-                /* first -> const/char || first -> int && second -> IDENFR */
-                iterator.traceBack(3);
-                DeclParser declParser = new DeclParser(iterator);
-                decls.add(declParser.parseDecl());
-            } else {
-                iterator.traceBack(3);
-                break;
-            }
-            first = iterator.getNextToken();
-            second = iterator.getNextToken();
+            DeclParser declParser = new DeclParser(iterator);
+            decls.add(declParser.parseDecl());
         }
     }
 
     private void parseFuncDefs() {
-        Token first = iterator.getNextToken();
-        Token second = iterator.getNextToken();
         while (iterator.hasNext()) {
+            Token first = iterator.getNextToken();
+            Token second = iterator.getNextToken();
             Token third = iterator.getNextToken();
-            if (!third.getType().equals(Token.Type.LPARENT)) {
-                /* no def function */
-                iterator.traceBack(3);
+            iterator.traceBack(3);
+            if (second.getType().equals(Token.Type.MAINTK)) {
+                /* def main function */
                 break;
             }
-            if ((first.getType().equals(Token.Type.INTTK) || first.getType().equals(Token.Type.CHARTK) ||
-                    first.getType().equals(Token.Type.VOIDTK)) && second.getType().equals(Token.Type.IDENFR)) {
-                /* first -> int/char/void && second -> IDENFR */
-                iterator.traceBack(3);
-                FuncDefParser funcDefParser = new FuncDefParser(iterator);
-                funcDefs.add(funcDefParser.parseFuncDef());
-            } else {
-                iterator.traceBack(3);
-                break;
-            }
-            first = iterator.getNextToken();
-            second = iterator.getNextToken();
+            FuncDefParser funcDefParser = new FuncDefParser(iterator);
+            funcDefs.add(funcDefParser.parseFuncDef());
         }
     }
 

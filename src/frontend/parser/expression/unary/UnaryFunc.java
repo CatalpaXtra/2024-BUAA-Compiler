@@ -1,7 +1,6 @@
 package frontend.parser.expression.unary;
 
 import frontend.lexer.Token;
-import frontend.parser.expression.FuncRParams;
 import frontend.parser.terminal.Ident;
 
 public class UnaryFunc implements UnaryEle {

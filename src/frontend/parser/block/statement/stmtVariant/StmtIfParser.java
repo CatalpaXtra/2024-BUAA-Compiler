@@ -1,8 +1,10 @@
-package frontend.parser.block.statement;
+package frontend.parser.block.statement.stmtVariant;
 
 import frontend.ErrorHandler;
 import frontend.lexer.Token;
 import frontend.lexer.TokenIterator;
+import frontend.parser.block.statement.Stmt;
+import frontend.parser.block.statement.StmtParser;
 import frontend.parser.expression.cond.Cond;
 import frontend.parser.expression.cond.CondParser;
 

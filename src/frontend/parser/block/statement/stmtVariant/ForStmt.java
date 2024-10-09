@@ -1,20 +1,19 @@
-package frontend.parser.block.statement;
+package frontend.parser.block.statement.stmtVariant;
 
 import frontend.lexer.Token;
 import frontend.parser.expression.Exp;
 import frontend.parser.expression.primary.LVal;
 
-public class StmtAssign implements StmtEle {
+public class ForStmt {
+    private final String name = "<ForStmt>";
     private final LVal lVal;
     private final Token assign;
     private final Exp exp;
-    private final Token semicolon;
 
-    public StmtAssign(LVal lVal, Token assign,  Exp exp, Token semicolon) {
+    public ForStmt(LVal lVal, Token assign, Exp exp) {
         this.lVal = lVal;
         this.assign = assign;
         this.exp = exp;
-        this.semicolon = semicolon;
     }
 
     @Override
@@ -23,7 +22,7 @@ public class StmtAssign implements StmtEle {
         sb.append(lVal.toString());
         sb.append(assign.toString());
         sb.append(exp.toString());
-        sb.append(semicolon.toString());
+        sb.append(name + "\n");
         return sb.toString();
     }
 }

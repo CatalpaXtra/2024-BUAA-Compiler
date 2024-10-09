@@ -1,6 +1,5 @@
-package frontend.parser.block.statement;
+package frontend.parser.block.statement.stmtVariant;
 
-import frontend.ErrorHandler;
 import frontend.lexer.Token;
 import frontend.lexer.TokenIterator;
 import frontend.parser.expression.Exp;
@@ -8,26 +7,23 @@ import frontend.parser.expression.ExpParser;
 import frontend.parser.expression.primary.LVal;
 import frontend.parser.expression.primary.LValParser;
 
-public class StmtAssignParser {
+public class ForStmtParser {
     private final TokenIterator iterator;
     private LVal lVal;
     private Token assign;
     private Exp exp;
-    private Token semicolon;
 
-    public StmtAssignParser(TokenIterator iterator) {
+    public ForStmtParser(TokenIterator iterator) {
         this.iterator = iterator;
     }
 
-    public StmtAssign parseStmtAssign() {
+    public ForStmt parseForStmt() {
         LValParser lValParser = new LValParser(iterator);
         lVal = lValParser.parseLVal();
         assign = iterator.getNextToken();
         ExpParser expParser = new ExpParser(iterator);
         exp = expParser.parseExp();
-        ErrorHandler errorHandler = new ErrorHandler(iterator);
-        semicolon = errorHandler.handleErrorI();
-        StmtAssign stmtAssign = new StmtAssign(lVal, assign, exp, semicolon);
-        return stmtAssign;
+        ForStmt forStmt = new ForStmt(lVal, assign, exp);
+        return forStmt;
     }
 }

@@ -2,15 +2,12 @@ package frontend.lexer;
 
 import frontend.Error;
 
-import java.io.FileNotFoundException;
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Scanner;
 
 public class Lexer {
     private final ArrayList<Token> tokens;
-    private final ArrayList<Error> errors;
     private boolean annotate;
     private static final Map<String, Token.Type> reserveWords = Map.ofEntries(
             Map.entry("main", Token.Type.MAINTK),
@@ -31,7 +28,6 @@ public class Lexer {
 
     public Lexer(Scanner scanner) {
         tokens = new ArrayList<>();
-        errors = new ArrayList<>();
         annotate = false;
 
         int line = 1;
@@ -113,7 +109,8 @@ public class Lexer {
                         loc++;
                         tokens.add(new Token(Token.Type.AND, "&&", line));
                         if (!(loc < input.length() && input.charAt(loc) == '&')) {
-                            errors.add(new Error(Error.Type.a, "&", line));
+                            Error error = new Error(Error.Type.a, "&", line);
+                            LexerErrors.addError(error);
                             loc--;
                         }
                         break;
@@ -121,7 +118,8 @@ public class Lexer {
                         loc++;
                         tokens.add(new Token(Token.Type.OR, "||", line));
                         if (!(loc < input.length() && input.charAt(loc) == '|')) {
-                            errors.add(new Error(Error.Type.a, "|", line));
+                            Error error = new Error(Error.Type.a, "|", line);
+                            LexerErrors.addError(error);
                             loc--;
                         }
                         break;
@@ -216,30 +214,7 @@ public class Lexer {
         return ch >= '0' && ch <= '9';
     }
 
-    public void printTokens() {
-        StringBuilder output = new StringBuilder();
-        if (!errors.isEmpty()) {
-            for (Error error : errors) {
-                output.append(error.toString()).append("\n");
-            }
-            try (PrintWriter writer = new PrintWriter("error.txt")) {
-                writer.println(output);
-            } catch (FileNotFoundException ignored) {}
-        } else {
-            for (Token token : tokens) {
-                output.append(token.toString()).append("\n");
-            }
-            try (PrintWriter writer = new PrintWriter("lexer.txt")) {
-                writer.println(output);
-            } catch (FileNotFoundException ignored) {}
-        }
-    }
-
     public ArrayList<Token> getTokens() {
         return tokens;
-    }
-
-    public ArrayList<Error> getErrors() {
-        return errors;
     }
 }

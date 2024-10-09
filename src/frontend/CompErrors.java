@@ -23,20 +23,16 @@ public class CompErrors {
         int i = 0, j = 0;
         while (i < len1 && j < len2) {
             if (lexerErrors.get(i).getLine() <= parserErrors.get(j).getLine()) {
-                sb.append(lexerErrors.get(i).toString());
-                i++;
+                sb.append(lexerErrors.get(i++).toString());
             } else {
-                sb.append(parserErrors.get(j).toString());
-                j++;
+                sb.append(parserErrors.get(j++).toString());
             }
         }
         while (i < len1) {
-            sb.append(lexerErrors.get(i).toString());
-            i++;
+            sb.append(lexerErrors.get(i++).toString());
         }
         while (j < len2) {
-            sb.append(parserErrors.get(j).toString());
-            j++;
+            sb.append(parserErrors.get(j++).toString());
         }
         return sb.toString();
     }

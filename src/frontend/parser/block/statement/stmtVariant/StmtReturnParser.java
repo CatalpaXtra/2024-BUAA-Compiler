@@ -1,4 +1,4 @@
-package frontend.parser.block.statement;
+package frontend.parser.block.statement.stmtVariant;
 
 import frontend.Error;
 import frontend.ErrorHandler;
@@ -24,6 +24,7 @@ public class StmtReturnParser {
         iterator.traceBack(1);
         exp = null;
         if (token.getType().equals(Token.Type.RBRACE)) {
+            /* prevent out of bound */
             Error error = new Error(Error.Type.i, ";", return1.getLine());
             ParserErrors.addError(error);
             semicolon = null;

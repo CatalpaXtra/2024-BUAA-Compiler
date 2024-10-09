@@ -15,12 +15,11 @@ public class BlockItemParser {
 
     public BlockItem parseBlockItem() {
         Token token = iterator.getNextToken();
+        iterator.traceBack(1);
         if (token.getType().equals(Token.Type.CONSTTK) || token.getType().equals(Token.Type.INTTK) || token.getType().equals(Token.Type.CHARTK)) {
-            iterator.traceBack(1);
             DeclParser declParser = new DeclParser(iterator);
             blockItemEle = declParser.parseDecl();
         } else {
-            iterator.traceBack(1);
             StmtParser stmtParser = new StmtParser(iterator);
             blockItemEle = stmtParser.parseStmt();
         }

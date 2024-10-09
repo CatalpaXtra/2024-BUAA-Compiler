@@ -1,6 +1,7 @@
-package frontend.parser.block.statement;
+package frontend.parser.block.statement.stmtVariant;
 
 import frontend.lexer.Token;
+import frontend.parser.block.statement.StmtEle;
 
 public class StmtContinue implements StmtEle {
     private final Token continue1;

@@ -2,6 +2,7 @@ package frontend.parser.function;
 
 import frontend.lexer.Token;
 import frontend.parser.block.Block;
+import frontend.parser.function.params.FuncFParams;
 import frontend.parser.terminal.Ident;
 
 public class FuncDef {

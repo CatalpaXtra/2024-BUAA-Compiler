@@ -1,27 +1,28 @@
-package frontend.parser.function;
+package frontend.parser.expression.unary;
 
 import frontend.lexer.Token;
+import frontend.parser.expression.Exp;
 
 import java.util.ArrayList;
 
-public class FuncFParams {
-    private final String name = "<FuncFParams>";
-    private final ArrayList<FuncFParam> funcFParamList;
+public class FuncRParams {
+    private final String name = "<FuncRParams>";
+    private final ArrayList<Exp> exps;
     private final ArrayList<Token> commas;
 
-    public FuncFParams(ArrayList<FuncFParam> funcFParamList, ArrayList<Token> commas) {
-        this.funcFParamList = funcFParamList;
+    public FuncRParams(ArrayList<Exp> exps, ArrayList<Token> commas) {
+        this.exps = exps;
         this.commas = commas;
     }
 
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append(funcFParamList.get(0).toString());
+        sb.append(exps.get(0).toString());
         int len = commas.size();
         for (int i = 0; i < len; i++) {
             sb.append(commas.get(i).toString());
-            sb.append(funcFParamList.get(i + 1).toString());
+            sb.append(exps.get(i + 1).toString());
         }
         sb.append(name + "\n");
         return sb.toString();

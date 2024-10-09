@@ -1,4 +1,4 @@
-package frontend.parser.block.statement;
+package frontend.parser.block.statement.stmtVariant;
 
 import frontend.ErrorHandler;
 import frontend.lexer.Token;
@@ -6,29 +6,29 @@ import frontend.lexer.TokenIterator;
 import frontend.parser.expression.primary.LVal;
 import frontend.parser.expression.primary.LValParser;
 
-public class StmtGetCharParser {
+public class StmtGetIntParser {
     private final TokenIterator iterator;
     private LVal lVal;
     private Token assign;
-    private Token getChar;
+    private Token getInt;
     private Token lParent;
     private Token rParent;
     private Token semicolon;
 
-    public StmtGetCharParser(TokenIterator iterator) {
+    public StmtGetIntParser(TokenIterator iterator) {
         this.iterator = iterator;
     }
 
-    public StmtGetChar parseStmtGetChar() {
+    public StmtGetInt parseStmtGetInt() {
         LValParser lValParser = new LValParser(iterator);
         lVal = lValParser.parseLVal();
         assign = iterator.getNextToken();
-        getChar = iterator.getNextToken();
+        getInt = iterator.getNextToken();
         lParent = iterator.getNextToken();
         ErrorHandler errorHandler = new ErrorHandler(iterator);
         rParent = errorHandler.handleErrorJ();
         semicolon = errorHandler.handleErrorI();
-        StmtGetChar stmtGetChar = new StmtGetChar(lVal, assign, getChar, lParent, rParent, semicolon);
-        return stmtGetChar;
+        StmtGetInt stmtGetInt = new StmtGetInt(lVal, assign, getInt, lParent, rParent, semicolon);
+        return stmtGetInt;
     }
 }

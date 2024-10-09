@@ -11,10 +11,8 @@ public class UnaryOpParser {
     }
 
     public UnaryOp parseUnaryOp() {
-        Token first = iterator.getNextToken();
-        if (!first.getType().equals(Token.Type.PLUS) && !first.getType().equals(Token.Type.MINU) && !first.getType().equals(Token.Type.NOT)) {
-            System.out.println("ERROR : EXPECT PLUS OR MINU OR NOT");
-        }
-        return new UnaryOp(first);
+        Token token = iterator.getNextToken();
+        UnaryOp unaryOp = new UnaryOp(token);
+        return unaryOp;
     }
 }

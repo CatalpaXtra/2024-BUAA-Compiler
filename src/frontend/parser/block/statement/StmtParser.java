@@ -3,6 +3,7 @@ package frontend.parser.block.statement;
 import frontend.lexer.Token;
 import frontend.lexer.TokenIterator;
 import frontend.parser.block.BlockParser;
+import frontend.parser.block.statement.stmtVariant.*;
 
 public class StmtParser {
     private final TokenIterator iterator;
@@ -65,16 +66,15 @@ public class StmtParser {
     }
 
     private void caseIdenfr() {
-        int mode = 0;       // 0:assign 1:getint 2:getchar
-        boolean isLVal = false;
+        boolean isAssign = false;
+        int mode = 0;       // 0:exp 1:getint 2:getchar
         Token token = iterator.getNextToken();
         int cnt = 1;
         while (!token.getType().equals(Token.Type.SEMICN)) {
             token = iterator.getNextToken();
             cnt += 1;
             if (token.getType().equals(Token.Type.ASSIGN)) {
-                isLVal = true;
-
+                isAssign = true;
                 token = iterator.getNextToken();
                 cnt += 1;
                 if (token.getType().equals(Token.Type.GETINTTK)) {
@@ -87,7 +87,7 @@ public class StmtParser {
         }
         iterator.traceBack(cnt);
 
-        if (isLVal) {
+        if (isAssign) {
             if (mode == 0) {
                 StmtAssignParser stmtAssignParser = new StmtAssignParser(iterator);
                 stmtEle = stmtAssignParser.parseStmtAssign();

@@ -1,6 +1,8 @@
-package frontend.parser.block.statement;
+package frontend.parser.block.statement.stmtVariant;
 
 import frontend.lexer.Token;
+import frontend.parser.block.statement.Stmt;
+import frontend.parser.block.statement.StmtEle;
 import frontend.parser.expression.cond.Cond;
 
 public class StmtIf implements StmtEle {

@@ -1,4 +1,4 @@
-package frontend.parser.function;
+package frontend.parser.function.params;
 
 import frontend.ErrorHandler;
 import frontend.lexer.Token;

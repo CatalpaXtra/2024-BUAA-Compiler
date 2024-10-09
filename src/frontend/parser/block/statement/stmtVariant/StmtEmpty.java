@@ -1,6 +1,7 @@
-package frontend.parser.block.statement;
+package frontend.parser.block.statement.stmtVariant;
 
 import frontend.lexer.Token;
+import frontend.parser.block.statement.StmtEle;
 
 public class StmtEmpty implements StmtEle {
     private final Token semicolon;

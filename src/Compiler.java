@@ -1,5 +1,6 @@
 import frontend.CompErrors;
 import frontend.lexer.Lexer;
+import frontend.lexer.LexerErrors;
 import frontend.parser.CompUnit;
 import frontend.parser.Parser;
 import frontend.parser.ParserErrors;
@@ -20,7 +21,7 @@ public class Compiler {
         Parser parser = new Parser(lexer);
         CompUnit compUnit = parser.parse();
 
-        CompErrors compErrors = new CompErrors(lexer.getErrors(), ParserErrors.getErrors());
+        CompErrors compErrors = new CompErrors(LexerErrors.getErrors(), ParserErrors.getErrors());
         if (compErrors.existError()) {
             String output = compErrors.toString();
             try (PrintWriter writer = new PrintWriter("error.txt")) {

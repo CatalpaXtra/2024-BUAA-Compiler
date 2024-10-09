@@ -5,6 +5,8 @@ import frontend.lexer.Token;
 import frontend.lexer.TokenIterator;
 import frontend.parser.block.Block;
 import frontend.parser.block.BlockParser;
+import frontend.parser.function.params.FuncFParams;
+import frontend.parser.function.params.FuncFParamsParser;
 import frontend.parser.terminal.Ident;
 import frontend.parser.terminal.IdentParser;
 

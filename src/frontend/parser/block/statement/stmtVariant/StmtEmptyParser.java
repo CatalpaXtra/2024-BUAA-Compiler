@@ -1,4 +1,4 @@
-package frontend.parser.block.statement;
+package frontend.parser.block.statement.stmtVariant;
 
 import frontend.lexer.Token;
 import frontend.lexer.TokenIterator;
