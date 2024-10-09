@@ -1,5 +1,6 @@
 package frontend.parser.block.statement;
 
+import frontend.ErrorHandler;
 import frontend.lexer.Token;
 import frontend.lexer.TokenIterator;
 
@@ -14,7 +15,8 @@ public class StmtContinueParser {
 
     public StmtContinue parseStmtContinue() {
         continue1 = iterator.getNextToken();
-        semicolon = iterator.getNextToken();
+        ErrorHandler errorHandler = new ErrorHandler(iterator);
+        semicolon = errorHandler.handleErrorI();
         StmtContinue stmtContinue = new StmtContinue(continue1, semicolon);
         return stmtContinue;
     }

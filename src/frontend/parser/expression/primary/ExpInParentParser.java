@@ -1,5 +1,6 @@
 package frontend.parser.expression.primary;
 
+import frontend.ErrorHandler;
 import frontend.lexer.Token;
 import frontend.lexer.TokenIterator;
 import frontend.parser.expression.Exp;
@@ -19,7 +20,8 @@ public class ExpInParentParser {
         lParent = iterator.getNextToken();
         ExpParser expParser = new ExpParser(iterator);
         exp = expParser.parseExp();
-        rParent = iterator.getNextToken();
+        ErrorHandler errorHandler = new ErrorHandler(iterator);
+        rParent = errorHandler.handleErrorJ();
         ExpInParent expInParent = new ExpInParent(lParent, exp, rParent);
         return expInParent;
     }

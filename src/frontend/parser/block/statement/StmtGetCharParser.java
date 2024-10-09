@@ -1,5 +1,6 @@
 package frontend.parser.block.statement;
 
+import frontend.ErrorHandler;
 import frontend.lexer.Token;
 import frontend.lexer.TokenIterator;
 import frontend.parser.expression.primary.LVal;
@@ -24,8 +25,9 @@ public class StmtGetCharParser {
         assign = iterator.getNextToken();
         getChar = iterator.getNextToken();
         lParent = iterator.getNextToken();
-        rParent = iterator.getNextToken();
-        semicolon = iterator.getNextToken();
+        ErrorHandler errorHandler = new ErrorHandler(iterator);
+        rParent = errorHandler.handleErrorJ();
+        semicolon = errorHandler.handleErrorI();
         StmtGetChar stmtGetChar = new StmtGetChar(lVal, assign, getChar, lParent, rParent, semicolon);
         return stmtGetChar;
     }

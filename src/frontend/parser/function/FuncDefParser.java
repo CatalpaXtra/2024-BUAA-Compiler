@@ -1,5 +1,6 @@
 package frontend.parser.function;
 
+import frontend.ErrorHandler;
 import frontend.lexer.Token;
 import frontend.lexer.TokenIterator;
 import frontend.parser.block.Block;
@@ -26,6 +27,7 @@ public class FuncDefParser {
         IdentParser identParser = new IdentParser(iterator);
         ident = identParser.parseIdent();
         lParent = iterator.getNextToken();
+
         Token token = iterator.getNextToken();
         if (token.getType().equals(Token.Type.RPARENT)) {
             funcFParams = null;
@@ -34,12 +36,11 @@ public class FuncDefParser {
             iterator.traceBack(1);
             FuncFParamsParser funcFParamsParser = new FuncFParamsParser(iterator);
             funcFParams = funcFParamsParser.parseFuncFParams();
-            rParent = iterator.getNextToken();
+            ErrorHandler errorHandler = new ErrorHandler(iterator);
+            rParent = errorHandler.handleErrorJ();
         }
-
         BlockParser blockParser = new BlockParser(iterator);
         block = blockParser.parseBlock();
-
         FuncDef funcDef = new FuncDef(funcType, ident, lParent, funcFParams, rParent, block);
         return funcDef;
     }

@@ -1,5 +1,6 @@
 package frontend.parser.declaration.constDecl;
 
+import frontend.ErrorHandler;
 import frontend.lexer.Token;
 import frontend.lexer.TokenIterator;
 import frontend.parser.declaration.constDecl.constInitVal.ConstInitVal;
@@ -30,7 +31,8 @@ public class ConstDefParser {
             lBracket = token;
             ConstExpParser constExpParser = new ConstExpParser(iterator);
             constExp = constExpParser.parseConstExp();
-            rBracket = iterator.getNextToken();
+            ErrorHandler errorHandler = new ErrorHandler(iterator);
+            rBracket = errorHandler.handleErrorK();
         } else {
             iterator.traceBack(1);
             lBracket = rBracket = null;

@@ -72,3 +72,49 @@ UnaryOp → '+' | '−' | '!'
 若读到`=`，对`InitVal`进行分析，有 `InitVal → Exp | '{' [ Exp { ',' Exp } ] '}' | StringConst`  
 同<a href="#ConstInitVal">上文提及</a>的处理步骤无太大区别
 
+
+#### FuncDef
+
+
+#### 错误处理
+在实现解析`CompUnit`后，进行错误处理。在语法分析中新增的错误有：
+| 错误类型               | 错误类别码 | 解释                                                               | 对应文法及出错符号                                |
+|:---------------------:|:---------:|:------------------------------------------------------------------:|:--------------------------------------------------:|
+| 缺少分号             | i       | 报错行号为分号前一个非终结符所在行号                          | Stmt, ConstDecl 及 VarDecl 中的 ';'              |
+| 缺少右小括号 ')'     | j       | 报错行号为右小括号前一个非终结符所在行号                      | 函数调用 (UnaryExp)、函数定义 (FuncDef, MainFuncDef)、Stmt 及 PrimaryExp 中的 ')' |
+| 缺少右中括号 ']'     | k       | 报错行号为右中括号前一个非终结符所在行号                      | 数组定义 (ConstDef, VarDef, FuncFParam) 和使用 (LVal)中的 ']' |
+
+错误**i**涉及到的情况
+```c
+Stmt → LVal '=' Exp ';' // i
+| Exp ';' // i
+| 'break' ';' | 'continue' ';' // i
+| 'return' [Exp] ';' // i
+| LVal '=' 'getint''('')'';' // i
+| LVal '=' 'getchar''('')'';' // i
+| 'printf''('StringConst {','Exp}')'';' // i
+ConstDecl → 'const' BType ConstDef { ',' ConstDef } ';' // i
+VarDecl → BType VarDef { ',' VarDef } ';' // i
+```
+
+错误**j**涉及到的情况
+```c
+UnaryExp → Ident '(' [FuncRParams] ')' // j
+PrimaryExp → '(' Exp ')' // j
+FuncDef → FuncType Ident '(' [FuncFParams] ')' Block // j
+MainFuncDef → 'int' 'main' '(' ')' Block // j
+Stmt → 'if' '(' Cond ')' Stmt [ 'else' Stmt ] // j
+| LVal '=' 'getint''('')'';' // j
+| LVal '=' 'getchar''('')'';' // j
+| 'printf''('StringConst {','Exp}')'';' // j
+```
+
+错误**k**涉及到的情况
+```c
+ConstDef → Ident [ '[' ConstExp ']' ] '=' ConstInitVal // k
+VarDef → Ident [ '[' ConstExp ']' ] | Ident [ '[' ConstExp ']' ] '=' InitVal // k
+FuncFParam → BType Ident ['[' ']'] // k
+LVal → Ident ['[' Exp ']'] // k
+```
+
+

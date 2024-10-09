@@ -1,5 +1,6 @@
 package frontend.parser.declaration.constDecl;
 
+import frontend.ErrorHandler;
 import frontend.lexer.Token;
 import frontend.lexer.TokenIterator;
 import frontend.parser.declaration.BType;
@@ -33,9 +34,10 @@ public class ConstDeclParser {
             constDefs.add(constDefParser.parseConstDef());
             token = iterator.getNextToken();
         }
-        semicolon = token;
+        iterator.traceBack(1);
+        ErrorHandler errorHandler = new ErrorHandler(iterator);
+        semicolon = errorHandler.handleErrorI();
         ConstDecl constDecl = new ConstDecl(constTk, btype, constDefs, commas, semicolon);
         return constDecl;
     }
-
 }

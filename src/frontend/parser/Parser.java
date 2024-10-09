@@ -1,6 +1,5 @@
 package frontend.parser;
 
-import frontend.Error;
 import frontend.lexer.Lexer;
 import frontend.lexer.Token;
 import frontend.lexer.TokenIterator;
@@ -15,14 +14,12 @@ import java.util.ArrayList;
 
 public class Parser {
     private final TokenIterator iterator;
-    private final ArrayList<Error> errors;
     private final ArrayList<Decl> decls;
     private final ArrayList<FuncDef> funcDefs;
     private MainFuncDef mainFuncDef;
 
     public Parser(Lexer lexer) {
         this.iterator = new TokenIterator(lexer.getTokens());
-        this.errors = new ArrayList<>();
         this.decls = new ArrayList<>();
         this.funcDefs = new ArrayList<>();
     }

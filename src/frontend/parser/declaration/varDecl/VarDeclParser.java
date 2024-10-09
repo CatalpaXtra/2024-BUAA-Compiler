@@ -1,5 +1,6 @@
 package frontend.parser.declaration.varDecl;
 
+import frontend.ErrorHandler;
 import frontend.lexer.Token;
 import frontend.lexer.TokenIterator;
 import frontend.parser.declaration.BType;
@@ -30,7 +31,9 @@ public class VarDeclParser {
             varDefs.add(varDefParser.parseVarDef());
             token = iterator.getNextToken();
         }
-        semicolon = token;
+        iterator.traceBack(1);
+        ErrorHandler errorHandler = new ErrorHandler(iterator);
+        semicolon = errorHandler.handleErrorI();
         VarDecl varDecl = new VarDecl(btype, varDefs, commas, semicolon);
         return varDecl;
     }

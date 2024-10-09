@@ -1,7 +1,10 @@
 package frontend.parser.block.statement;
 
+import frontend.Error;
+import frontend.ErrorHandler;
 import frontend.lexer.Token;
 import frontend.lexer.TokenIterator;
+import frontend.parser.ParserErrors;
 import frontend.parser.expression.Exp;
 import frontend.parser.expression.ExpParser;
 
@@ -18,14 +21,19 @@ public class StmtReturnParser {
     public StmtReturn parseStmtReturn() {
         return1 = iterator.getNextToken();
         Token token = iterator.getNextToken();
-        if (token.getType().equals(Token.Type.SEMICN)) {
-            exp = null;
-            semicolon = token;
+        iterator.traceBack(1);
+        exp = null;
+        if (token.getType().equals(Token.Type.RBRACE)) {
+            Error error = new Error(Error.Type.i, ";", return1.getLine());
+            ParserErrors.addError(error);
+            semicolon = null;
         } else {
-            iterator.traceBack(1);
-            ExpParser expParser = new ExpParser(iterator);
-            exp = expParser.parseExp();
-            semicolon = iterator.getNextToken();
+            if (!token.getType().equals(Token.Type.SEMICN)) {
+                ExpParser expParser = new ExpParser(iterator);
+                exp = expParser.parseExp();
+            }
+            ErrorHandler errorHandler = new ErrorHandler(iterator);
+            semicolon = errorHandler.handleErrorI();
         }
         StmtReturn stmtReturn = new StmtReturn(return1, exp, semicolon);
         return stmtReturn;

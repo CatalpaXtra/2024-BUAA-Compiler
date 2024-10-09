@@ -1,5 +1,6 @@
 package frontend.parser.expression.unary;
 
+import frontend.ErrorHandler;
 import frontend.lexer.Token;
 import frontend.lexer.TokenIterator;
 import frontend.parser.expression.FuncRParams;
@@ -25,13 +26,14 @@ public class UnaryFuncParser {
         lParent = iterator.getNextToken();
         Token token = iterator.getNextToken();
         if (token.getType().equals(Token.Type.RPARENT)) {
-            rParent = token;
             funcRParams = null;
+            rParent = token;
         } else {
             iterator.traceBack(1);
             FuncRParamsParser funcRParamsParser = new FuncRParamsParser(iterator);
             funcRParams = funcRParamsParser.parseFuncRParams();
-            rParent = iterator.getNextToken();
+            ErrorHandler errorHandler = new ErrorHandler(iterator);
+            rParent = errorHandler.handleErrorJ();
         }
         UnaryFunc unaryFunc = new UnaryFunc(ident, lParent, funcRParams, rParent);
         return unaryFunc;

@@ -1,5 +1,6 @@
 package frontend.parser.block.statement;
 
+import frontend.ErrorHandler;
 import frontend.lexer.Token;
 import frontend.lexer.TokenIterator;
 import frontend.parser.expression.Exp;
@@ -32,15 +33,16 @@ public class StmtPrintParser {
         stringConst = stringConstParser.parseStringConst();
 
         Token token = iterator.getNextToken();
-        while (!token.getType().equals(Token.Type.RPARENT)) {
+        while (token.getType().equals(Token.Type.COMMA)) {
             commas.add(token);
             ExpParser expParser = new ExpParser(iterator);
             exps.add(expParser.parseExp());
             token = iterator.getNextToken();
         }
-        rParent = token;
-        semicolon = iterator.getNextToken();
-
+        iterator.traceBack(1);
+        ErrorHandler errorHandler = new ErrorHandler(iterator);
+        rParent = errorHandler.handleErrorJ();
+        semicolon = errorHandler.handleErrorI();
         StmtPrint stmtPrint = new StmtPrint(printf, lParent, stringConst, commas, exps, rParent, semicolon);
         return stmtPrint;
     }

@@ -1,5 +1,6 @@
 package frontend.parser.block.statement;
 
+import frontend.ErrorHandler;
 import frontend.lexer.Token;
 import frontend.lexer.TokenIterator;
 import frontend.parser.expression.primary.LVal;
@@ -24,10 +25,10 @@ public class StmtGetIntParser {
         assign = iterator.getNextToken();
         getInt = iterator.getNextToken();
         lParent = iterator.getNextToken();
-        rParent = iterator.getNextToken();
-        semicolon = iterator.getNextToken();
+        ErrorHandler errorHandler = new ErrorHandler(iterator);
+        rParent = errorHandler.handleErrorJ();
+        semicolon = errorHandler.handleErrorI();
         StmtGetInt stmtGetInt = new StmtGetInt(lVal, assign, getInt, lParent, rParent, semicolon);
         return stmtGetInt;
     }
-
 }

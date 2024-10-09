@@ -1,5 +1,6 @@
 package frontend.parser.expression.primary;
 
+import frontend.ErrorHandler;
 import frontend.lexer.Token;
 import frontend.lexer.TokenIterator;
 import frontend.parser.expression.Exp;
@@ -26,7 +27,8 @@ public class LValParser {
             lBracket = token;
             ExpParser expParser = new ExpParser(iterator);
             exp = expParser.parseExp();
-            rBracket = iterator.getNextToken();
+            ErrorHandler errorHandler = new ErrorHandler(iterator);
+            rBracket = errorHandler.handleErrorK();
         } else {
             iterator.traceBack(1);
             lBracket = rBracket = null;

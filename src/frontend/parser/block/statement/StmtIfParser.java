@@ -1,5 +1,6 @@
 package frontend.parser.block.statement;
 
+import frontend.ErrorHandler;
 import frontend.lexer.Token;
 import frontend.lexer.TokenIterator;
 import frontend.parser.expression.cond.Cond;
@@ -24,7 +25,8 @@ public class StmtIfParser {
         lParent = iterator.getNextToken();
         CondParser condParser = new CondParser(iterator);
         cond = condParser.parseCond();
-        rParent = iterator.getNextToken();
+        ErrorHandler errorHandler = new ErrorHandler(iterator);
+        rParent = errorHandler.handleErrorJ();
         StmtParser stmtParser = new StmtParser(iterator);
         stmt1 = stmtParser.parseStmt();
 

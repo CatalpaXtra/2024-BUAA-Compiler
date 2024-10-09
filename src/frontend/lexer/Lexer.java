@@ -111,18 +111,16 @@ public class Lexer {
                 switch (input.charAt(loc)) {
                     case '&':
                         loc++;
-                        if (loc < input.length() && input.charAt(loc) == '&') {
-                            tokens.add(new Token(Token.Type.AND, "&&", line));
-                        } else {
+                        tokens.add(new Token(Token.Type.AND, "&&", line));
+                        if (!(loc < input.length() && input.charAt(loc) == '&')) {
                             errors.add(new Error(Error.Type.a, "&", line));
                             loc--;
                         }
                         break;
                     case '|':
                         loc++;
-                        if (loc < input.length() && input.charAt(loc) == '|') {
-                            tokens.add(new Token(Token.Type.OR, "||", line));
-                        } else {
+                        tokens.add(new Token(Token.Type.OR, "||", line));
+                        if (!(loc < input.length() && input.charAt(loc) == '|')) {
                             errors.add(new Error(Error.Type.a, "|", line));
                             loc--;
                         }

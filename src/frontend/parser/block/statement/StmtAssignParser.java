@@ -1,5 +1,6 @@
 package frontend.parser.block.statement;
 
+import frontend.ErrorHandler;
 import frontend.lexer.Token;
 import frontend.lexer.TokenIterator;
 import frontend.parser.expression.Exp;
@@ -24,7 +25,8 @@ public class StmtAssignParser {
         assign = iterator.getNextToken();
         ExpParser expParser = new ExpParser(iterator);
         exp = expParser.parseExp();
-        semicolon = iterator.getNextToken();
+        ErrorHandler errorHandler = new ErrorHandler(iterator);
+        semicolon = errorHandler.handleErrorI();
         StmtAssign stmtAssign = new StmtAssign(lVal, assign, exp, semicolon);
         return stmtAssign;
     }

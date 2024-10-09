@@ -1,5 +1,6 @@
 package frontend.parser.function;
 
+import frontend.ErrorHandler;
 import frontend.lexer.Token;
 import frontend.lexer.TokenIterator;
 import frontend.parser.declaration.BType;
@@ -26,7 +27,8 @@ public class FuncFParamParser {
         Token token = iterator.getNextToken();
         if (token.getType().equals(Token.Type.LBRACK)) {
             lBracket = token;
-            rBracket = iterator.getNextToken();
+            ErrorHandler errorHandler = new ErrorHandler(iterator);
+            rBracket = errorHandler.handleErrorK();
         } else {
             iterator.traceBack(1);
             lBracket = rBracket = null;
