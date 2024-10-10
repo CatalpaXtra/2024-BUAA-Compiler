@@ -51,8 +51,7 @@ public class Parser {
         while (iterator.hasNext()) {
             Token first = iterator.getNextToken();
             Token second = iterator.getNextToken();
-            Token third = iterator.getNextToken();
-            iterator.traceBack(3);
+            iterator.traceBack(2);
             if (second.getType().equals(Token.Type.MAINTK)) {
                 /* def main function */
                 break;
