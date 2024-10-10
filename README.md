@@ -49,7 +49,7 @@
 - `MulExp → UnaryExp { ('*' | '/' | '%') UnaryExp }`
 
 再根据后续一系列规则建立语法树
-```c
+```text
 UnaryExp → PrimaryExp | Ident '(' [FuncRParams] ')' | UnaryOp UnaryExp
 
 FuncRParams → Exp { ',' Exp }
@@ -89,7 +89,7 @@ Character → CharConst
 `FuncDef`中的分析难点，有 `Block → '{' { BlockItem } '}'`  
 Block中的新增文法符号仅有BlockItem，有 `BlockItem → Decl | Stmt`  
 由于Decl已处理完毕，此处新增文法仅有Stmt，有
-```c
+```text
 Stmt → LVal '=' Exp ';'
 | [Exp] ';'
 | Block
@@ -105,7 +105,7 @@ Stmt → LVal '=' Exp ';'
 `BlockItem`有两种递推情况，因此仍需建立一个接口，使得解析后的结果均能被`BlockItem`接受。在此新建接口`BlockItemEle`  
 同理，对`Stmt`，新建接口`StmtEle`  
 此处项目结构大致如下
-```c
+```text
 │  Block.java
 │  BlockItem.java
 │  BlockItemEle.java
@@ -127,7 +127,7 @@ Stmt → LVal '=' Exp ';'
 
 ##### Cond
 有 `Cond → LOrExp`
-```c
+```text
 LOrExp → LAndExp | LOrExp '||' LAndExp
 LAndExp → EqExp | LAndExp '&&' EqExp
 EqExp → RelExp | EqExp ('==' | '!=') RelExp
@@ -137,7 +137,7 @@ RelExp → AddExp | RelExp ('<' | '>' | '<=' | '>=') AddExp
 涉及到对软件包**expression**的内容扩充，新增条件判断表达式  
 由于`AddExp` `MulExp`与上述表达式结构较为类似，新建`BaseExp`父类，定义为泛型类型，以满足不同表达式存储不同种类的下层表达式的需要。而上述所有表达式均继承此父类，避免重复大段代码  
 **expression**软件包结构大致如下
-```c
+```text
 │  ConstExp.java
 │  ConstExpParser.java
 │  Exp.java
@@ -167,7 +167,7 @@ RelExp → AddExp | RelExp ('<' | '>' | '<=' | '>=') AddExp
 | 缺少右中括号 ']'     | k       | 报错行号为右中括号前一个非终结符所在行号                      | 数组定义 (ConstDef, VarDef, FuncFParam) 和使用 (LVal)中的 ']' |
 
 错误**i**涉及到的情况
-```c
+```text
 Stmt → LVal '=' Exp ';' // i
 | Exp ';' // i
 | 'break' ';' | 'continue' ';' // i
@@ -180,7 +180,7 @@ VarDecl → BType VarDef { ',' VarDef } ';' // i
 ```
 
 错误**j**涉及到的情况
-```c
+```text
 UnaryExp → Ident '(' [FuncRParams] ')' // j
 PrimaryExp → '(' Exp ')' // j
 FuncDef → FuncType Ident '(' [FuncFParams] ')' Block // j
@@ -193,7 +193,7 @@ Stmt → 'if' '(' Cond ')' Stmt [ 'else' Stmt ] // j
 ```
 
 错误**k**涉及到的情况
-```c
+```text
 ConstDef → Ident [ '[' ConstExp ']' ] '=' ConstInitVal // k
 VarDef → Ident [ '[' ConstExp ']' ] | Ident [ '[' ConstExp ']' ] '=' InitVal // k
 FuncFParam → BType Ident ['[' ']'] // k
