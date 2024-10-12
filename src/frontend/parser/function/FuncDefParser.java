@@ -1,8 +1,10 @@
 package frontend.parser.function;
 
+import frontend.Error;
 import frontend.ErrorHandler;
 import frontend.lexer.Token;
 import frontend.lexer.TokenIterator;
+import frontend.parser.ParserErrors;
 import frontend.parser.block.Block;
 import frontend.parser.block.BlockParser;
 import frontend.parser.function.params.FuncFParams;
@@ -34,6 +36,13 @@ public class FuncDefParser {
         if (token.getType().equals(Token.Type.RPARENT)) {
             funcFParams = null;
             rParent = token;
+        } else if (token.getType().equals(Token.Type.LBRACE)) {
+            funcFParams = null;
+            iterator.traceBack(2);
+            token = iterator.getNextToken();
+            Error error = new Error(Error.Type.j, ")", token.getLine());
+            ParserErrors.addError(error);
+            rParent = null;
         } else {
             iterator.traceBack(1);
             FuncFParamsParser funcFParamsParser = new FuncFParamsParser(iterator);

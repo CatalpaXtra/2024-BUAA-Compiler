@@ -70,7 +70,7 @@ public class StmtParser {
         int mode = 0;       // 0:exp 1:getint 2:getchar
         Token token = iterator.getNextToken();
         int cnt = 1;
-        while (!token.getType().equals(Token.Type.SEMICN)) {
+        while (iterator.hasNext() && !token.getType().equals(Token.Type.SEMICN)) {
             token = iterator.getNextToken();
             cnt += 1;
             if (token.getType().equals(Token.Type.ASSIGN)) {

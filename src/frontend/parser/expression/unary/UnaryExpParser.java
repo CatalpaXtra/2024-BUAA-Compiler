@@ -16,7 +16,7 @@ public class UnaryExpParser {
         Token first = iterator.getNextToken();
         Token second = iterator.getNextToken();
         iterator.traceBack(2);
-        if (isIdent(first, second)) {
+        if (isCallFunc(first, second)) {
             UnaryFuncParser unaryFuncParser = new UnaryFuncParser(iterator);
             unaryEle = unaryFuncParser.parseUnaryFunc();
         } else if (isUnaryOp(first)) {
@@ -30,7 +30,7 @@ public class UnaryExpParser {
         return unaryExp;
     }
 
-    private boolean isIdent(Token first, Token second) {
+    private boolean isCallFunc(Token first, Token second) {
         return first.getType().equals(Token.Type.IDENFR) &&
                 second.getType().equals(Token.Type.LPARENT);
     }
