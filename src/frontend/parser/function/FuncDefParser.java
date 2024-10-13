@@ -42,7 +42,7 @@ public class FuncDefParser {
             token = iterator.getNextToken();
             Error error = new Error(Error.Type.j, ")", token.getLine());
             ParserErrors.addError(error);
-            rParent = null;
+            rParent = new Token(Token.Type.RPARENT, ")", token.getLine());
         } else {
             iterator.traceBack(1);
             FuncFParamsParser funcFParamsParser = new FuncFParamsParser(iterator);

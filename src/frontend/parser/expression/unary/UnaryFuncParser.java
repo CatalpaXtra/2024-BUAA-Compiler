@@ -40,7 +40,7 @@ public class UnaryFuncParser {
             token = iterator.getNextToken();
             Error error = new Error(Error.Type.j, ")", token.getLine());
             ParserErrors.addError(error);
-            rParent = null;
+            rParent = new Token(Token.Type.RPARENT, ")", token.getLine());
         }
         UnaryFunc unaryFunc = new UnaryFunc(ident, lParent, funcRParams, rParent);
         return unaryFunc;

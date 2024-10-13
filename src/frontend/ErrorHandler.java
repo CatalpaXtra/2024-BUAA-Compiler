@@ -20,7 +20,8 @@ public class ErrorHandler {
         token = iterator.getNextToken();
         Error error = new Error(Error.Type.i, ";", token.getLine());
         ParserErrors.addError(error);
-        return null;
+        token = new Token(Token.Type.SEMICN, ";", token.getLine());
+        return token;
     }
 
     public Token handleErrorJ() {
@@ -32,7 +33,8 @@ public class ErrorHandler {
         token = iterator.getNextToken();
         Error error = new Error(Error.Type.j, ")", token.getLine());
         ParserErrors.addError(error);
-        return null;
+        token = new Token(Token.Type.RPARENT, ")", token.getLine());
+        return token;
     }
 
     public Token handleErrorK() {
@@ -44,6 +46,7 @@ public class ErrorHandler {
         token = iterator.getNextToken();
         Error error = new Error(Error.Type.k, "]", token.getLine());
         ParserErrors.addError(error);
-        return null;
+        token = new Token(Token.Type.RBRACK, "]", token.getLine());
+        return token;
     }
 }

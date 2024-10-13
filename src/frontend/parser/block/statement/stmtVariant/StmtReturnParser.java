@@ -27,7 +27,7 @@ public class StmtReturnParser {
             /* prevent out of bound */
             Error error = new Error(Error.Type.i, ";", return1.getLine());
             ParserErrors.addError(error);
-            semicolon = null;
+            semicolon = new Token(Token.Type.SEMICN, ";", return1.getLine());
         } else {
             if (!token.getType().equals(Token.Type.SEMICN)) {
                 ExpParser expParser = new ExpParser(iterator);

@@ -18,7 +18,7 @@ public class StmtParser {
         iterator.traceBack(1);
         switch (token.getType()) {
             case IDENFR:        // LVal = Exp/getint()/getchar();
-                caseIdenfr();
+                caseIdenfr(token.getLine());
                 break;
             case LPARENT: case INTCON: case CHRCON: case PLUS: case MINU:   // Exp;
                 StmtExpParser stmtExpParser = new StmtExpParser(iterator);
@@ -65,14 +65,13 @@ public class StmtParser {
         return stmt;
     }
 
-    private void caseIdenfr() {
+    private void caseIdenfr(int line) {
         boolean isAssign = false;
         int mode = 0;       // 0:exp 1:getint 2:getchar
+        iterator.getNextToken();
         Token token = iterator.getNextToken();
-        int cnt = 1;
-        while (iterator.hasNext() && !token.getType().equals(Token.Type.SEMICN)) {
-            token = iterator.getNextToken();
-            cnt += 1;
+        int cnt = 2;
+        while (iterator.hasNext() && token.getLine() == line && !token.getType().equals(Token.Type.SEMICN)) {
             if (token.getType().equals(Token.Type.ASSIGN)) {
                 isAssign = true;
                 token = iterator.getNextToken();
@@ -84,6 +83,8 @@ public class StmtParser {
                 }
                 break;
             }
+            token = iterator.getNextToken();
+            cnt += 1;
         }
         iterator.traceBack(cnt);
 
