@@ -240,11 +240,14 @@ LVal → Ident ['[' Exp ']'] // k
 要求：识别出定义的常量、变量、函数、形参，输出作用域序号、标识符字符串、类型名称
 
 #### 作用域序号
-对语法分析得到的`CompUnit`，有`CompUnit → {Decl} {FuncDef} MainFuncDef`，定义**全局作用域序号为1**，因此所有`Decl` `FuncDef`的作用域序号均为1
-对`FuncDef`，每定义一个**作用域数量加1**，其形参为所在的作用域为`FuncDef`的作用域
-在语句块`Block`中，每遇到`'{'`，则**作用域数量加1**
+对语法分析得到的`CompUnit`，有 `CompUnit → {Decl} {FuncDef} MainFuncDef` ，按`Decl` `FuncDef` `MainFuncDef`的顺序进行语义分析
 
-新建**symbol**软件包，以保存符号的作用域序号并创建符号表
+定义**全局作用域序号为1**，因此所有`Decl` `FuncDef`的作用域序号均为1。对`FuncDef`，其形参为所在的作用域为`FuncDef`内部的作用域  
+每遇到语句块`Block`，则**作用域数量加1**，同时新建符号表
+
+新建**symbol**软件包
+- `Symbol`类，存储作用域序号、类型名称
+- `SymbolTable`类，创建符号表，一个`Block`对应一个`SymbolTable`，实现父符号表内容的查询
 
 
 
