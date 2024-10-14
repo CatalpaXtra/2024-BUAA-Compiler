@@ -5,7 +5,7 @@ import frontend.parser.expression.Exp;
 
 import java.util.ArrayList;
 
-public class ExpSet implements InitValEle{
+public class ExpSet implements InitValEle {
     private final Token lBrace;
     private final ArrayList<Exp> exps;
     private final ArrayList<Token> commas;

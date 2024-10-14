@@ -10,6 +10,10 @@ public class Stmt implements BlockItemEle {
         this.stmtEle = stmtEle;
     }
 
+    public StmtEle getStmtEle() {
+        return stmtEle;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

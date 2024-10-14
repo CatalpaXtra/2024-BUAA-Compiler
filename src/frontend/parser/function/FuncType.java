@@ -10,6 +10,15 @@ public class FuncType {
         this.token = token;
     }
 
+    public String identifyFuncType() {
+        if (token.getType().equals(Token.Type.INTTK)) {
+            return "Int";
+        } else if (token.getType().equals(Token.Type.CHARTK)) {
+            return "Char";
+        }
+        return "Void";
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

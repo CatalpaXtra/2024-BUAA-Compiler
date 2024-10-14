@@ -30,6 +30,10 @@ public class StmtFor implements StmtEle {
         this.stmt = stmt;
     }
 
+    public Stmt getStmt() {
+        return stmt;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

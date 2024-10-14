@@ -9,6 +9,10 @@ public class Decl implements BlockItemEle {
         this.declEle = declEle;
     }
 
+    public DeclEle getDeclEle() {
+        return declEle;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

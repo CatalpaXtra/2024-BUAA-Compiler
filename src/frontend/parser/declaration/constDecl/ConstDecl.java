@@ -22,6 +22,14 @@ public class ConstDecl implements DeclEle {
         this.semicolon = semicolon;
     }
 
+    public BType getBType() {
+        return btype;
+    }
+
+    public ArrayList<ConstDef> getConstDefs() {
+        return constDefs;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

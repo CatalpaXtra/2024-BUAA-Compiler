@@ -7,6 +7,10 @@ public class BlockItem {
         this.blockItemEle = blockItemEle;
     }
 
+    public BlockItemEle getBlockItemEle() {
+        return blockItemEle;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

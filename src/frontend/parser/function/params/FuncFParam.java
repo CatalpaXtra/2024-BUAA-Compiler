@@ -18,6 +18,18 @@ public class FuncFParam {
         this.rBracket = rBracket;
     }
 
+    public BType getBType() {
+        return bType;
+    }
+
+    public Ident getIdent() {
+        return ident;
+    }
+
+    public boolean isArray() {
+        return lBracket != null && rBracket != null;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

@@ -23,6 +23,14 @@ public class ConstDef {
         this.constInitVal = constInitVal;
     }
 
+    public Ident getIdent() {
+        return ident;
+    }
+
+    public boolean isArray() {
+        return lBracket != null && constExp != null && rBracket != null;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

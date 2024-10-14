@@ -17,6 +17,10 @@ public class Block implements StmtEle {
         this.rBrace = rBrace;
     }
 
+    public ArrayList<BlockItem> getBlockItems() {
+        return blockItems;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

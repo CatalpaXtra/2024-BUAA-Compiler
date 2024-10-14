@@ -14,6 +14,10 @@ public class FuncFParams {
         this.commas = commas;
     }
 
+    public ArrayList<FuncFParam> getFuncFParamList() {
+        return funcFParamList;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

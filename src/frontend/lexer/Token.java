@@ -24,6 +24,10 @@ public class Token {
         return type;
     }
 
+    public String getContent() {
+        return content;
+    }
+
     public int getLine() {
         return line;
     }

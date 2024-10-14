@@ -1,0 +1,38 @@
+package midend.symbol;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+
+public class SymbolTable {
+    private final HashMap<String, Symbol> symbols;
+    private final ArrayList<Symbol> symbolList;
+    private final SymbolTable parent;
+    private final int depth;
+
+    public SymbolTable() {
+        this.symbols = new HashMap<>();
+        this.symbolList = new ArrayList<>();
+        this.parent = null;
+        this.depth = 0;
+    }
+
+    public SymbolTable(SymbolTable parent) {
+        this.symbols = new HashMap<>();
+        this.symbolList = new ArrayList<>();
+        this.parent = parent;
+        this.depth = parent.getDepth() + 1;
+    }
+
+    public void addSymbol(Symbol symbol) {
+        symbols.put(symbol.getName(), symbol);
+        symbolList.add(symbol);
+    }
+
+    private int getDepth() {
+        return depth;
+    }
+
+    public ArrayList<Symbol> getSymbolList() {
+        return symbolList;
+    }
+}

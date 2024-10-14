@@ -4,6 +4,7 @@ import frontend.lexer.LexerErrors;
 import frontend.parser.CompUnit;
 import frontend.parser.Parser;
 import frontend.parser.ParserErrors;
+import midend.Semantic;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -20,17 +21,17 @@ public class Compiler {
         Lexer lexer = new Lexer(scanner);
         Parser parser = new Parser(lexer);
         CompUnit compUnit = parser.parse();
+        Semantic semantic = new Semantic(compUnit);
+        semantic.analyze();
 
         CompErrors compErrors = new CompErrors(LexerErrors.getErrors(), ParserErrors.getErrors());
         if (compErrors.existError()) {
-            String output = compErrors.toString();
             try (PrintWriter writer = new PrintWriter("error.txt")) {
-                writer.println(output);
+                writer.println(compErrors.toString());
             } catch (FileNotFoundException ignored) {}
         } else {
-            String output = compUnit.toString();
-            try (PrintWriter writer = new PrintWriter("parser.txt")) {
-                writer.println(output);
+            try (PrintWriter writer = new PrintWriter("symbol.txt")) {
+                writer.println(semantic.getAllSymbolsAsString());
             } catch (FileNotFoundException ignored) {}
         }
     }

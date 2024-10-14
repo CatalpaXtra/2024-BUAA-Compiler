@@ -20,6 +20,14 @@ public class VarDecl implements DeclEle {
         this.semicolon = semicolon;
     }
 
+    public BType getBType() {
+        return btype;
+    }
+
+    public ArrayList<VarDef> getVarDefs() {
+        return varDefs;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

@@ -22,7 +22,7 @@ public class StmtPrint implements StmtEle {
         this.stringConst = stringConst;
         this.commas = commas;
         this.exps = exps;
-        this.rParent =rParent;
+        this.rParent = rParent;
         this.semicolon = semicolon;
     }
 

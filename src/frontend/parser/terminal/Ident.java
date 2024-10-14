@@ -9,6 +9,14 @@ public class Ident {
         this.token = token;
     }
 
+    public String getIdenfr() {
+        return token.getContent();
+    }
+
+    public int getLine() {
+        return token.getLine();
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

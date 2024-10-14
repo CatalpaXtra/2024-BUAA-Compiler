@@ -5,7 +5,7 @@ import frontend.parser.expression.ConstExp;
 
 import java.util.ArrayList;
 
-public class ConstExpSet implements ConstInitValEle{
+public class ConstExpSet implements ConstInitValEle {
     private final Token lBrace;
     private final ArrayList<ConstExp> constExps;
     private final ArrayList<Token> commas;

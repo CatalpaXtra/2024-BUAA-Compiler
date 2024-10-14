@@ -9,6 +9,13 @@ public class BType {
         this.token = token;
     }
 
+    public String identifyType() {
+        if (token.getType().equals(Token.Type.INTTK)) {
+            return "Int";
+        }
+        return "Char";
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

@@ -24,6 +24,14 @@ public class StmtIf implements StmtEle {
         this.stmt2 = stmt2;
     }
 
+    public Stmt getStmt1() {
+        return stmt1;
+    }
+
+    public Stmt getStmt2() {
+        return stmt2;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
