@@ -5,10 +5,14 @@ import frontend.parser.declaration.constDecl.constInitVal.ConstInitValEle;
 import frontend.parser.declaration.varDecl.initVal.InitValEle;
 
 public class StringConst implements ConstInitValEle, InitValEle {
-    private Token token;
+    private final Token token;
 
     public StringConst(Token token) {
         this.token = token;
+    }
+
+    public Token getToken() {
+        return token;
     }
 
     @Override

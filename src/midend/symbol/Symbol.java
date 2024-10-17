@@ -17,6 +17,10 @@ public class Symbol {
         return name;
     }
 
+    public int getLine() {
+        return line;
+    }
+
     @Override
     public String toString() {
         return scope + " " + name + " " + symbolType;

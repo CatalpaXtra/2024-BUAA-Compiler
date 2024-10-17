@@ -12,6 +12,10 @@ public class StmtContinue implements StmtEle {
         this.semicolon = semicolon;
     }
 
+    public int getLineNum() {
+        return continue1.getLine();
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

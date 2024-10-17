@@ -26,6 +26,18 @@ public class StmtPrint implements StmtEle {
         this.semicolon = semicolon;
     }
 
+    public int getLineNum() {
+        return printf.getLine();
+    }
+
+    public StringConst getStringConst() {
+        return stringConst;
+    }
+
+    public int getExpNum() {
+        return exps.size();
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

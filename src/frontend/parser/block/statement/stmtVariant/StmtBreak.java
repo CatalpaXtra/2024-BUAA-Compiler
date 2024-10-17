@@ -12,6 +12,10 @@ public class StmtBreak implements StmtEle {
         this.semicolon = semicolon;
     }
 
+    public int getLineNum() {
+        return break1.getLine();
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

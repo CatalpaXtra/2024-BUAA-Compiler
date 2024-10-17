@@ -2,7 +2,8 @@ package frontend;
 
 public class Error {
     public enum Type {
-        a,  i, j, k,
+        a, i, j, k,
+        b, c, d, e, f, g, h, l, m
     }
 
     private final Error.Type type;

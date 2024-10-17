@@ -15,6 +15,14 @@ public class StmtReturn implements StmtEle {
         this.semicolon = semicolon;
     }
 
+    public int getLineNum() {
+        return return1.getLine();
+    }
+
+    public boolean existReturnValue() {
+        return exp != null;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

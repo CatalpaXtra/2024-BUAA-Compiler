@@ -5,6 +5,7 @@ import frontend.parser.CompUnit;
 import frontend.parser.Parser;
 import frontend.parser.ParserErrors;
 import midend.Semantic;
+import midend.SemanticErrors;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -24,7 +25,7 @@ public class Compiler {
         Semantic semantic = new Semantic(compUnit);
         semantic.analyze();
 
-        CompErrors compErrors = new CompErrors(LexerErrors.getErrors(), ParserErrors.getErrors());
+        CompErrors compErrors = new CompErrors(LexerErrors.getErrors(), ParserErrors.getErrors(), SemanticErrors.getErrors());
         if (compErrors.existError()) {
             try (PrintWriter writer = new PrintWriter("error.txt")) {
                 writer.println(compErrors.toString());

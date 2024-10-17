@@ -21,6 +21,10 @@ public class Block implements StmtEle {
         return blockItems;
     }
 
+    public Token getRBrace() {
+        return rBrace;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

@@ -247,7 +247,42 @@ LVal → Ident ['[' Exp ']'] // k
 
 新建**symbol**软件包
 - `Symbol`类，存储作用域序号、类型名称
-- `SymbolTable`类，创建符号表，一个`Block`对应一个`SymbolTable`，实现父符号表内容的查询
+- `SymbolTable`类，创建符号表`HashMap<String, Symbol> symbols`，以符号的name为key，Symbol为value，一个`Block`对应一个`SymbolTable`，实现父符号表内容的查询
 
+#### 错误处理
+在**mid**软件包下新建`ErrorHandler`类，语义分析中可能遇到的所有问题都调用此中的静态方法求解
+##### B
+名字重定义
 
+在向`HashMap<String, Symbol> symbols`中添加`Symbol`时，判断`symbols.containsKey(symbol.getName())`，若已有，则不继续添加
 
+##### C
+```text
+LVal → Ident ['[' Exp ']'] // c
+
+UnaryExp → Ident '(' [FuncRParams] ')' // c
+```
+
+##### D
+
+##### E
+
+##### F
+无返回值的函数存在不匹配的return语句  
+检查 `void` 类型函数体内每一条 `return` 语句都没有值，遇到有值的 `return` 语句就报 f 类错误
+
+##### G
+有返回值的函数缺少return语句  
+只需要考虑函数体**最后一条**语句，且只判断有没有 `return` 语句，不需要考虑 `return` 语句是否有返回值；也不需要检查函数体内其他的 `return` 语句是否有值
+
+若函数语句块为空，则有数组越界访问的风险
+
+##### I
+printf中格式字符与表达式个数不匹配  
+格式字符**只包含** `%d` 与 `%c` ，其他C语言中的格式字符，如 `%f` 都当做普通字符原样输出
+
+##### M
+在非循环块中使用break和continue语句
+
+对自定义函数、main函数进行语义分析时，对其中的`analyzeBlock`方法中的形参`isInFor`赋初始值`false`  
+若后续遇到`StmtFor`，对其内的`Block`，为`isInFor`赋值`true`

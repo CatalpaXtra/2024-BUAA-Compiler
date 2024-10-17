@@ -1,5 +1,7 @@
 package midend.symbol;
 
+import midend.ErrorHandler;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -24,15 +26,32 @@ public class SymbolTable {
     }
 
     public void addSymbol(Symbol symbol) {
-        symbols.put(symbol.getName(), symbol);
-        symbolList.add(symbol);
+        if (!ErrorHandler.handleErrorB(symbol, symbols)) {
+            symbols.put(symbol.getName(), symbol);
+            symbolList.add(symbol);
+        }
     }
 
     private int getDepth() {
         return depth;
     }
 
+    public boolean hasParent() {
+        return parent != null;
+    }
+
+    public Symbol getSymbol(String name) {
+        if (symbols.containsKey(name)) {
+            return symbols.get(name);
+        }
+        if (hasParent()) {
+            return parent.getSymbol(name);
+        }
+        return null;
+    }
+
     public ArrayList<Symbol> getSymbolList() {
         return symbolList;
     }
+
 }

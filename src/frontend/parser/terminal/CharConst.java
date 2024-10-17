@@ -3,7 +3,7 @@ package frontend.parser.terminal;
 import frontend.lexer.Token;
 
 public class CharConst {
-    private Token token;
+    private final Token token;
 
     public CharConst(Token token) {
         this.token = token;
