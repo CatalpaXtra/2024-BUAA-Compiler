@@ -1,6 +1,6 @@
 package frontend.parser;
 
-import frontend.Error;
+import frontend.lexer.Error;
 
 import java.util.ArrayList;
 

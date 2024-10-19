@@ -1,4 +1,3 @@
-import frontend.CompErrors;
 import frontend.lexer.Lexer;
 import frontend.lexer.LexerErrors;
 import frontend.parser.CompUnit;

@@ -1,7 +1,5 @@
 package frontend.lexer;
 
-import frontend.Error;
-
 import java.util.ArrayList;
 
 public class LexerErrors {

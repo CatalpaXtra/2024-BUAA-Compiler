@@ -1,4 +1,4 @@
-package frontend;
+import frontend.lexer.Error;
 
 import java.util.ArrayList;
 

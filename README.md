@@ -237,7 +237,8 @@ LVal → Ident ['[' Exp ']'] // k
 
 ## 中端部分
 ### 语义分析
-要求：识别出定义的常量、变量、函数、形参，输出作用域序号、标识符字符串、类型名称
+要求：识别出定义的常量、变量、函数、形参，输出作用域序号、标识符字符串、类型名称  
+在**src**根目录下新建**midend**软件包，以支持语义分析
 
 #### 作用域序号
 对语法分析得到的`CompUnit`，有 `CompUnit → {Decl} {FuncDef} MainFuncDef` ，按`Decl` `FuncDef` `MainFuncDef`的顺序进行语义分析
@@ -247,64 +248,106 @@ LVal → Ident ['[' Exp ']'] // k
 
 新建**symbol**软件包
 - `Symbol`类，存储作用域序号、类型名称
-- `SymbolTable`类，创建符号表`HashMap<String, Symbol> symbols`，以符号的name为key，Symbol为value，一个`Block`对应一个`SymbolTable`，实现父符号表内容的查询
+- `SymbolTable`类，创建符号表`HashMap<String, Symbol> symbols`，以符号的name为key，Symbol为value，一个`Block`对应一个`SymbolTable`
+
+#### 具体实现
+对语法分析得到的内容，同样采用递归下降的方式进行语义分析。  
+具体地，在`Semantic`类中对特定的文法，创建相应的`visit*()`方法，用于语义分析(如`AddExp`，有`visitAddExp()`方法)
 
 #### 错误处理
-在**mid**软件包下新建`ErrorHandler`类，语义分析中可能遇到的所有问题都调用此中的静态方法求解
-##### B
-名字重定义
+在**mid**软件包下新建`ErrorHandler`类，当遇到可能出现语义分析中相应错误的文法递推时，调用`ErrorHandler`类中的`handleError*()`静态方法。  
+注意到**每一行中最多只有一个错误**，因此在`visit*()`中，若检测出错误即可立即`return`
 
-在向`HashMap<String, Symbol> symbols`中添加`Symbol`时，判断`symbols.containsKey(symbol.getName())`，若已有，则不继续添加
+##### B
+函数名或者变量名在**当前作用域**下重复定义
+```text
+ConstDef → Ident [ '[' ConstExp ']' ] '=' ConstInitVal // b
+VarDef → Ident [ '[' ConstExp ']' ] | Ident [ '[' ConstExp ']' ] '=' InitVal // b
+FuncDef → FuncType Ident '(' [FuncFParams] ')' Block // b
+FuncFParam → BType Ident ['[' ']'] // b
+```
 
 ##### C
-使用了未定义的标识符。报错行号为Ident所在行数
+使用了未定义的标识符  
+标识符在**当前作用域与所有父作用域**中均不存在
 
 ```text
 LVal → Ident ['[' Exp ']'] // c
-
 UnaryExp → Ident '(' [FuncRParams] ')' // c
 ```
 
 ##### D
-函数参数个数不匹配
+函数调用语句中，实参个数与函数定义中的形参个数不匹配  
+**数组不参与任何形式的运算**
 
-函数调用语句出现在`UnaryExp`，而`UnaryExp`可由`Exp` `ConstExp` `Cond`递推得到
 ```text
-Exp → AddExp
-ConstExp → AddExp
-Cond → LOrExp 
-⋮
-UnaryExp → Ident '(' [FuncRParams] ')'  // d
-```
-
-对其出现的所有情况均进行检查
-```text
-Stmt → LVal '=' Exp ';'
-| [Exp] ';' 
-| 'if' '(' Cond ')' Stmt [ 'else' Stmt ] 
-| 'for' '(' [ForStmt] ';' [Cond] ';' [ForStmt] ')' Stmt
-| 'return' [Exp] ';'
-| 'printf''('StringConst {','Exp}')'';'
+UnaryExp → Ident '(' [FuncRParams] ')' // d
 ```
 
 ##### E
+函数调用语句中，实参类型与函数定义中对应位置的形参类型不匹配
+
+```text
+UnaryExp → Ident '(' [FuncRParams] ')' // e
+```
 
 ##### F
-无返回值的函数存在不匹配的return语句  
-检查 `void` 类型函数体内每一条 `return` 语句都没有值，遇到有值的 `return` 语句就报 f 类错误
+无返回值的函数存在不匹配的`return`语句  
+检查`void`类型函数体内每一条`return`语句是否有返回值，若有值报f类错误
+
+```text
+Stmt → 'return' [Exp] ';' // f
+```
 
 ##### G
-有返回值的函数缺少return语句  
-只需要考虑函数体**最后一条**语句，且只判断有没有 `return` 语句，不需要考虑 `return` 语句是否有返回值；也不需要检查函数体内其他的 `return` 语句是否有值
+有返回值的函数缺少`return`语句  
+只需要考虑函数体**最后一条**语句，且只判断有没有`return`语句，不需要考虑`return`语句是否有返回值；也不需要检查函数体内其他的`return`语句是否有值
 
-若函数语句块为空，则有数组越界访问的风险
+```text
+FuncDef → FuncType Ident '(' [FuncFParams] ')' Block // g
+MainFuncDef → 'int' 'main' '(' ')' Block // g
+```
 
-##### I
+##### H
+`LVal`为常量时，不能对其修改  
+不需处理被赋值的是数组整体、函数的情况
+
+```text
+Stmt → LVal '=' Exp ';' // h
+| 'for' '(' [ForStmt] ';' [Cond] ';' [ForStmt] ')' Stmt // h
+| LVal '=' 'getint''('')'';' // h
+| LVal '=' 'getchar''('')'';' // h
+
+ForStmt → LVal '=' Exp // h
+```
+
+##### L
 printf中格式字符与表达式个数不匹配  
-格式字符**只包含** `%d` 与 `%c` ，其他C语言中的格式字符，如 `%f` 都当做普通字符原样输出
+格式字符**只包含** `%d`与`%c` ，其他C语言中的格式字符，如`%f`都当做普通字符原样输出
+
+```text
+Stmt → 'printf''('StringConst {','Exp}')'';' // l
+```
 
 ##### M
-在非循环块中使用break和continue语句
+在非循环块中使用`break`和`continue`语句
 
-对自定义函数、main函数进行语义分析时，对其中的`analyzeBlock`方法中的形参`isInFor`赋初始值`false`  
-若后续遇到`StmtFor`，对其内的`Block`，为`isInFor`赋值`true`
+对自定义函数、main函数进行语义分析时，对其中的`analyzeBlock`方法中的形参`isInFor`赋初始值`false`；若后续遇到`StmtFor`，分析其内的`Block`时，为`isInFor`赋`true`
+
+```text
+Stmt → 'break' ';' | 'continue' ';' // m
+```
+
+
+#### debug与重构
+错误处理
+- e
+    ```c
+    int a;
+    func(a[0]);
+    ```
+- g
+    若函数语句块为空，查询`Block`中最后一个`Stmt`时有数组越界访问的风险
+
+
+

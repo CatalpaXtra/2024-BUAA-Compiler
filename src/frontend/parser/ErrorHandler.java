@@ -1,8 +1,8 @@
-package frontend;
+package frontend.parser;
 
+import frontend.lexer.Error;
 import frontend.lexer.Token;
 import frontend.lexer.TokenIterator;
-import frontend.parser.ParserErrors;
 
 public class ErrorHandler {
     private final TokenIterator iterator;

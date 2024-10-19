@@ -1,6 +1,6 @@
 package frontend.parser.declaration.constDecl;
 
-import frontend.ErrorHandler;
+import frontend.parser.ErrorHandler;
 import frontend.lexer.Token;
 import frontend.lexer.TokenIterator;
 import frontend.parser.declaration.constDecl.constInitVal.ConstInitVal;

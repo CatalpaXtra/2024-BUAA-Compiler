@@ -1,6 +1,6 @@
 package midend;
 
-import frontend.Error;
+import frontend.lexer.Error;
 import frontend.lexer.Token;
 import frontend.parser.block.BlockItem;
 import frontend.parser.block.BlockItemEle;

@@ -1,7 +1,7 @@
 package frontend.parser.block.statement.stmtVariant;
 
-import frontend.Error;
-import frontend.ErrorHandler;
+import frontend.lexer.Error;
+import frontend.parser.ErrorHandler;
 import frontend.lexer.Token;
 import frontend.lexer.TokenIterator;
 import frontend.parser.ParserErrors;

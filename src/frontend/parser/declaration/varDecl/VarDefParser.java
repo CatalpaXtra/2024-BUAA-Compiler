@@ -1,6 +1,6 @@
 package frontend.parser.declaration.varDecl;
 
-import frontend.ErrorHandler;
+import frontend.parser.ErrorHandler;
 import frontend.lexer.Token;
 import frontend.lexer.TokenIterator;
 import frontend.parser.declaration.varDecl.initVal.InitVal;
