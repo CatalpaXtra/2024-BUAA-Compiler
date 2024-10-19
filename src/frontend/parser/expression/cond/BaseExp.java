@@ -15,6 +15,10 @@ public class BaseExp<T> {
         this.operators = operators;
     }
 
+    public ArrayList<T> getLowerExps() {
+        return lowerExps;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

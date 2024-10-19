@@ -8,6 +8,10 @@ public class UnaryExp {
         this.unaryEle = unaryEle;
     }
 
+    public UnaryEle getUnaryEle() {
+        return unaryEle;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

@@ -18,6 +18,22 @@ public class LVal implements PrimaryEle {
         this.rBracket = rBracket;
     }
 
+    public Ident getIdent() {
+        return ident;
+    }
+
+    public Exp getExp() {
+        return exp;
+    }
+
+    public boolean isArray() {
+        return lBracket != null && exp != null && rBracket != null;
+    }
+
+    public boolean isVarAsFuncRParam() {
+        return lBracket != null && exp != null && rBracket != null;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

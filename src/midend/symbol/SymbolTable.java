@@ -26,10 +26,11 @@ public class SymbolTable {
     }
 
     public void addSymbol(Symbol symbol) {
-        if (!ErrorHandler.handleErrorB(symbol, symbols)) {
-            symbols.put(symbol.getName(), symbol);
-            symbolList.add(symbol);
+        if (ErrorHandler.handleErrorB(symbol, symbols)) {
+            return;
         }
+        symbols.put(symbol.getName(), symbol);
+        symbolList.add(symbol);
     }
 
     private int getDepth() {

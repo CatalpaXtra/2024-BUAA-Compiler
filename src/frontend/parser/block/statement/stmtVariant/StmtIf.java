@@ -24,6 +24,10 @@ public class StmtIf implements StmtEle {
         this.stmt2 = stmt2;
     }
 
+    public Cond getCond() {
+        return cond;
+    }
+
     public Stmt getStmt1() {
         return stmt1;
     }

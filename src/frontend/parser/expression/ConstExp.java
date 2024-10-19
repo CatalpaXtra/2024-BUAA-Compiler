@@ -11,6 +11,10 @@ public class ConstExp implements ConstInitValEle {
         this.addExp = addExp;
     }
 
+    public AddExp getAddExp() {
+        return addExp;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

@@ -16,6 +16,14 @@ public class UnaryFunc implements UnaryEle {
         this.rParent = rParent;
     }
 
+    public Ident getIdent() {
+        return ident;
+    }
+
+    public FuncRParams getFuncRParams() {
+        return funcRParams;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

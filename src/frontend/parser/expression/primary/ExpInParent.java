@@ -14,6 +14,10 @@ public class ExpInParent implements PrimaryEle {
         this.rParent = rParent;
     }
 
+    public Exp getExp() {
+        return exp;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

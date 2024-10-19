@@ -10,6 +10,10 @@ public class PrimaryExp implements UnaryEle {
         this.primaryEle = primaryEle;
     }
 
+    public PrimaryEle getPrimaryEle() {
+        return primaryEle;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

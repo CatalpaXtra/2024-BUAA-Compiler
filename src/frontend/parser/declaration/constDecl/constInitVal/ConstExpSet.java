@@ -18,6 +18,10 @@ public class ConstExpSet implements ConstInitValEle {
         this.rBrace = rBrace;
     }
 
+    public ArrayList<ConstExp> getConstExps() {
+        return constExps;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

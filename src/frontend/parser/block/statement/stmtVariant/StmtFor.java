@@ -30,6 +30,18 @@ public class StmtFor implements StmtEle {
         this.stmt = stmt;
     }
 
+    public ForStmt getForStmt1() {
+        return forStmt1;
+    }
+
+    public Cond getCond() {
+        return cond;
+    }
+
+    public ForStmt getForStmt2() {
+        return forStmt2;
+    }
+
     public Stmt getStmt() {
         return stmt;
     }

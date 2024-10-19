@@ -8,6 +8,10 @@ public class InitVal {
         this.initValEle = initValEle;
     }
 
+    public InitValEle getInitValEle() {
+        return initValEle;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

@@ -8,6 +8,10 @@ public class ConstInitVal {
         this.constInitValEle = constInitValEle;
     }
 
+    public ConstInitValEle getConstInitValEle() {
+        return constInitValEle;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

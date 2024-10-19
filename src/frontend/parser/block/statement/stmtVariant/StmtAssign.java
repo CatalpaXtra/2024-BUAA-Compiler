@@ -18,6 +18,14 @@ public class StmtAssign implements StmtEle {
         this.semicolon = semicolon;
     }
 
+    public LVal getlVal() {
+        return lVal;
+    }
+
+    public Exp getExp() {
+        return exp;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

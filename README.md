@@ -257,6 +257,8 @@ LVal → Ident ['[' Exp ']'] // k
 在向`HashMap<String, Symbol> symbols`中添加`Symbol`时，判断`symbols.containsKey(symbol.getName())`，若已有，则不继续添加
 
 ##### C
+使用了未定义的标识符。报错行号为Ident所在行数
+
 ```text
 LVal → Ident ['[' Exp ']'] // c
 
@@ -264,6 +266,26 @@ UnaryExp → Ident '(' [FuncRParams] ')' // c
 ```
 
 ##### D
+函数参数个数不匹配
+
+函数调用语句出现在`UnaryExp`，而`UnaryExp`可由`Exp` `ConstExp` `Cond`递推得到
+```text
+Exp → AddExp
+ConstExp → AddExp
+Cond → LOrExp 
+⋮
+UnaryExp → Ident '(' [FuncRParams] ')'  // d
+```
+
+对其出现的所有情况均进行检查
+```text
+Stmt → LVal '=' Exp ';'
+| [Exp] ';' 
+| 'if' '(' Cond ')' Stmt [ 'else' Stmt ] 
+| 'for' '(' [ForStmt] ';' [Cond] ';' [ForStmt] ')' Stmt
+| 'return' [Exp] ';'
+| 'printf''('StringConst {','Exp}')'';'
+```
 
 ##### E
 

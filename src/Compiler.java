@@ -23,7 +23,7 @@ public class Compiler {
         Parser parser = new Parser(lexer);
         CompUnit compUnit = parser.parse();
         Semantic semantic = new Semantic(compUnit);
-        semantic.analyze();
+        semantic.visit();
 
         CompErrors compErrors = new CompErrors(LexerErrors.getErrors(), ParserErrors.getErrors(), SemanticErrors.getErrors());
         if (compErrors.existError()) {

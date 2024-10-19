@@ -18,6 +18,10 @@ public class ExpSet implements InitValEle {
         this.rBrace = rBrace;
     }
 
+    public ArrayList<Exp> getExps() {
+        return exps;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

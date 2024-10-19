@@ -23,6 +23,10 @@ public class StmtReturn implements StmtEle {
         return exp != null;
     }
 
+    public Exp getExp() {
+        return exp;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

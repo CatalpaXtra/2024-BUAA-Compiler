@@ -8,6 +8,10 @@ public class Cond {
         this.lOrExp = lOrExp;
     }
 
+    public LOrExp getlOrExp() {
+        return lOrExp;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

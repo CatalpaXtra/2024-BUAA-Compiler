@@ -31,6 +31,14 @@ public class ConstDef {
         return lBracket != null && constExp != null && rBracket != null;
     }
 
+    public ConstExp getConstExp() {
+        return constExp;
+    }
+
+    public ConstInitVal getConstInitVal() {
+        return constInitVal;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

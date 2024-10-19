@@ -21,6 +21,10 @@ public class StmtGetInt implements StmtEle {
         this.semicolon = semicolon;
     }
 
+    public LVal getlVal() {
+        return lVal;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

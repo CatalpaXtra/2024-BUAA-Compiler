@@ -13,6 +13,10 @@ public class Symbol {
         this.scope = scope;
     }
 
+    public String getSymbolType() {
+        return symbolType;
+    }
+
     public String getName() {
         return name;
     }

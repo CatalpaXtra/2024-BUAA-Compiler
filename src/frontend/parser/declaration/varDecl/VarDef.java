@@ -31,6 +31,18 @@ public class VarDef {
         return lBracket != null && constExp != null && rBracket != null;
     }
 
+    public ConstExp getConstExp() {
+        return constExp;
+    }
+
+    public boolean hasInitValue() {
+        return eq != null && initVal != null;
+    }
+
+    public InitVal getInitVal() {
+        return initVal;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
