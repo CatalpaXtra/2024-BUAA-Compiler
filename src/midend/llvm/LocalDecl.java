@@ -66,8 +66,11 @@ public class LocalDecl {
                 String initVal = ((StringConst) constInitValEle).getToken().getContent();
             }
         } else {
+            int memoryReg = virtualReg++;
+            module.addCode("%" + memoryReg + " = alloca i32");
             int initVal = GlobalDecl.visitGlobalConstExp((ConstExp) constDef.getConstInitVal().getConstInitValEle(), symbolTable);
-            SymbolCon symbolCon = new SymbolCon(symbolType, name, line, scope);
+            module.addCode("store i32 " + initVal + ", i32* %" + memoryReg);
+            SymbolCon symbolCon = new SymbolCon(symbolType, name, line, scope, "%" + memoryReg, initVal);
             symbolTable.addSymbol(symbolCon);
         }
     }

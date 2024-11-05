@@ -352,17 +352,19 @@ Stmt → 'break' ';' | 'continue' ';' // m
 
 ### LLVM中间代码生成
 #### 变量
-将`char`改为`i8`，将`int`改为`i32`
+将`char`改为`i8`，将`int`改为`i32`  
 将`char`类型初值改为`int`型，如`int c = 'a'`，等价为`int c = 97`
 
 全局
-- 对于 `InitVal` 初值，需要**直接算出**其具体的值。
+- 对于 `InitVal` 初值，需要**直接算出**其具体的值
 - 使用全局标识符 `@`
 - 格式为`@<Ident> = dso_local global i32 <InitVal, default=0>`
 
 局部
 - 使用标识符 `%`
 - 首先需要通过 `alloca` 指令分配一块内存，才能对其进行 `load/store` 操作
+
+对 `Const` 变量，存储其不可修改值。便于后续引用时的代值计算
 
 例如：
 ```c
@@ -388,11 +390,15 @@ define dso_local i32 @main() {
 }
 ```
 
-涉及到符号表及对应作用域
+将对应的全局标识符/虚拟寄存器加入到变量类`Symbol`中，便于取出并参与计算
 
-#### FuncDef
-##### FuncDecl
+#### 函数
 
-##### Stmt
-对STMT
 
+#### 条件判断
+
+
+#### 数组
+
+
+#### 类型转换

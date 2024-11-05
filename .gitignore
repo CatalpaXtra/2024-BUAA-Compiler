@@ -6,5 +6,5 @@ src/config.json
 src/*.zip
 
 # 忽略文件
-2024-BUAA-Compiler.iml
+*.iml
 *.txt
