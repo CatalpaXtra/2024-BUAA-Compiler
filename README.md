@@ -212,8 +212,8 @@ LVal → Ident ['[' Exp ']'] // k
 
 其余bug均为错误处理时遇到
 - 对于函数定义 `FuncDef → FuncType Ident '(' [FuncFParams] ')' Block`
-若遇到以下错误样例，则原先代码会认为在`'('`之后的不是`')'`而进行`FuncFParams`的解析  
-因此新增if语句特判，当读到的`Token`为`'{'`时，认为缺省`FuncFParams`与`')'`，后续进行`Block`的解析
+  若遇到以下错误样例，则原先代码会认为在`'('`之后的不是`')'`而进行`FuncFParams`的解析  
+  因此新增if语句特判，当读到的`Token`为`'{'`时，认为缺省`FuncFParams`与`')'`，后续进行`Block`的解析
     ```c
     void f1({
 
@@ -221,8 +221,8 @@ LVal → Ident ['[' Exp ']'] // k
     ```
 
 - 对于语句 `Stmt → LVal '=' Exp ';' | Exp ';'`
-若遇到以下错误样例，则原先代码会无限向后读取符号，直至读到`'='`，错误认为`a b c = 1 `为一个赋值语句  
-因此新增限制，当读到的`Token`行数与`Stmt`所在行数不一致时，便不再往下读取，认为此行为`Exp ';'`
+  若遇到以下错误样例，则原先代码会无限向后读取符号，直至读到`'='`，错误认为`a b c = 1 `为一个赋值语句  
+  因此新增限制，当读到的`Token`行数与`Stmt`所在行数不一致时，便不再往下读取，认为此行为`Exp ';'`
     ```c
     int main (){
     a
@@ -347,7 +347,52 @@ Stmt → 'break' ';' | 'continue' ';' // m
     func(a[0]);
     ```
 - g
-    若函数语句块为空，查询`Block`中最后一个`Stmt`时有数组越界访问的风险
+  若函数语句块为空，查询`Block`中最后一个`Stmt`时有数组越界访问的风险
 
 
+### LLVM中间代码生成
+#### 变量
+将`char`改为`i8`，将`int`改为`i32`
+将`char`类型初值改为`int`型，如`int c = 'a'`，等价为`int c = 97`
+
+全局
+- 对于 `InitVal` 初值，需要**直接算出**其具体的值。
+- 使用全局标识符 `@`
+- 格式为`@<Ident> = dso_local global i32 <InitVal, default=0>`
+
+局部
+- 使用标识符 `%`
+- 首先需要通过 `alloca` 指令分配一块内存，才能对其进行 `load/store` 操作
+
+例如：
+```c
+int b = 3;
+
+int main() {
+    int c = b + 4;
+    return 0;
+}
+```
+
+其llvm代码为：
+```llvm
+@b = dso_local global i32 3
+
+define dso_local i32 @main() {
+    %1 = alloca i32          ; 分配 c
+    %2 = load i32, i32* @b   ; 加载 b 到内存
+    %3 = add nsw i32 %2, 4   ; b + 4
+    store i32 %3, i32* %1    ; c = b + 4
+    %4 = add i32 0, 0
+    ret i32 0
+}
+```
+
+涉及到符号表及对应作用域
+
+#### FuncDef
+##### FuncDecl
+
+##### Stmt
+对STMT
 

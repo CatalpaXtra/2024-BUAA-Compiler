@@ -10,6 +10,10 @@ public class Number implements PrimaryEle {
         this.intConst = intConst;
     }
 
+    public IntConst getIntConst() {
+        return intConst;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

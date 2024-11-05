@@ -10,6 +10,10 @@ public class Character implements PrimaryEle {
         this.charConst = charConst;
     }
 
+    public CharConst getCharConst() {
+        return charConst;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

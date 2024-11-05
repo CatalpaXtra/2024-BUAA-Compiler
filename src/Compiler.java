@@ -5,6 +5,8 @@ import frontend.parser.Parser;
 import frontend.parser.ParserErrors;
 import midend.Semantic;
 import midend.SemanticErrors;
+import midend.llvm.Builder;
+import midend.llvm.Module;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -29,10 +31,14 @@ public class Compiler {
             try (PrintWriter writer = new PrintWriter("error.txt")) {
                 writer.println(compErrors.toString());
             } catch (FileNotFoundException ignored) {}
-        } else {
-            try (PrintWriter writer = new PrintWriter("symbol.txt")) {
-                writer.println(semantic.getAllSymbolsAsString());
-            } catch (FileNotFoundException ignored) {}
+            return;
         }
+
+        Builder builder = new Builder(compUnit);
+        builder.build();
+        Module module = builder.getModule();
+        try (PrintWriter writer = new PrintWriter("llvm_ir.txt")) {
+            writer.println(module.irOut());
+        } catch (FileNotFoundException ignored) {}
     }
 }

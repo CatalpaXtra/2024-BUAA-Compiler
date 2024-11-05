@@ -9,6 +9,10 @@ public class IntConst {
         this.token = token;
     }
 
+    public int getVal() {
+        return Integer.parseInt(token.getContent());
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

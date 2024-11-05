@@ -10,6 +10,10 @@ public class UnaryOp {
         this.token = token;
     }
 
+    public Token getToken() {
+        return token;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

@@ -5,12 +5,22 @@ public class Symbol {
     private final String name;
     private final int line;
     private final int scope; // 作用域序号
+    private final String memory;
 
     public Symbol(String symbolType, String name, int line, int scope) {
         this.symbolType = symbolType;
         this.name = name;
         this.line = line;
         this.scope = scope;
+        this.memory = "";
+    }
+
+    public Symbol(String symbolType, String name, int line, int scope, String memory) {
+        this.symbolType = symbolType;
+        this.name = name;
+        this.line = line;
+        this.scope = scope;
+        this.memory = memory;
     }
 
     public String getSymbolType() {
@@ -23,6 +33,10 @@ public class Symbol {
 
     public int getLine() {
         return line;
+    }
+
+    public String getMemory() {
+        return memory;
     }
 
     @Override

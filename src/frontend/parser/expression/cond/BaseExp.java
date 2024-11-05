@@ -19,6 +19,10 @@ public class BaseExp<T> {
         return lowerExps;
     }
 
+    public ArrayList<Token> getOperators() {
+        return operators;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
