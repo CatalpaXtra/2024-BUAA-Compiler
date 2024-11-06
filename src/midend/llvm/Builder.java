@@ -34,7 +34,6 @@ import java.util.ArrayList;
 
 public class Builder {
     private static int scopeNum = 1;
-    private final ArrayList<SymbolTable> symbolTables;
     private final ArrayList<Decl> decls;
     private final ArrayList<FuncDef> funcDefs;
     private final MainFuncDef mainFuncDef;
@@ -42,12 +41,10 @@ public class Builder {
     private final Module module;
 
     public Builder(CompUnit compUnit) {
-        this.symbolTables = new ArrayList<>();
         this.decls = compUnit.getDecls();
         this.funcDefs = compUnit.getFuncDefs();
         this.mainFuncDef = compUnit.getMainFuncDef();
         this.globalSymbolTable = new SymbolTable();
-        symbolTables.add(globalSymbolTable);
         this.module = new Module();
     }
 
@@ -60,12 +57,16 @@ public class Builder {
         for (Decl decl : decls) {
             visitGlobalDecl(decl, globalSymbolTable, 1);
         }
+
         LocalDecl.setLocalDecl(globalSymbolTable, module);
+        LocalStmt.setLocalStmt(globalSymbolTable, module);
         for (FuncDef funcDef : funcDefs) {
-            LocalDecl.resetReg(0);
+            Register.resetReg();
             visitFuncDef(funcDef);
         }
-        LocalDecl.resetReg(1);
+
+        Register.resetReg();
+        Register.allocReg();
         visitMainFuncDef();
     }
 
@@ -99,19 +100,19 @@ public class Builder {
         /* extend symbolTable */
         int funcScopeNum = ++scopeNum;
         SymbolTable childSymbolTable = new SymbolTable(globalSymbolTable);
-        symbolTables.add(childSymbolTable);
 
         /* visit FuncFParams */
         ArrayList<FuncFParam> funcFParamList = funcDef.getFuncFParams() == null ? new ArrayList<>() : funcDef.getFuncFParams().getFuncFParamList();
         String declFParam = "";
         for (FuncFParam funcFParam : funcFParamList) {
-            int reg = LocalDecl.allocReg();
+            int reg = Register.allocReg();
             declFParam += typeTransfer(funcFParam.getBType().getToken().getType()) + " %" + reg + ", ";
         }
-        LocalDecl.allocReg();
+
+        Register.allocReg();
         ArrayList<String> storeFParam = new ArrayList<>();
         for (FuncFParam funcFParam : funcFParamList) {
-            int memory = LocalDecl.allocReg();
+            int memory = Register.allocReg();
             String valueType = typeTransfer(funcFParam.getBType().getToken().getType());
             storeFParam.add("%" + memory + " = alloca i32");
             storeFParam.add("store " +  valueType + " %" + (memory - funcFParamList.size()) + ", i32* %" + memory);
@@ -160,14 +161,14 @@ public class Builder {
     private void visitStmt(Stmt stmt, SymbolTable symbolTable, Token.Type type, boolean isInFor) {
         StmtEle stmtEle = stmt.getStmtEle();
         if (stmtEle instanceof StmtAssign) {
-            LocalDecl.visitStmtAssign((StmtAssign) stmtEle, symbolTable);
+            LocalStmt.visitStmtAssign((StmtAssign) stmtEle, symbolTable);
         } else if (stmtEle instanceof StmtExp) {
             // TODO no need?
             LocalDecl.visitExp(((StmtExp) stmtEle).getExp(), symbolTable);
         } else if (stmtEle instanceof StmtGetInt) {
-            LocalDecl.visitStmtGetInt((StmtGetInt) stmtEle, symbolTable);
+            LocalStmt.visitStmtGetInt((StmtGetInt) stmtEle, symbolTable);
         } else if (stmtEle instanceof StmtGetChar) {
-            LocalDecl.visitStmtGetChar((StmtGetChar) stmtEle, symbolTable);
+            LocalStmt.visitStmtGetChar((StmtGetChar) stmtEle, symbolTable);
         }
 
         if (stmtEle instanceof StmtFor) {
@@ -176,13 +177,13 @@ public class Builder {
             visitStmtIf((StmtIf) stmtEle, symbolTable, type, isInFor);
         } else if (stmtEle instanceof Block) {
             SymbolTable childSymbolTable = new SymbolTable(symbolTable);
-            symbolTables.add(childSymbolTable);
             visitBlock((Block) stmtEle, ++scopeNum, childSymbolTable, type, isInFor);
         } else if (stmtEle instanceof StmtPrint) {
             if (((StmtPrint) stmtEle).getExpNum() > 0) {
                 ArrayList<Exp> exps = ((StmtPrint) stmtEle).getExps();
                 for (Exp exp : exps) {
-                    visitExp(exp, symbolTable);
+                    // TODO
+                    // LocalDecl.visitExp(exp, symbolTable);
                 }
             }
         } else if (stmtEle instanceof StmtReturn) {
@@ -195,12 +196,20 @@ public class Builder {
         }
     }
 
+    private void visitStmtIf(StmtIf stmtIf, SymbolTable symbolTable, Token.Type type, boolean isInFor) {
+        LocalStmt.visitCond(stmtIf.getCond(), symbolTable);
+        visitStmt(stmtIf.getStmt1(), symbolTable, type, isInFor);
+        if (stmtIf.getStmt2() != null) {
+            visitStmt(stmtIf.getStmt2(), symbolTable, type, isInFor);
+        }
+    }
+
     private void visitStmtFor(StmtFor stmtFor, SymbolTable symbolTable, Token.Type type) {
         if (stmtFor.getForStmt1() != null) {
             visitForStmt(stmtFor.getForStmt1(), symbolTable);
         }
         if (stmtFor.getCond() != null) {
-            visitCond(stmtFor.getCond(), symbolTable);
+            LocalStmt.visitCond(stmtFor.getCond(), symbolTable);
         }
         if (stmtFor.getForStmt2() != null) {
             visitForStmt(stmtFor.getForStmt2(), symbolTable);
@@ -216,114 +225,10 @@ public class Builder {
         module.addCode("store i32 " + result.irOut() + ", i32* " + memory);
     }
 
-    private void visitStmtIf(StmtIf stmtIf, SymbolTable symbolTable, Token.Type type, boolean isInFor) {
-        visitCond(stmtIf.getCond(), symbolTable);
-        visitStmt(stmtIf.getStmt1(), symbolTable, type, isInFor);
-        if (stmtIf.getStmt2() != null) {
-            visitStmt(stmtIf.getStmt2(), symbolTable, type, isInFor);
-        }
-    }
-
-    private void visitCond(Cond cond, SymbolTable symbolTable) {
-        visitLOrExp(cond.getlOrExp(), symbolTable);
-    }
-
-    private void visitLOrExp(LOrExp lOrExp, SymbolTable symbolTable) {
-        ArrayList<LAndExp> lAndExps = lOrExp.getLowerExps();
-        for (LAndExp lAndExp : lAndExps) {
-            visitLAndExp(lAndExp, symbolTable);
-        }
-    }
-
-    private void visitLAndExp(LAndExp lAndExp, SymbolTable symbolTable) {
-        ArrayList<EqExp> EqExps = lAndExp.getLowerExps();
-        for (EqExp eqExp : EqExps) {
-            visitEqExp(eqExp, symbolTable);
-        }
-    }
-
-    private void visitEqExp(EqExp eqExp, SymbolTable symbolTable) {
-        ArrayList<RelExp> relExps = eqExp.getLowerExps();
-        for (RelExp relExp : relExps) {
-            visitRelExp(relExp, symbolTable);
-        }
-    }
-
-    private void visitRelExp(RelExp relExp, SymbolTable symbolTable) {
-        ArrayList<AddExp> addExps = relExp.getLowerExps();
-        for (AddExp addExp : addExps) {
-            visitAddExp(addExp, symbolTable);
-        }
-    }
-
-    private void visitPrimaryExp(PrimaryExp primaryExp, SymbolTable symbolTable) {
-        PrimaryEle primaryEle = primaryExp.getPrimaryEle();
-        if (primaryEle instanceof ExpInParent) {
-            visitExp(((ExpInParent) primaryEle).getExp(), symbolTable);
-        } else if (primaryEle instanceof LVal) {
-            visitLVal((LVal) primaryEle, symbolTable);
-        }
-    }
-
-    private void visitUnaryExp(UnaryExp unaryExp, SymbolTable symbolTable) {
-        UnaryEle unaryEle = unaryExp.getUnaryEle();
-        if (unaryEle instanceof UnaryFunc) {
-            visitUnaryFunc((UnaryFunc) unaryEle, symbolTable);
-        } else if (unaryEle instanceof UnaryOpExp) {
-            visitUnaryOpExp((UnaryOpExp) unaryEle, symbolTable);
-        } else if (unaryEle instanceof PrimaryExp) {
-            visitPrimaryExp((PrimaryExp) unaryEle, symbolTable);
-        }
-    }
-
-    private void visitMulExp(MulExp mulExp, SymbolTable symbolTable) {
-        ArrayList<UnaryExp> unaryExps = mulExp.getLowerExps();
-        for (UnaryExp unaryExp : unaryExps) {
-            visitUnaryExp(unaryExp, symbolTable);
-        }
-    }
-
-    private void visitAddExp(AddExp addExp, SymbolTable symbolTable) {
-        ArrayList<MulExp> mulExps = addExp.getLowerExps();
-        for (MulExp mulExp : mulExps) {
-            visitMulExp(mulExp, symbolTable);
-        }
-    }
-
-    private void visitExp(Exp exp, SymbolTable symbolTable) {
-        visitAddExp(exp.getAddExp(), symbolTable);
-    }
-
-    private void visitUnaryFunc(UnaryFunc unaryFunc, SymbolTable symbolTable) {
-        Ident funcIdent = unaryFunc.getIdent();
-        FuncRParams funcRParams = unaryFunc.getFuncRParams();
-        if (funcRParams != null) {
-            ArrayList<Exp> funcExps = funcRParams.getExps();
-            for (Exp exp : funcExps) {
-                visitExp(exp, symbolTable);
-            }
-        }
-    }
-
-    private void visitUnaryOpExp(UnaryOpExp unaryOpExp, SymbolTable symbolTable) {
-        UnaryOp unaryOp = unaryOpExp.getUnaryOp();
-        UnaryExp unaryExp = unaryOpExp.getUnaryExp();
-        visitUnaryExp(unaryExp, symbolTable);
-    }
-
-    private void visitLVal(LVal lVal, SymbolTable symbolTable) {
-        Ident ident = lVal.getIdent();
-        if (lVal.isArray()) {
-            Exp exp = lVal.getExp();
-            visitExp(exp, symbolTable);
-        }
-    }
-
     private void visitMainFuncDef() {
         module.addCode("");
         module.addCode("define dso_local i32 @main() {");
         SymbolTable childSymbolTable = new SymbolTable(globalSymbolTable);
-        symbolTables.add(childSymbolTable);
         visitBlock(mainFuncDef.getBlock(), ++scopeNum, childSymbolTable, Token.Type.INTTK, false);
         module.addCode("}");
     }

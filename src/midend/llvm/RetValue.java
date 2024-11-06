@@ -24,10 +24,6 @@ public class RetValue {
         return value;
     }
 
-    public String getReg() {
-        return "" + regNum;
-    }
-
     public String irOut() {
         if (isDigit) {
             return value + "";

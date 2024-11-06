@@ -474,3 +474,6 @@ define dso_local i32 @main() {
 
 
 #### 类型转换
+- 函数传参
+- 函数返回值(getchar)
+

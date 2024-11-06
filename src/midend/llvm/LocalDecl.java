@@ -16,6 +16,7 @@ import frontend.parser.expression.ConstExp;
 import frontend.parser.expression.Exp;
 import frontend.parser.expression.add.AddExp;
 import frontend.parser.expression.add.MulExp;
+import frontend.parser.expression.cond.*;
 import frontend.parser.expression.primary.Character;
 import frontend.parser.expression.primary.ExpInParent;
 import frontend.parser.expression.primary.LVal;
@@ -31,19 +32,10 @@ import java.util.ArrayList;
 public class LocalDecl {
     private static SymbolTable globalSymbolTable;
     private static Module module;
-    private static int virtualReg;
 
     public static void setLocalDecl(SymbolTable symbolTable, Module md) {
         globalSymbolTable = symbolTable;
         module = md;
-    }
-
-    public static void resetReg(int initReg) {
-        virtualReg = initReg;
-    }
-
-    public static int allocReg() {
-        return virtualReg++;
     }
 
     public static void visitConstDecl(ConstDecl constDecl, SymbolTable symbolTable, int scope) {
@@ -78,7 +70,7 @@ public class LocalDecl {
                 String initVal = ((StringConst) constInitValEle).getToken().getContent();
             }
         } else {
-            int memoryReg = virtualReg++;
+            int memoryReg = Register.allocReg();
             module.addCode("%" + memoryReg + " = alloca i32");
             int initVal = GlobalDecl.visitGlobalConstExp((ConstExp) constDef.getConstInitVal().getConstInitValEle(), symbolTable);
             module.addCode("store i32 " + initVal + ", i32* %" + memoryReg);
@@ -103,7 +95,7 @@ public class LocalDecl {
                 String initVal = ((StringConst) initValEle).getToken().getContent();
             }
         } else {
-            int memoryReg = virtualReg++;
+            int memoryReg = Register.allocReg();
             module.addCode("%" + memoryReg + " = alloca i32");
             if (varDef.hasInitValue()) {
                 RetValue result = visitExp((Exp) varDef.getInitVal().getInitValEle(), symbolTable);
@@ -122,14 +114,14 @@ public class LocalDecl {
         return visitAddExp(exp.getAddExp(), symbolTable);
     }
 
-    private static RetValue visitAddExp(AddExp addExp, SymbolTable symbolTable) {
+    public static RetValue visitAddExp(AddExp addExp, SymbolTable symbolTable) {
         ArrayList<MulExp> mulExps = addExp.getLowerExps();
         RetValue result = visitMulExp(mulExps.get(0), symbolTable);
         ArrayList<Token> operators = addExp.getOperators();
         for (int i = 1; i < mulExps.size(); i++) {
             RetValue left = result;
             RetValue right = visitMulExp(mulExps.get(i), symbolTable);
-            result = new RetValue(virtualReg++, false);
+            result = new RetValue(Register.allocReg(), false);
             Token op = operators.get(i - 1);
             if (op.getType().equals(Token.Type.PLUS)) {
                 module.addCode(result.irOut() + " = add i32 " + left.irOut() + ", " + right.irOut());
@@ -147,7 +139,7 @@ public class LocalDecl {
         for (int i = 1; i < unaryExps.size(); i++) {
             RetValue left = result;
             RetValue right = visitUnaryExp(unaryExps.get(i), symbolTable);
-            result = new RetValue(virtualReg++, false);
+            result = new RetValue(Register.allocReg(), false);
             Token op = operators.get(i - 1);
             if (op.getType().equals(Token.Type.MULT)) {
                 module.addCode(result.irOut() + " = mul i32 " + left.irOut() + ", " + right.irOut());
@@ -189,9 +181,9 @@ public class LocalDecl {
         }
         passRParam = passRParam.length() > 2 ? passRParam.substring(0, passRParam.length() - 2) : passRParam;
 
-        RetValue result = new RetValue(virtualReg++, false);
+        RetValue result = new RetValue(Register.allocReg(), false);
         if (symbolFunc.getSymbolType().contains("Void")) {
-            virtualReg--;
+            Register.cancelReg();
             module.addCode("call void @" + funcName + "(" + passRParam + ")");
         } else if (symbolFunc.getSymbolType().contains("Int")) {
             module.addCode(result.irOut() + " = call i32 @" + funcName + "(" + passRParam + ")");
@@ -211,7 +203,7 @@ public class LocalDecl {
             if (retValue.isDigit()) {
                 return new RetValue(-retValue.getValue(), true);
             } else {
-                RetValue result = new RetValue(virtualReg++, false);
+                RetValue result = new RetValue(Register.allocReg(), false);
                 module.addCode(result.irOut() + " = sub i32 0, " + retValue.irOut());
                 return result;
             }
@@ -241,37 +233,11 @@ public class LocalDecl {
         } else {
             Symbol symbol = symbolTable.getSymbol(ident.getIdenfr());
             String memory = symbol.getMemory();
-            RetValue result = new RetValue(virtualReg++, false);
+            RetValue result = new RetValue(Register.allocReg(), false);
             module.addCode(result.irOut() + " = load i32, i32* " + memory);
             return result;
         }
         return new RetValue(0, true);
-    }
-
-    public static void visitStmtAssign(StmtAssign stmtAssign, SymbolTable symbolTable) {
-        Ident ident = stmtAssign.getlVal().getIdent();
-        Symbol symbol = symbolTable.getSymbol(ident.getIdenfr());
-        String memory = symbol.getMemory();
-        RetValue result = LocalDecl.visitExp(stmtAssign.getExp(), symbolTable);
-        module.addCode("store i32 " + result.irOut() + ", i32* " + memory);
-    }
-
-    public static void visitStmtGetInt(StmtGetInt stmtGetInt, SymbolTable symbolTable) {
-        int memoryReg = virtualReg++;
-        module.addCode("%" + memoryReg + " = call i32 @getint()");
-        Ident ident = stmtGetInt.getlVal().getIdent();
-        Symbol symbol = symbolTable.getSymbol(ident.getIdenfr());
-        String memory = symbol.getMemory();
-        module.addCode("store i32 %" + memoryReg + ", i32* " + memory);
-    }
-
-    public static void visitStmtGetChar(StmtGetChar stmtGetChar, SymbolTable symbolTable) {
-        int memoryReg = virtualReg++;
-        module.addCode("%" + memoryReg + " = call i32 @getchar()");
-        Ident ident = stmtGetChar.getlVal().getIdent();
-        Symbol symbol = symbolTable.getSymbol(ident.getIdenfr());
-        String memory = symbol.getMemory();
-        module.addCode("store i32 %" + memoryReg + ", i32* " + memory);
     }
 
 }
