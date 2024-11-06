@@ -393,7 +393,79 @@ define dso_local i32 @main() {
 将对应的全局标识符/虚拟寄存器加入到变量类`Symbol`中，便于取出并参与计算
 
 #### 函数
+声明
+- 使用全局标识符 `@`
+- 基本块占用一个编号，进入 Block 后需要跳过一个基本块入口的编号
+- 对传入的形参，应`alloca`内存空间并`store`
 
+调用
+- 对无返回值`void`类函数，仅在 `Stmt → Exp;` 中出现
+- 对有返回值`int`, `char`，出现范围较广。在参与运算时需申请寄存器用于存值
+
+例如：
+```c
+int a = 1000;
+
+int foo(int a, int b){
+    return a + b;
+}
+
+void bar() {
+    a = 1200;
+    return;
+}
+
+int main() {
+    bar();
+    int b = a;
+    a = getint();
+    b = foo(a,b);
+    return 0;
+}
+```
+
+其llvm代码为：
+```llvm
+declare i32 @getint()
+declare i32 @getchar()
+declare void @putint(i32)
+declare void @putch(i32)
+declare void @putstr(i8*)
+
+@a = dso_local global i32 1000
+
+@.str = private unnamed_addr constant [2 x i8] c"\0A\00", align 1
+
+define dso_local i32 @foo(i32 %0, i32 %1) {
+    %3 = alloca i32
+    %4 = alloca i32
+    store i32 %0, i32* %3
+    store i32 %1, i32* %4
+    %5 = load i32, i32* %3
+    %6 = load i32, i32* %4
+    %7 = add nsw i32 %5, %6
+    ret i32 %7
+}
+
+define dso_local void @bar() {
+    store i32 1200, i32* @a
+    ret void
+}
+
+define dso_local i32 @main() {
+    call void @bar()
+    %1 = alloca i32
+    %2 = load i32, i32* @a
+    store i32 %2, i32* %1
+    %3 = call i32 @getint()
+    store i32 %3, i32* @a
+    %4 = load i32, i32* @a
+    %5 = load i32, i32* %1
+    %6 = call i32 @foo(i32 %4, i32 %5)
+    store i32 %6, i32* %1
+    ret i32 0
+}
+```
 
 #### 条件判断
 

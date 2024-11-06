@@ -60,10 +60,12 @@ public class Builder {
         for (Decl decl : decls) {
             visitGlobalDecl(decl, globalSymbolTable, 1);
         }
-        LocalDecl.setLocalDecl(module);
+        LocalDecl.setLocalDecl(globalSymbolTable, module);
         for (FuncDef funcDef : funcDefs) {
+            LocalDecl.resetReg(0);
             visitFuncDef(funcDef);
         }
+        LocalDecl.resetReg(1);
         visitMainFuncDef();
     }
 
@@ -76,12 +78,22 @@ public class Builder {
         }
     }
 
+    private String typeTransfer(Token.Type type) {
+        if (type.equals(Token.Type.INTTK)) {
+            return "i32";
+        } else if (type.equals(Token.Type.CHARTK)) {
+            return "i8";
+        } else {
+            return "void";
+        }
+    }
+
     private void visitFuncDef(FuncDef funcDef) {
         /* visit FuncType and FuncIdent */
         String symbolType = funcDef.getFuncType().identifyFuncType() + "Func";
-        String name = funcDef.getIdent().getIdenfr();
+        String funcName = funcDef.getIdent().getIdenfr();
         int line = funcDef.getIdent().getLine();
-        SymbolFunc symbolFunc = new SymbolFunc(symbolType, name, line, 1);
+        SymbolFunc symbolFunc = new SymbolFunc(symbolType, funcName, line, 1);
         globalSymbolTable.addSymbol(symbolFunc);
 
         /* extend symbolTable */
@@ -91,18 +103,37 @@ public class Builder {
 
         /* visit FuncFParams */
         ArrayList<FuncFParam> funcFParamList = funcDef.getFuncFParams() == null ? new ArrayList<>() : funcDef.getFuncFParams().getFuncFParamList();
+        String declFParam = "";
         for (FuncFParam funcFParam : funcFParamList) {
+            int reg = LocalDecl.allocReg();
+            declFParam += typeTransfer(funcFParam.getBType().getToken().getType()) + " %" + reg + ", ";
+        }
+        LocalDecl.allocReg();
+        ArrayList<String> storeFParam = new ArrayList<>();
+        for (FuncFParam funcFParam : funcFParamList) {
+            int memory = LocalDecl.allocReg();
+            String valueType = typeTransfer(funcFParam.getBType().getToken().getType());
+            storeFParam.add("%" + memory + " = alloca i32");
+            storeFParam.add("store " +  valueType + " %" + (memory - funcFParamList.size()) + ", i32* %" + memory);
+
             String type = funcFParam.getBType().identifyType();
             symbolType = funcFParam.isArray() ? type + "Array" : type;
-            name = funcFParam.getIdent().getIdenfr();
+            String name = funcFParam.getIdent().getIdenfr();
             line = funcFParam.getIdent().getLine();
-            SymbolVar symbolVar = new SymbolVar(symbolType, name, line, funcScopeNum);
+            SymbolVar symbolVar = new SymbolVar(symbolType, name, line, funcScopeNum, "%" + memory);
             symbolFunc.addSymbol(symbolVar);
             childSymbolTable.addSymbol(symbolVar);
         }
 
+        module.addCode("");
+        String funcType = typeTransfer(funcDef.getFuncType().getToken().getType());
+        declFParam = declFParam.length() > 2 ? declFParam.substring(0, declFParam.length() - 2) : declFParam;
+        module.addCode("define dso_local " + funcType + " @" + funcName + "(" + declFParam + ") {");
+        module.addCode(storeFParam);
+
         /* visit Block */
         visitBlock(funcDef.getBlock(), funcScopeNum, childSymbolTable, funcDef.getFuncType().getToken().getType(), false);
+        module.addCode("}");
     }
 
     private void visitBlock(Block block, int scope, SymbolTable symbolTable, Token.Type type, boolean isInFor) {
@@ -129,14 +160,14 @@ public class Builder {
     private void visitStmt(Stmt stmt, SymbolTable symbolTable, Token.Type type, boolean isInFor) {
         StmtEle stmtEle = stmt.getStmtEle();
         if (stmtEle instanceof StmtAssign) {
-            visitStmtAssign((StmtAssign) stmtEle, symbolTable);
+            LocalDecl.visitStmtAssign((StmtAssign) stmtEle, symbolTable);
         } else if (stmtEle instanceof StmtExp) {
             // TODO no need?
-            // visitExp(((StmtExp) stmtEle).getExp(), symbolTable);
+            LocalDecl.visitExp(((StmtExp) stmtEle).getExp(), symbolTable);
         } else if (stmtEle instanceof StmtGetInt) {
-            visitLVal(((StmtGetInt) stmtEle).getlVal(), symbolTable);
+            LocalDecl.visitStmtGetInt((StmtGetInt) stmtEle, symbolTable);
         } else if (stmtEle instanceof StmtGetChar) {
-            visitLVal(((StmtGetChar) stmtEle).getlVal(), symbolTable);
+            LocalDecl.visitStmtGetChar((StmtGetChar) stmtEle, symbolTable);
         }
 
         if (stmtEle instanceof StmtFor) {
@@ -162,14 +193,6 @@ public class Builder {
                 module.addCode("ret void");
             }
         }
-    }
-
-    private void visitStmtAssign(StmtAssign stmtAssign, SymbolTable symbolTable) {
-        Ident ident = stmtAssign.getlVal().getIdent();
-        Symbol symbol = symbolTable.getSymbol(ident.getIdenfr());
-        String memory = symbol.getMemory();
-        RetValue result = LocalDecl.visitExp(stmtAssign.getExp(), symbolTable);
-        module.addCode("store i32 " + result.irOut() + ", i32* " + memory);
     }
 
     private void visitStmtFor(StmtFor stmtFor, SymbolTable symbolTable, Token.Type type) {
@@ -297,6 +320,7 @@ public class Builder {
     }
 
     private void visitMainFuncDef() {
+        module.addCode("");
         module.addCode("define dso_local i32 @main() {");
         SymbolTable childSymbolTable = new SymbolTable(globalSymbolTable);
         symbolTables.add(childSymbolTable);

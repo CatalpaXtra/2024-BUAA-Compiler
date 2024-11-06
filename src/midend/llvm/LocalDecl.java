@@ -1,6 +1,9 @@
 package midend.llvm;
 
 import frontend.lexer.Token;
+import frontend.parser.block.statement.stmtVariant.StmtAssign;
+import frontend.parser.block.statement.stmtVariant.StmtGetChar;
+import frontend.parser.block.statement.stmtVariant.StmtGetInt;
 import frontend.parser.declaration.constDecl.ConstDecl;
 import frontend.parser.declaration.constDecl.ConstDef;
 import frontend.parser.declaration.constDecl.constInitVal.ConstExpSet;
@@ -26,12 +29,21 @@ import midend.symbol.*;
 import java.util.ArrayList;
 
 public class LocalDecl {
+    private static SymbolTable globalSymbolTable;
     private static Module module;
     private static int virtualReg;
 
-    public static void setLocalDecl(Module md) {
+    public static void setLocalDecl(SymbolTable symbolTable, Module md) {
+        globalSymbolTable = symbolTable;
         module = md;
-        virtualReg = 1;
+    }
+
+    public static void resetReg(int initReg) {
+        virtualReg = initReg;
+    }
+
+    public static int allocReg() {
+        return virtualReg++;
     }
 
     public static void visitConstDecl(ConstDecl constDecl, SymbolTable symbolTable, int scope) {
@@ -120,9 +132,9 @@ public class LocalDecl {
             result = new RetValue(virtualReg++, false);
             Token op = operators.get(i - 1);
             if (op.getType().equals(Token.Type.PLUS)) {
-                module.addCode(result.irOut() + " = add nsw i32 " + left.irOut() + ", " + right.irOut());
+                module.addCode(result.irOut() + " = add i32 " + left.irOut() + ", " + right.irOut());
             } else if (op.getType().equals(Token.Type.MINU)) {
-                module.addCode(result.irOut() + " = sub nsw i32 " + left.irOut() + ", " + right.irOut());
+                module.addCode(result.irOut() + " = sub i32 " + left.irOut() + ", " + right.irOut());
             }
         }
         return result;
@@ -138,11 +150,11 @@ public class LocalDecl {
             result = new RetValue(virtualReg++, false);
             Token op = operators.get(i - 1);
             if (op.getType().equals(Token.Type.MULT)) {
-                module.addCode(result.irOut() + " = mul nsw i32 " + left.irOut() + ", " + right.irOut());
+                module.addCode(result.irOut() + " = mul i32 " + left.irOut() + ", " + right.irOut());
             } else if (op.getType().equals(Token.Type.DIV)) {
-                module.addCode(result.irOut() + " = sdiv nsw i32 " + left.irOut() + ", " + right.irOut());
+                module.addCode(result.irOut() + " = sdiv i32 " + left.irOut() + ", " + right.irOut());
             } else if (op.getType().equals(Token.Type.MOD)) {
-                module.addCode(result.irOut() + " = srem nsw i32 " + left.irOut() + ", " + right.irOut());
+                module.addCode(result.irOut() + " = srem i32 " + left.irOut() + ", " + right.irOut());
             }
         }
         return result;
@@ -151,8 +163,7 @@ public class LocalDecl {
     private static RetValue visitUnaryExp(UnaryExp unaryExp, SymbolTable symbolTable) {
         UnaryEle unaryEle = unaryExp.getUnaryEle();
         if (unaryEle instanceof UnaryFunc) {
-            // TODO call func
-            visitUnaryFunc((UnaryFunc) unaryEle, symbolTable);
+            return visitUnaryFunc((UnaryFunc) unaryEle, symbolTable);
         } else if (unaryEle instanceof UnaryOpExp) {
             return visitUnaryOpExp((UnaryOpExp) unaryEle, symbolTable);
         } else if (unaryEle instanceof PrimaryExp) {
@@ -161,15 +172,33 @@ public class LocalDecl {
         return new RetValue(0, true);
     }
 
-    private static void visitUnaryFunc(UnaryFunc unaryFunc, SymbolTable symbolTable) {
-        Ident funcIdent = unaryFunc.getIdent();
+    private static RetValue visitUnaryFunc(UnaryFunc unaryFunc, SymbolTable symbolTable) {
+        String funcName = unaryFunc.getIdent().getIdenfr();
+        SymbolFunc symbolFunc = (SymbolFunc) globalSymbolTable.getSymbol(funcName);
+        ArrayList<Symbol> fParams = symbolFunc.getSymbols();
         FuncRParams funcRParams = unaryFunc.getFuncRParams();
+        String passRParam = "";
         if (funcRParams != null) {
             ArrayList<Exp> funcExps = funcRParams.getExps();
-            for (Exp exp : funcExps) {
-                visitExp(exp, symbolTable);
+            int len = funcExps.size();
+            for (int i = 0; i < len; i++) {
+                RetValue result = visitExp(funcExps.get(i), symbolTable);
+                String type = fParams.get(i).getSymbolType().contains("Int") ? "i32" : "i8";
+                passRParam += type + " " + result.irOut() + ", ";
             }
         }
+        passRParam = passRParam.length() > 2 ? passRParam.substring(0, passRParam.length() - 2) : passRParam;
+
+        RetValue result = new RetValue(virtualReg++, false);
+        if (symbolFunc.getSymbolType().contains("Void")) {
+            virtualReg--;
+            module.addCode("call void @" + funcName + "(" + passRParam + ")");
+        } else if (symbolFunc.getSymbolType().contains("Int")) {
+            module.addCode(result.irOut() + " = call i32 @" + funcName + "(" + passRParam + ")");
+        } else {
+            module.addCode(result.irOut() + " = call i8 @" + funcName + "(" + passRParam + ")");
+        }
+        return result;
     }
 
     private static RetValue visitUnaryOpExp(UnaryOpExp unaryOpExp, SymbolTable symbolTable) {
@@ -183,7 +212,7 @@ public class LocalDecl {
                 return new RetValue(-retValue.getValue(), true);
             } else {
                 RetValue result = new RetValue(virtualReg++, false);
-                module.addCode(result.irOut() + " = sub nsw i32 0, " + retValue.irOut());
+                module.addCode(result.irOut() + " = sub i32 0, " + retValue.irOut());
                 return result;
             }
         }
@@ -212,9 +241,37 @@ public class LocalDecl {
         } else {
             Symbol symbol = symbolTable.getSymbol(ident.getIdenfr());
             String memory = symbol.getMemory();
-            module.addCode("%" + virtualReg + " = load i32, i32* " + memory);
-            return new RetValue(virtualReg++, false);
+            RetValue result = new RetValue(virtualReg++, false);
+            module.addCode(result.irOut() + " = load i32, i32* " + memory);
+            return result;
         }
         return new RetValue(0, true);
     }
+
+    public static void visitStmtAssign(StmtAssign stmtAssign, SymbolTable symbolTable) {
+        Ident ident = stmtAssign.getlVal().getIdent();
+        Symbol symbol = symbolTable.getSymbol(ident.getIdenfr());
+        String memory = symbol.getMemory();
+        RetValue result = LocalDecl.visitExp(stmtAssign.getExp(), symbolTable);
+        module.addCode("store i32 " + result.irOut() + ", i32* " + memory);
+    }
+
+    public static void visitStmtGetInt(StmtGetInt stmtGetInt, SymbolTable symbolTable) {
+        int memoryReg = virtualReg++;
+        module.addCode("%" + memoryReg + " = call i32 @getint()");
+        Ident ident = stmtGetInt.getlVal().getIdent();
+        Symbol symbol = symbolTable.getSymbol(ident.getIdenfr());
+        String memory = symbol.getMemory();
+        module.addCode("store i32 %" + memoryReg + ", i32* " + memory);
+    }
+
+    public static void visitStmtGetChar(StmtGetChar stmtGetChar, SymbolTable symbolTable) {
+        int memoryReg = virtualReg++;
+        module.addCode("%" + memoryReg + " = call i32 @getchar()");
+        Ident ident = stmtGetChar.getlVal().getIdent();
+        Symbol symbol = symbolTable.getSymbol(ident.getIdenfr());
+        String memory = symbol.getMemory();
+        module.addCode("store i32 %" + memoryReg + ", i32* " + memory);
+    }
+
 }

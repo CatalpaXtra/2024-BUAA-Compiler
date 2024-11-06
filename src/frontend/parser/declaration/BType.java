@@ -16,6 +16,10 @@ public class BType {
         return "Char";
     }
 
+    public Token getToken() {
+        return token;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
