@@ -23,6 +23,25 @@ public class Module {
         codeList.addAll(codes);
     }
 
+    public void delLastCode() {
+        codeList.remove(codeList.size() - 1);
+    }
+
+    public int getLoc() {
+        return codeList.size() - 1;
+    }
+
+    public void replaceInterval(int left, int right, String replaced, String target) {
+        if (left > right) {
+            return;
+        }
+        for (int i = left; i <= right; i++) {
+            String str = codeList.get(i);
+            str = str.replace(target, replaced);
+            codeList.set(i, str);
+        }
+    }
+
     public String irOut() {
         StringBuilder sb = new StringBuilder();
         for (String code : codeList) {

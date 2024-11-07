@@ -193,28 +193,70 @@ public class Builder {
             } else {
                 module.addCode("ret void");
             }
+        } else if (stmtEle instanceof StmtBreak) {
+            module.addCode("br label <BLOCK2 OR STMT>");
+        } else if (stmtEle instanceof StmtContinue) {
+            module.addCode("br label <COND>");
         }
     }
 
     private void visitStmtIf(StmtIf stmtIf, SymbolTable symbolTable, Token.Type type, boolean isInFor) {
+        int left = module.getLoc() + 1;
         LocalStmt.visitCond(stmtIf.getCond(), symbolTable);
+        int right = module.getLoc();
+
         visitStmt(stmtIf.getStmt1(), symbolTable, type, isInFor);
+        module.replaceInterval(left, right, "%" + (LocalStmt.nextLabel + 1), "<BLOCK2 OR STMT>");
+
         if (stmtIf.getStmt2() != null) {
+            LocalStmt.nextLabel = Register.allocReg();
+            module.addCode("br label <NEXT STMT>");
+            int loc = module.getLoc();
+            module.addCode("");
+            module.addCode(LocalStmt.nextLabel + ":");
+
             visitStmt(stmtIf.getStmt2(), symbolTable, type, isInFor);
+            module.replaceInterval(loc, loc, "%" + (LocalStmt.nextLabel + 1), "<NEXT STMT>");
         }
+        LocalStmt.nextLabel = Register.allocReg();
+        module.addCode("br label %" + LocalStmt.nextLabel);
+        module.addCode("");
+        module.addCode(LocalStmt.nextLabel + ":");
     }
 
     private void visitStmtFor(StmtFor stmtFor, SymbolTable symbolTable, Token.Type type) {
         if (stmtFor.getForStmt1() != null) {
             visitForStmt(stmtFor.getForStmt1(), symbolTable);
         }
+
+        int condLabel = Register.getRegNum();
+        int left = module.getLoc() + 1;
         if (stmtFor.getCond() != null) {
             LocalStmt.visitCond(stmtFor.getCond(), symbolTable);
+        } else {
+            LocalStmt.nextLabel = Register.allocReg();
+            module.addCode("br label %" + LocalStmt.nextLabel);
+            module.addCode("");
+            module.addCode(LocalStmt.nextLabel + ":");
         }
+
+        visitStmt(stmtFor.getStmt(), symbolTable, type, true);
+        int right = module.getLoc();
+        LocalStmt.nextLabel = Register.allocReg();
+        module.addCode("br label %" + LocalStmt.nextLabel);
+        module.addCode("");
+        module.addCode(LocalStmt.nextLabel + ":");
+
         if (stmtFor.getForStmt2() != null) {
             visitForStmt(stmtFor.getForStmt2(), symbolTable);
         }
-        visitStmt(stmtFor.getStmt(), symbolTable, type, true);
+        LocalStmt.nextLabel = Register.allocReg();
+        module.addCode("br label %" + condLabel);
+        module.addCode("");
+        module.addCode(LocalStmt.nextLabel + ":");
+
+        module.replaceInterval(left, right, "%" + LocalStmt.nextLabel, "<BLOCK2 OR STMT>");
+        module.replaceInterval(left, right, "%" + condLabel, "<COND>");
     }
 
     private void visitForStmt(ForStmt forStmt, SymbolTable symbolTable) {
