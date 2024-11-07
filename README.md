@@ -366,6 +366,8 @@ Stmt → 'break' ';' | 'continue' ';' // m
 
 对 `Const` 变量，存储其不可修改值。便于后续引用时的代值计算
 
+新建`RetValue`类，记录`visit*Exp`返回值为数字还是为寄存器类型
+
 例如：
 ```c
 int b = 3;
@@ -468,7 +470,132 @@ define dso_local i32 @main() {
 ```
 
 #### 条件判断
+对`Cond`有如下递推关系：
+```text
+Cond → LOrExp
+LOrExp → {LAndExp '||'} LAndExp
+LAndExp → {EqExp '&&'} EqExp
+EqExp → {RelExp ('==' | '!=')} RelExp
+RelExp → {AddExp ('<' | '>' | '<=' | '>=')} AddExp
+```
 
+对`RetValue`类，新建属性以表明其下的表达式为单一还是多元
+- 将`LOrExp` `LAndExp`分为一类，对其每个递推表达式需单独设置`label`寄存器用来决定是否跳转。返回类型可为单一可为多元
+- 将`EqExp` `RelExp`分为一类，计算完表达式的值后返回寄存器\数字。返回类型为多元
+
+实现细节：
+- 跳转到之后还未构建的基本块，采取**回填操作**
+- 注意**短路求值**，`LOrExp`中若出现非0数字则为真，提前终止；`LAndExp`中若出现0则为假，提前终止
+
+for语句，`break` 跳转到 `NextStmt`，而 `continue` 跳转到 `ForStmt2`
+
+例如：
+```c
+int a = 1000;
+
+int foo(int a, int b){
+    return a + b;
+}
+
+void bar() {
+    a = 1200;
+    return;
+}
+
+int main() {
+    bar();
+    int b = a;
+    a = getint();
+    b = foo(a,b);
+    return 0;
+}
+```
+
+其llvm代码为：
+```llvm
+declare i32 @getint()
+declare i32 @getchar()
+declare void @putint(i32)
+declare void @putch(i8)
+declare void @putstr(i8*)
+
+
+define dso_local i32 @main() {
+%1 = alloca i32
+store i32 1, i32* %1
+%2 = alloca i32
+%3 = load i32, i32* %1
+store i32 %3, i32* %2
+%4 = alloca i32
+%5 = alloca i32
+%6 = alloca i32
+%7 = call i32 @getint()
+store i32 %7, i32* %5
+%8 = load i32, i32* %1
+%9 = load i32, i32* %1
+%10 = mul i32 %8, %9
+store i32 %10, i32* %6
+br label %11
+
+11:
+%12 = load i32, i32* %6
+%13 = load i32, i32* %5
+%14 = add i32 %13, 1
+%15 = icmp slt i32 %12, %14
+br i1 %15, label %16, label %37
+
+16:
+%17 = load i32, i32* %2
+store i32 %17, i32* %4
+%18 = load i32, i32* %1
+%19 = load i32, i32* %2
+%20 = add i32 %18, %19
+store i32 %20, i32* %2
+%21 = load i32, i32* %4
+store i32 %21, i32* %1
+br label %22
+
+22:
+%23 = load i32, i32* %6
+%24 = srem i32 %23, 2
+%25 = icmp eq i32 %24, 1
+br i1 %25, label %26, label %27
+
+26:
+br label %34
+br label %27
+
+27:
+%28 = alloca i32
+store i32 10086, i32* %28
+br label %29
+
+29:
+%30 = load i32, i32* %6
+%31 = icmp sgt i32 %30, 19
+br i1 %31, label %32, label %33
+
+32:
+br label %37
+br label %33
+
+33:
+br label %34
+
+34:
+%35 = load i32, i32* %6
+%36 = add i32 %35, 1
+store i32 %36, i32* %6
+br label %11
+
+37:
+ret i32 0
+}
+```
+
+TODO
+- 回填改为使用 LLVM IR 中的 SlotTracker
+- 消除`break` `continue`之后可能多余的语句
 
 #### 数组
 

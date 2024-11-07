@@ -1,9 +1,6 @@
 package midend.llvm;
 
 import frontend.lexer.Token;
-import frontend.parser.block.statement.stmtVariant.StmtAssign;
-import frontend.parser.block.statement.stmtVariant.StmtGetChar;
-import frontend.parser.block.statement.stmtVariant.StmtGetInt;
 import frontend.parser.declaration.constDecl.ConstDecl;
 import frontend.parser.declaration.constDecl.ConstDef;
 import frontend.parser.declaration.constDecl.constInitVal.ConstExpSet;
@@ -16,7 +13,6 @@ import frontend.parser.expression.ConstExp;
 import frontend.parser.expression.Exp;
 import frontend.parser.expression.add.AddExp;
 import frontend.parser.expression.add.MulExp;
-import frontend.parser.expression.cond.*;
 import frontend.parser.expression.primary.Character;
 import frontend.parser.expression.primary.ExpInParent;
 import frontend.parser.expression.primary.LVal;

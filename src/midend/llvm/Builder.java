@@ -13,18 +13,10 @@ import frontend.parser.declaration.DeclEle;
 import frontend.parser.declaration.constDecl.ConstDecl;
 import frontend.parser.declaration.varDecl.VarDecl;
 import frontend.parser.expression.Exp;
-import frontend.parser.expression.add.AddExp;
-import frontend.parser.expression.add.MulExp;
-import frontend.parser.expression.cond.*;
-import frontend.parser.expression.primary.ExpInParent;
 import frontend.parser.expression.primary.LVal;
-import frontend.parser.expression.primary.PrimaryEle;
-import frontend.parser.expression.primary.PrimaryExp;
-import frontend.parser.expression.unary.*;
 import frontend.parser.function.FuncDef;
 import frontend.parser.function.MainFuncDef;
 import frontend.parser.function.params.FuncFParam;
-import frontend.parser.terminal.Ident;
 import midend.symbol.Symbol;
 import midend.symbol.SymbolFunc;
 import midend.symbol.SymbolTable;
@@ -196,28 +188,38 @@ public class Builder {
         } else if (stmtEle instanceof StmtBreak) {
             module.addCode("br label <BLOCK2 OR STMT>");
         } else if (stmtEle instanceof StmtContinue) {
-            module.addCode("br label <COND>");
+            module.addCode("br label <FORSTMT2>");
         }
     }
 
     private void visitStmtIf(StmtIf stmtIf, SymbolTable symbolTable, Token.Type type, boolean isInFor) {
+        /* Handle Cond */
+        LocalStmt.nextLabel = Register.allocReg();
+        module.addCode("br label %" + LocalStmt.nextLabel);
+        module.addCode("");
         int left = module.getLoc() + 1;
         LocalStmt.visitCond(stmtIf.getCond(), symbolTable);
         int right = module.getLoc();
+        module.addCode(LocalStmt.nextLabel + ":");
 
+        /* Handle Stmt1 */
         visitStmt(stmtIf.getStmt1(), symbolTable, type, isInFor);
         module.replaceInterval(left, right, "%" + (LocalStmt.nextLabel + 1), "<BLOCK2 OR STMT>");
 
+        /* Handle Stmt2 */
         if (stmtIf.getStmt2() != null) {
+            int replaceLoc = module.getLoc() + 1;
+            /* Branch to Next Stmt */
             LocalStmt.nextLabel = Register.allocReg();
             module.addCode("br label <NEXT STMT>");
-            int loc = module.getLoc();
             module.addCode("");
             module.addCode(LocalStmt.nextLabel + ":");
 
             visitStmt(stmtIf.getStmt2(), symbolTable, type, isInFor);
-            module.replaceInterval(loc, loc, "%" + (LocalStmt.nextLabel + 1), "<NEXT STMT>");
+            module.replaceInterval(replaceLoc, replaceLoc, "%" + (LocalStmt.nextLabel + 1), "<NEXT STMT>");
         }
+
+        /* Branch To Next Stmt */
         LocalStmt.nextLabel = Register.allocReg();
         module.addCode("br label %" + LocalStmt.nextLabel);
         module.addCode("");
@@ -225,43 +227,60 @@ public class Builder {
     }
 
     private void visitStmtFor(StmtFor stmtFor, SymbolTable symbolTable, Token.Type type) {
+        /* Handle ForStmt1 */
         if (stmtFor.getForStmt1() != null) {
             visitForStmt(stmtFor.getForStmt1(), symbolTable);
         }
 
+        /* Handle Cond */
         int condLabel = Register.getRegNum();
         int left = module.getLoc() + 1;
         if (stmtFor.getCond() != null) {
+            LocalStmt.nextLabel = Register.allocReg();
+            module.addCode("br label %" + LocalStmt.nextLabel);
+            module.addCode("");
             LocalStmt.visitCond(stmtFor.getCond(), symbolTable);
+            module.addCode(LocalStmt.nextLabel + ":");
         } else {
+            /* Directly Branch to Stmt */
             LocalStmt.nextLabel = Register.allocReg();
             module.addCode("br label %" + LocalStmt.nextLabel);
             module.addCode("");
             module.addCode(LocalStmt.nextLabel + ":");
         }
 
+        /* Handle Stmt */
         visitStmt(stmtFor.getStmt(), symbolTable, type, true);
         int right = module.getLoc();
+        /* Branch to ForStmt2 */
         LocalStmt.nextLabel = Register.allocReg();
         module.addCode("br label %" + LocalStmt.nextLabel);
         module.addCode("");
         module.addCode(LocalStmt.nextLabel + ":");
 
+        /* Handle ForStmt2 */
+        int forstmt2Label = LocalStmt.nextLabel;
         if (stmtFor.getForStmt2() != null) {
             visitForStmt(stmtFor.getForStmt2(), symbolTable);
         }
+
+        /* Reach Loop Bottom */
         LocalStmt.nextLabel = Register.allocReg();
+        /* Branch to Cond */
         module.addCode("br label %" + condLabel);
         module.addCode("");
         module.addCode(LocalStmt.nextLabel + ":");
 
         module.replaceInterval(left, right, "%" + LocalStmt.nextLabel, "<BLOCK2 OR STMT>");
-        module.replaceInterval(left, right, "%" + condLabel, "<COND>");
+        module.replaceInterval(left, right, "%" + forstmt2Label, "<FORSTMT2>");
     }
 
     private void visitForStmt(ForStmt forStmt, SymbolTable symbolTable) {
-        Ident ident = forStmt.getlVal().getIdent();
-        Symbol symbol = symbolTable.getSymbol(ident.getIdenfr());
+        LVal lVal = forStmt.getlVal();
+        if (lVal.isArray()) {
+            // TODO
+        }
+        Symbol symbol = symbolTable.getSymbol(lVal.getIdent().getIdenfr());
         String memory = symbol.getMemory();
         RetValue result = LocalDecl.visitExp(forStmt.getExp(), symbolTable);
         module.addCode("store i32 " + result.irOut() + ", i32* " + memory);

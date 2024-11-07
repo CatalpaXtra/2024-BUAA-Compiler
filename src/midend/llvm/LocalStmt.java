@@ -49,26 +49,37 @@ public class LocalStmt {
     }
 
     public static void visitCond(Cond cond, SymbolTable symbolTable) {
-        nextLabel = Register.allocReg();
-        module.addCode("br label %" + nextLabel);
-        module.addCode("");
-
         visitLOrExp(cond.getlOrExp(), symbolTable);
+    }
 
+    private static void visitSingleLOrExp(LAndExp lAndExp, SymbolTable symbolTable) {
         module.addCode(nextLabel + ":");
+        int left = module.getLoc() + 1;
+        RetValue result = visitLAndExp(lAndExp, symbolTable, true);
+        if (result.isDigit()) {
+            if (result.getValue() != 0) {
+                /* Cond is true, Jump to Stmt1 */
+                module.delLastCode();
+                return;
+            } else {
+                /* Cond is false, Jump to BLOCK2 OR STMT */
+                module.addCode("br label <BLOCK2 OR STMT>");
+                module.addCode("");
+                nextLabel = Register.allocReg();
+            }
+        } else if (result.isReg()) {
+            nextLabel = Register.allocReg();
+            module.addCode("br i1 " + result.irOut() + ", label %" + nextLabel + ", label <BLOCK2 OR STMT>");
+            module.addCode("");
+        }
+        module.replaceInterval(left, module.getLoc(), "%" + nextLabel, "<BLOCK1>");
     }
 
     private static void visitLOrExp(LOrExp lOrExp, SymbolTable symbolTable) {
         ArrayList<LAndExp> lAndExps = lOrExp.getLowerExps();
         if (lAndExps.size() == 1) {
-            // TODO optimize single
-//            module.addCode(nextLabel + ":");
-//            RetValue result = visitLAndExp(lAndExps.get(0), symbolTable, true);
-//            if (result.isReg() || result.isDigit()) {
-//                module.addCode("br i1 " + result.irOut() + ", label <BLOCK1>, label <BLOCK2 OR STMT>");
-//                module.addCode("");
-//            }
-//            return;
+            visitSingleLOrExp(lAndExps.get(0), symbolTable);
+            return;
         }
 
         int left = module.getLoc() + 1;
