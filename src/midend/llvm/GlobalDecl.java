@@ -1,6 +1,8 @@
 package midend.llvm;
 
 import frontend.lexer.Token;
+import frontend.parser.declaration.Decl;
+import frontend.parser.declaration.DeclEle;
 import frontend.parser.declaration.constDecl.ConstDecl;
 import frontend.parser.declaration.constDecl.ConstDef;
 import frontend.parser.declaration.constDecl.constInitVal.ConstExpSet;
@@ -35,23 +37,32 @@ public class GlobalDecl {
         module = md;
     }
 
-    public static void visitGlobalConstDecl(ConstDecl constDecl, SymbolTable symbolTable, int scope) {
+    public static void visitGlobalDecl(Decl decl, SymbolTable symbolTable) {
+        DeclEle declEle = decl.getDeclEle();
+        if (declEle instanceof ConstDecl) {
+            GlobalDecl.visitGlobalConstDecl((ConstDecl) declEle, symbolTable);
+        } else {
+            GlobalDecl.visitGlobalVarDecl((VarDecl) declEle, symbolTable);
+        }
+    }
+
+    public static void visitGlobalConstDecl(ConstDecl constDecl, SymbolTable symbolTable) {
         String type = constDecl.getBType().identifyType();
         ArrayList<ConstDef> constDefs = constDecl.getConstDefs();
         for (ConstDef constDef : constDefs) {
-            visitGlobalConstDef(constDef, type, symbolTable, scope);
+            visitGlobalConstDef(constDef, type, symbolTable);
         }
     }
 
-    public static void visitGlobalVarDecl(VarDecl varDecl, SymbolTable symbolTable, int scope) {
+    public static void visitGlobalVarDecl(VarDecl varDecl, SymbolTable symbolTable) {
         String type = varDecl.getBType().identifyType();
         ArrayList<VarDef> varDefs = varDecl.getVarDefs();
         for (VarDef varDef : varDefs) {
-            visitGlobalVarDef(varDef, type, symbolTable, scope);
+            visitGlobalVarDef(varDef, type, symbolTable);
         }
     }
 
-    private static void visitGlobalConstDef(ConstDef constDef, String type, SymbolTable symbolTable, int scope) {
+    private static void visitGlobalConstDef(ConstDef constDef, String type, SymbolTable symbolTable) {
         String symbolType = "Const" + type;
         String name = constDef.getIdent().getIdenfr();
         int line = constDef.getIdent().getLine();
@@ -69,12 +80,12 @@ public class GlobalDecl {
         } else {
             int initVal = visitGlobalConstExp((ConstExp) constDef.getConstInitVal().getConstInitValEle(), symbolTable);
             module.addCode("@" + name + " = dso_local global i32 " + initVal);
-            SymbolCon symbolCon = new SymbolCon(symbolType, name, line, scope, "@" + name, initVal);
+            SymbolCon symbolCon = new SymbolCon(symbolType, name, line, "@" + name, initVal);
             symbolTable.addSymbol(symbolCon);
         }
     }
 
-    private static void visitGlobalVarDef(VarDef varDef, String type, SymbolTable symbolTable, int scope) {
+    private static void visitGlobalVarDef(VarDef varDef, String type, SymbolTable symbolTable) {
         String symbolType = type;
         String name = varDef.getIdent().getIdenfr();
         int line = varDef.getIdent().getLine();
@@ -84,22 +95,22 @@ public class GlobalDecl {
             InitValEle initValEle = varDef.getInitVal().getInitValEle();
 
             // TODO
-            if (initValEle instanceof ExpSet) {
-                ArrayList<Integer> initVal = visitGlobalExpSet((ExpSet) initValEle, symbolTable);
-                SymbolArray symbolArray = new SymbolArray(symbolType, name, line, scope, size, initVal);
-                symbolTable.addSymbol(symbolArray);
-            } else if (initValEle instanceof StringConst) {
-                String initVal = ((StringConst) initValEle).getToken().getContent();
-                SymbolArray symbolArray = new SymbolArray(symbolType, name, line, scope, size, initVal);
-                symbolTable.addSymbol(symbolArray);
-            }
+//            if (initValEle instanceof ExpSet) {
+//                ArrayList<Integer> initVal = visitGlobalExpSet((ExpSet) initValEle, symbolTable);
+//                SymbolArray symbolArray = new SymbolArray(symbolType, name, line, size, initVal);
+//                symbolTable.addSymbol(symbolArray);
+//            } else if (initValEle instanceof StringConst) {
+//                String initVal = ((StringConst) initValEle).getToken().getContent();
+//                SymbolArray symbolArray = new SymbolArray(symbolType, name, line, size, initVal);
+//                symbolTable.addSymbol(symbolArray);
+//            }
         } else {
             int initVal = 0;
             if (varDef.hasInitValue()) {
                 initVal = visitGlobalExp((Exp) varDef.getInitVal().getInitValEle(), symbolTable);
             }
             module.addCode("@" + name + " = dso_local global i32 " + initVal);
-            SymbolVar symbolVar = new SymbolVar(symbolType, name, line, scope, "@" + name, initVal);
+            SymbolVar symbolVar = new SymbolVar(symbolType, name, line, "@" + name, initVal);
             symbolTable.addSymbol(symbolVar);
         }
     }

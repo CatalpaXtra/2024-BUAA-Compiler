@@ -1,35 +1,21 @@
 package midend.llvm;
 
 public class RetValue {
-    private int regNum;
-    private int value;
-    private boolean isDigit;
-    private boolean isMany;
+    /* mode == 0, return value; mode == 1, return register; mode == 2, many in cond, no need return */
+    private final int mode;
+    private final int value;
 
-    public RetValue(int value, boolean isDigit) {
-        if (isDigit) {
-            this.regNum = -1;
-            this.value = value;
-        } else {
-            this.regNum = value;
-            this.value = -1;
-        }
-        this.isDigit = isDigit;
-        this.isMany = false;
-    }
-
-    public RetValue(int value, boolean isDigit, boolean isMany) {
-        this.regNum = value;
-        this.isDigit = isDigit;
-        this.isMany = isMany;
+    public RetValue(int value, int mode) {
+        this.value = value;
+        this.mode = mode;
     }
 
     public boolean isDigit() {
-        return isDigit;
+        return mode == 0;
     }
 
     public boolean isReg() {
-        return !isMany && !isDigit;
+        return mode == 1;
     }
 
     public int getValue() {
@@ -37,10 +23,10 @@ public class RetValue {
     }
 
     public String irOut() {
-        if (isDigit) {
+        if (mode == 0) {
             return value + "";
         } else {
-            return "%" + regNum;
+            return "%" + value;
         }
     }
 }
