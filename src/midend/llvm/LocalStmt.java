@@ -102,12 +102,64 @@ public class LocalStmt {
         module.addCode("store i32 %" + memoryReg + ", i32* " + memory);
     }
 
+    private static ArrayList<String> handleString(String string) {
+        StringBuilder part = new StringBuilder();
+        ArrayList<String> parts = new ArrayList<>();
+        for (int i = 1; i < string.length() - 1; i++) {
+            char current = string.charAt(i);
+            if (current == '%' && i + 1 < string.length()) {
+                char next = string.charAt(i + 1);
+                if (next == 'd' || next == 'c') {
+                    if (!part.isEmpty()) {
+                        parts.add(part.toString() + "\\00");
+                        part = new StringBuilder();
+                    }
+                    parts.add("%" + next);
+                    i++;
+                } else {
+                    part.append(current);
+                }
+            } else if (current == '\\' && i + 1 < string.length()) {
+                char next = string.charAt(i + 1);
+                if (next == 'n') {
+                    part.append("\\0A");
+                    i++;
+                } else if (next == '0') {
+                    part.append("\\00");
+                    i++;
+                } else {
+                    part.append(current);
+                }
+            } else {
+                part.append(current);
+            }
+        }
+        if (!part.isEmpty()) {
+            parts.add(part.toString() + "\\00");
+        }
+        return parts;
+    }
+
     private static void visitStmtPrint(StmtPrint stmtPrint, SymbolTable symbolTable) {
-        if (stmtPrint.getExpNum() > 0) {
-            ArrayList<Exp> exps = stmtPrint.getExps();
-            for (Exp exp : exps) {
-                // TODO
-                // LocalDecl.visitExp(exp, symbolTable);
+        String string = stmtPrint.getStringConst().getToken().getContent();
+        ArrayList<String> parts = handleString(string);
+        ArrayList<Exp> exps = stmtPrint.getExps();
+        int expCount = 0;
+        for (int i = 0; i < parts.size(); i++) {
+            if (parts.get(i).equals("%d") || parts.get(i).equals("%c")) {
+                RetValue result = LocalDecl.visitExp(exps.get(expCount), symbolTable);
+                String putFormat = parts.get(i).equals("%d") ? "putint" : "putch";
+                module.addCode("call void @" + putFormat + "(i32 " + result.irOut() + ")");
+                expCount++;
+            } else {
+                int strLen = parts.get(i).length();
+                for (int j = 0; j < parts.get(i).length(); j++) {
+                    if (parts.get(i).charAt(j) == '\\') {
+                        strLen -= 2;
+                    }
+                }
+                String strName = module.addGlobalStr( strLen, parts.get(i));
+                module.addCode("call void @putstr(i8* getelementptr inbounds ([" + strLen + " x i8], [" + strLen + " x i8]* " + strName + ", i64 0, i64 0))");
             }
         }
     }

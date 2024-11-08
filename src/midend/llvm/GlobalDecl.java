@@ -79,7 +79,7 @@ public class GlobalDecl {
             }
         } else {
             int initVal = visitGlobalConstExp((ConstExp) constDef.getConstInitVal().getConstInitValEle(), symbolTable);
-            module.addCode("@" + name + " = dso_local global i32 " + initVal);
+            module.addGlobalVar("@" + name + " = dso_local global i32 " + initVal);
             SymbolCon symbolCon = new SymbolCon(symbolType, name, line, "@" + name, initVal);
             symbolTable.addSymbol(symbolCon);
         }
@@ -109,7 +109,7 @@ public class GlobalDecl {
             if (varDef.hasInitValue()) {
                 initVal = visitGlobalExp((Exp) varDef.getInitVal().getInitValEle(), symbolTable);
             }
-            module.addCode("@" + name + " = dso_local global i32 " + initVal);
+            module.addGlobalVar("@" + name + " = dso_local global i32 " + initVal);
             SymbolVar symbolVar = new SymbolVar(symbolType, name, line, "@" + name, initVal);
             symbolTable.addSymbol(symbolVar);
         }
