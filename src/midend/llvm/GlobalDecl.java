@@ -82,6 +82,7 @@ public class GlobalDecl {
     public static String charArrayInit(int arraySize, String initVal) {
         initVal = initVal.substring(1, initVal.length() - 1);
         String arrayFormat = "\"";
+        int len = 0;
         for (int i = 0; i < initVal.length(); i++) {
             if (initVal.charAt(i) == '\\' && i + 1 < initVal.length()) {
                 char next = initVal.charAt(i + 1);
@@ -94,8 +95,9 @@ public class GlobalDecl {
             } else {
                 arrayFormat += initVal.charAt(i);
             }
+            len++;
         }
-        for (int i = initVal.length(); i < arraySize; i++) {
+        for (int i = len; i < arraySize; i++) {
             arrayFormat += "\\00";
         }
         return arrayFormat + "\"";

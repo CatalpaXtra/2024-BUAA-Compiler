@@ -15,6 +15,10 @@ public class Register {
         return regNum++;
     }
 
+    public static void cancelAlloc() {
+        regNum--;
+    }
+
     public static int getRegNum() {
         return regNum;
     }

@@ -236,7 +236,9 @@ public class Semantic {
         String symbolType = funcDef.getFuncType().identifyFuncType() + "Func";
         String name = funcDef.getIdent().getIdenfr();
         int line = funcDef.getIdent().getLine();
-        SymbolFunc symbolFunc = new SymbolFunc(symbolType, name, line, 1);
+
+        ArrayList<FuncFParam> funcFParamList = funcDef.getFuncFParams() == null ? new ArrayList<>() : funcDef.getFuncFParams().getFuncFParamList();
+        SymbolFunc symbolFunc = new SymbolFunc(symbolType, name, line, 1, funcFParamList);
         globalSymbolTable.addSymbol(symbolFunc);
 
         /* extend symbolTable */
@@ -245,7 +247,6 @@ public class Semantic {
         symbolTables.add(childSymbolTable);
 
         /* visit FuncFParams */
-        ArrayList<FuncFParam> funcFParamList = funcDef.getFuncFParams() == null ? new ArrayList<>() : funcDef.getFuncFParams().getFuncFParamList();
         for (FuncFParam funcFParam : funcFParamList) {
             String type = funcFParam.getBType().identifyType();
             symbolType = funcFParam.isArray() ? type + "Array" : type;

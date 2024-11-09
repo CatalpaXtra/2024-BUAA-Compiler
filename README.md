@@ -604,3 +604,16 @@ TODO
 - 函数传参
 - 函数返回值(getchar)
 
+Attention:
+- 无返回值函数最后需要返回
+- 未及时更新nextLabel的值，if跳转到非label的临时寄存器
+- ignore UnaryOpExp忽视NOT
+
+TODO:
+- char类型转义字符，如'\t'正确输出
+- break continue 忽略后续代码生成
+- ret br 不能在同一语句块
+- 多个br不能在同一语句块
+
+- 数组访问类型规范
+- ！出现在Cond中的情况

@@ -1,7 +1,8 @@
 package midend.llvm;
 
 public class RetValue {
-    /* mode == 0, return value; mode == 1, return register; mode == 2, many in cond, no need return */
+    /* mode == 0, return value; mode == 1, return register */
+    /* mode == 2, many in And; mode == 3, many in Eq and Rel */
     private final int mode;
     private final int value;
 
@@ -16,6 +17,10 @@ public class RetValue {
 
     public boolean isReg() {
         return mode == 1;
+    }
+
+    public boolean isMany() {
+        return mode == 3;
     }
 
     public int getValue() {

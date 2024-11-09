@@ -21,6 +21,7 @@ import frontend.parser.expression.primary.LVal;
 import frontend.parser.expression.primary.PrimaryEle;
 import frontend.parser.expression.primary.PrimaryExp;
 import frontend.parser.expression.unary.*;
+import frontend.parser.function.params.FuncFParam;
 import frontend.parser.terminal.Ident;
 import frontend.parser.terminal.StringConst;
 import midend.symbol.*;
@@ -118,7 +119,13 @@ public class LocalDecl {
             RetValue memoryReg = new RetValue(Register.allocReg(), 1);
             module.addInstrAllocaVar(memoryReg, llvmType);
             int initVal = GlobalDecl.visitGlobalConstExp((ConstExp) constDef.getConstInitVal().getConstInitValEle(), symbolTable);
-            module.addInstrStoreVar(llvmType, ""+initVal, memoryReg.irOut());
+            if (symbolType.contains("Char")) {
+                RetValue result = new RetValue(Register.allocReg(), 1);
+                module.addInstrTrunc(result, "i32", new RetValue(initVal, 0), "i8");
+                module.addInstrStoreVar(llvmType, result.irOut(), memoryReg.irOut());
+            } else {
+                module.addInstrStoreVar(llvmType, ""+initVal, memoryReg.irOut());
+            }
             SymbolCon symbolCon = new SymbolCon(symbolType, name, line, memoryReg.irOut(), initVal);
             symbolTable.addSymbol(symbolCon);
         }
@@ -162,12 +169,20 @@ public class LocalDecl {
                     SymbolVar symbolVar = new SymbolVar(symbolType, name, line, memoryReg.irOut(), initVal, size);
                     symbolTable.addSymbol(symbolVar);
                 }
+            } else {
+                SymbolVar symbolVar = new SymbolVar(symbolType, name, line, memoryReg.irOut(), "", size);
+                symbolTable.addSymbol(symbolVar);
             }
         } else {
             RetValue memoryReg = new RetValue(Register.allocReg(), 1);
             module.addInstrAllocaVar(memoryReg, llvmType);
             if (varDef.hasInitValue()) {
                 RetValue result = visitExp((Exp) varDef.getInitVal().getInitValEle(), symbolTable);
+                if (symbolType.contains("Char")) {
+                    RetValue value = result;
+                    result = new RetValue(Register.allocReg(), 1);
+                    module.addInstrTrunc(result, "i32", value, "i8");
+                }
                 module.addInstrStoreVar(llvmType, result.irOut(), memoryReg.irOut());
             }
             SymbolVar symbolVar = new SymbolVar(symbolType, name, line, memoryReg.irOut());
@@ -247,10 +262,14 @@ public class LocalDecl {
         String passRParam = "";
         if (funcRParams != null) {
             ArrayList<Exp> funcExps = funcRParams.getExps();
+            ArrayList<FuncFParam> funcFParams = symbolFunc.getFuncFParams();
             int len = funcExps.size();
             for (int i = 0; i < len; i++) {
                 RetValue result = visitExp(funcExps.get(i), symbolTable);
                 String llvmType = Support.varTransfer(fParams.get(i).getSymbolType());
+                if (funcFParams.get(i).isArray()) {
+                    llvmType += "*";
+                }
                 passRParam += llvmType + " " + result.irOut() + ", ";
             }
         }
@@ -263,17 +282,21 @@ public class LocalDecl {
             RetValue result = new RetValue(Register.allocReg(), 1);
             String llvmType = Support.varTransfer(symbolFunc.getSymbolType());
             module.addInstrCall(result, llvmType, funcName, passRParam);
+            if (symbolFunc.isChar()) {
+                RetValue value = result;
+                result = new RetValue(Register.allocReg(), 1);
+                module.addInstrZext(result, "i8", value, "i32");
+            }
             return result;
         }
     }
 
     private static RetValue visitUnaryOpExp(UnaryOpExp unaryOpExp, SymbolTable symbolTable) {
         Token op = unaryOpExp.getUnaryOp().getToken();
-        UnaryExp unaryExp = unaryOpExp.getUnaryExp();
+        RetValue retValue = visitUnaryExp(unaryOpExp.getUnaryExp(), symbolTable);
         if (op.getType().equals(Token.Type.PLUS)) {
-            return visitUnaryExp(unaryExp, symbolTable);
+            return retValue;
         } else if (op.getType().equals(Token.Type.MINU)) {
-            RetValue retValue = visitUnaryExp(unaryExp, symbolTable);
             if (retValue.isDigit()) {
                 return new RetValue(-retValue.getValue(), 0);
             } else {
@@ -281,8 +304,11 @@ public class LocalDecl {
                 module.addInstrSub(result, "0", retValue);
                 return result;
             }
+        } else {
+            /* Only Exist In Cond */
+            RetValue result = new RetValue(Register.allocReg(), 1);
+            return retValue;
         }
-        return new RetValue(0, 0);
     }
 
     private static RetValue visitPrimaryExp(PrimaryExp primaryExp, SymbolTable symbolTable) {
@@ -321,10 +347,16 @@ public class LocalDecl {
                 RetValue result = new RetValue(Register.allocReg(), 1);
                 module.addInstrGetelementptr1(result, size, llvmType, memory);
                 return result;
+            } else {
+                RetValue result = new RetValue(Register.allocReg(), 1);
+                module.addInstrLoad(result, llvmType, memory);
+                if (symbol.isChar()) {
+                    RetValue value = result;
+                    result = new RetValue(Register.allocReg(), 1);
+                    module.addInstrZext(result, "i8", value, "i32");
+                }
+                return result;
             }
-            RetValue result = new RetValue(Register.allocReg(), 1);
-            module.addInstrLoad(result, llvmType, memory);
-            return result;
         }
     }
 }

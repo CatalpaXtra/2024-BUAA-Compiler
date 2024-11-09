@@ -138,9 +138,28 @@ public class Module {
         if (retType.equals("void")) {
             instr = "ret void";
         } else {
-            instr = "ret i32 " + value.irOut();
+            instr = "ret " + retType + " " + value.irOut();
         }
         codeList.add(instr);
+    }
+
+    public void addInstrZext(RetValue result, String ty1, RetValue value, String ty2) {
+        /* <result> = zext <ty> <value> to <ty2> */
+        String instr = result.irOut() + " = zext " + ty1 + " " + value.irOut() + " to " + ty2;
+        codeList.add(instr);
+    }
+
+    public void addInstrTrunc(RetValue result, String ty1, RetValue value, String ty2) {
+        /* <result> = trunc <ty> <value> to <ty2> */
+        String instr = result.irOut() + " = trunc " + ty1 + " " + value.irOut() + " to " + ty2;
+        codeList.add(instr);
+    }
+
+    public void addRetIfNotExist() {
+        String instr = codeList.get(codeList.size() - 1);
+        if (!instr.contains("ret")) {
+            codeList.add("ret void");
+        }
     }
 
     public void addCode(String code) {

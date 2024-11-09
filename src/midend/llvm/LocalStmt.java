@@ -21,9 +21,14 @@ import java.util.ArrayList;
 public class LocalStmt {
     private static Module module;
     public static int nextLabel;
+    private static String funcType;
 
     public static void setLocalStmt(Module md) {
         module = md;
+    }
+
+    public static void setFuncType(String type) {
+        funcType = type;
     }
 
     public static void visitBlock(Block block, SymbolTable symbolTable, Token.Type type, boolean isInFor) {
@@ -63,17 +68,27 @@ public class LocalStmt {
             SymbolTable childSymbolTable = new SymbolTable(symbolTable);
             visitBlock((Block) stmtEle, childSymbolTable, type, isInFor);
         } else if (stmtEle instanceof StmtReturn) {
-            if (((StmtReturn) stmtEle).existReturnValue()) {
-                RetValue result = LocalDecl.visitExp(((StmtReturn) stmtEle).getExp(), symbolTable);
-                // TODO fix ret
-                module.addInstrRet("i32", result);
-            } else {
-                module.addInstrRet("void", null);
-            }
+            visitStmtReturn((StmtReturn) stmtEle, symbolTable);
         } else if (stmtEle instanceof StmtBreak) {
+            // TODO 省略后续语句
             module.addInstrBr("<BLOCK2 OR STMT>");
         } else if (stmtEle instanceof StmtContinue) {
+            // TODO 省略后续语句
             module.addInstrBr("<FORSTMT2>");
+        }
+    }
+
+    private static void visitStmtReturn(StmtReturn stmtReturn, SymbolTable symbolTable) {
+        if (stmtReturn.existReturnValue()) {
+            RetValue result = LocalDecl.visitExp(stmtReturn.getExp(), symbolTable);
+            if (funcType.contains("Char")) {
+                RetValue value = result;
+                result = new RetValue(Register.allocReg(), 1);
+                module.addInstrTrunc(result, "i32", value, "i8");
+            }
+            module.addInstrRet(Support.varTransfer(funcType), result);
+        } else {
+            module.addInstrRet("void", null);
         }
     }
 
@@ -89,6 +104,11 @@ public class LocalStmt {
             RetValue temp2 = new RetValue(Register.allocReg(), 1);
             module.addInstrStoreVar(llvmType, temp2.irOut(), temp1.irOut());
         } else {
+            if (symbol.isChar()) {
+                RetValue value = result;
+                result = new RetValue(Register.allocReg(), 1);
+                module.addInstrTrunc(result, "i32", value, "i8");
+            }
             module.addInstrStoreVar(llvmType, result.irOut(), memory);
         }
     }
@@ -166,7 +186,7 @@ public class LocalStmt {
                         strLen -= 2;
                     }
                 }
-                String strName = module.addGlobalStr( strLen, parts.get(i));
+                String strName = module.addGlobalStr(strLen, parts.get(i));
                 String rParams = "i8* getelementptr inbounds ([" + strLen + " x i8], [" + strLen + " x i8]* " + strName + ", i64 0, i64 0)";
                 module.addInstrCall(null, "void", "putstr", rParams);
             }
@@ -185,7 +205,7 @@ public class LocalStmt {
 
         /* Handle Stmt1 */
         visitStmt(stmtIf.getStmt1(), symbolTable, type, isInFor);
-        module.replaceInterval(left, right, "%" + (nextLabel + 1), "<BLOCK2 OR STMT>");
+        module.replaceInterval(left, right, "%" + Register.getRegNum(), "<BLOCK2 OR STMT>");
 
         /* Handle Stmt2 */
         if (stmtIf.getStmt2() != null) {
@@ -197,7 +217,7 @@ public class LocalStmt {
             module.addCode(nextLabel + ":");
 
             visitStmt(stmtIf.getStmt2(), symbolTable, type, isInFor);
-            module.replaceInterval(replaceLoc, replaceLoc, "%" + (nextLabel + 1), "<NEXT STMT>");
+            module.replaceInterval(replaceLoc, replaceLoc, "%" + Register.getRegNum(), "<NEXT STMT>");
         }
 
         /* Branch To Next Stmt */
@@ -280,7 +300,12 @@ public class LocalStmt {
                 module.addCode("");
                 nextLabel = Register.allocReg();
             }
-        } else if (result.isReg()) {
+        } else if (result.isReg() || result.isMany()) {
+            if (result.isReg()) {
+                RetValue value = result;
+                result = new RetValue(Register.allocReg(), 1);
+                module.addInstrTrunc(result, "i32", value, "i1");
+            }
             nextLabel = Register.allocReg();
             module.addInstrBrCond(result, "%" + nextLabel, "<BLOCK2 OR STMT>");
             module.addCode("");
@@ -334,8 +359,9 @@ public class LocalStmt {
             return visitEqExp(eqExps.get(0), symbolTable);
         }
 
-        int left = module.getLoc() + 1;
+        /* Delete Repeat Label */
         module.delLastCode();
+        int left = module.getLoc() + 1;
         for (int i = 0; i < eqExps.size(); i++) {
             module.addCode(nextLabel + ":");
             RetValue result = visitEqExp(eqExps.get(i), symbolTable);
@@ -366,6 +392,14 @@ public class LocalStmt {
                     module.addInstrBrCond(temp, "%" + nextLabel, "<NEXT LOREXP>");
                 }
                 module.addCode("");
+            } else {
+                nextLabel = Register.allocReg();
+                if (i == eqExps.size() - 1) {
+                    module.addInstrBrCond(result, "<BLOCK1>", "<NEXT LOREXP>");
+                } else {
+                    module.addInstrBrCond(result, "%" + nextLabel, "<NEXT LOREXP>");
+                }
+                module.addCode("");
             }
         }
         if (isLast) {
@@ -385,16 +419,27 @@ public class LocalStmt {
         ArrayList<Token> operators = eqExp.getOperators();
         RetValue result = visitRelExp(relExps.get(0), symbolTable);
         for (int i = 1; i < relExps.size(); i++) {
-            // TODO value transfer
+            if (result.isMany()) {
+                /* Value Transfer */
+                RetValue value = result;
+                result = new RetValue(Register.allocReg(), 1);
+                module.addInstrZext(result, "i1", value, "i32");
+            }
 
             String cond = Support.condTransfer(operators.get(i-1).getType());
             RetValue left = result;
             RetValue right = visitRelExp(relExps.get(i), symbolTable);
             result = new RetValue(Register.allocReg(), 1);
-
             module.addInstrIcmp(result, cond, left, right.irOut());
+
+            /* Value Transfer */
+            RetValue value = result;
+            result = new RetValue(Register.allocReg(), 1);
+            module.addInstrZext(result, "i1", value, "i32");
         }
-        return result;
+        Register.cancelAlloc();
+        module.delLastCode();
+        return new RetValue(Register.getRegNum() - 1, 3);
     }
 
     private static RetValue visitRelExp(RelExp relExp, SymbolTable symbolTable) {
@@ -406,15 +451,19 @@ public class LocalStmt {
         ArrayList<Token> operators = relExp.getOperators();
         RetValue result = LocalDecl.visitAddExp(addExps.get(0), symbolTable);
         for (int i = 1; i < addExps.size(); i++) {
-            // TODO value transfer
-
             String cond = Support.condTransfer(operators.get(i-1).getType());
             RetValue left = result;
             RetValue right = LocalDecl.visitAddExp(addExps.get(i), symbolTable);
             result = new RetValue(Register.allocReg(), 1);
-
             module.addInstrIcmp(result, cond, left, right.irOut());
+
+            /* Value Transfer */
+            RetValue value = result;
+            result = new RetValue(Register.allocReg(), 1);
+            module.addInstrZext(result, "i1", value, "i32");
         }
-        return result;
+        Register.cancelAlloc();
+        module.delLastCode();
+        return new RetValue(Register.getRegNum() - 1, 3);
     }
 }
