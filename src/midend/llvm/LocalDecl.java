@@ -61,60 +61,128 @@ public class LocalDecl {
         }
     }
 
+    private static void assignIntArray(RetValue memoryReg, int size, ArrayList<Integer> initVal) {
+        RetValue lastReg = memoryReg;
+        for (int i = 0; i < initVal.size(); i++) {
+            RetValue thisReg = new RetValue(Register.allocReg(), 1);
+            if (i == 0) {
+                module.addCode(thisReg.irOut() + " = getelementptr inbounds [" + size + " x i32], [" + size + " x i32]* " + lastReg.irOut() +", i32 0, i32 0");
+            } else {
+                module.addCode(thisReg.irOut() + " = getelementptr inbounds i32, i32* " + lastReg.irOut() + ", i32 1");
+            }
+            module.addCode("store i32 " + initVal.get(i) + ", i32* " + thisReg.irOut());
+            lastReg = thisReg;
+        }
+    }
+
+    private static void assignCharArray(RetValue memoryReg, int size, String initVal) {
+        initVal = initVal.substring(1, initVal.length() - 1) + "\0";
+        RetValue lastReg = memoryReg;
+        for (int i = 0; i < initVal.length(); i++) {
+            RetValue thisReg = new RetValue(Register.allocReg(), 1);
+            if (i == 0) {
+                module.addCode(thisReg.irOut() + " = getelementptr inbounds [" + size + " x i8], [" + size + " x i8]* " + lastReg.irOut() +", i8 0, i8 0");
+            } else {
+                module.addCode(thisReg.irOut() + " = getelementptr inbounds i8, i8* " + lastReg.irOut() + ", i8 1");
+            }
+            int value = initVal.charAt(i);
+            module.addCode("store i8 " + value + ", i8* " + thisReg.irOut());
+            lastReg = thisReg;
+        }
+    }
+
     private static void visitConstDef(ConstDef constDef, String type, SymbolTable symbolTable) {
         String symbolType = "Const" + type;
+        String llvmType = Support.varTransfer(type);
         String name = constDef.getIdent().getIdenfr();
         int line = constDef.getIdent().getLine();
         if (constDef.isArray()) {
             symbolType += "Array";
             int size = GlobalDecl.visitGlobalConstExp(constDef.getConstExp(), symbolTable);
-            ConstInitValEle constInitValEle = constDef.getConstInitVal().getConstInitValEle();
+            RetValue memoryReg = new RetValue(Register.allocReg(), 1);
+            module.addCode(memoryReg.irOut() + " = alloca [" + size + " x " + llvmType + "]");
 
-            // TODO
+            ConstInitValEle constInitValEle = constDef.getConstInitVal().getConstInitValEle();
             if (constInitValEle instanceof ConstExpSet) {
                 ArrayList<Integer> initVal = GlobalDecl.visitGlobalConstExpSet((ConstExpSet) constInitValEle, symbolTable);
+                assignIntArray(memoryReg, size, initVal);
+                SymbolCon symbolCon = new SymbolCon(symbolType, name, line, "%" + memoryReg, initVal, size);
+                symbolTable.addSymbol(symbolCon);
             } else if (constInitValEle instanceof StringConst) {
                 String initVal = ((StringConst) constInitValEle).getToken().getContent();
+                assignCharArray(memoryReg, size, initVal);
+                SymbolCon symbolCon = new SymbolCon(symbolType, name, line, "%" + memoryReg, initVal, size);
+                symbolTable.addSymbol(symbolCon);
             }
         } else {
-            int memoryReg = Register.allocReg();
-            module.addCode("%" + memoryReg + " = alloca i32");
+            RetValue memoryReg = new RetValue(Register.allocReg(), 1);
+            module.addCode(memoryReg.irOut() + " = alloca " + llvmType);
             int initVal = GlobalDecl.visitGlobalConstExp((ConstExp) constDef.getConstInitVal().getConstInitValEle(), symbolTable);
-            module.addCode("store i32 " + initVal + ", i32* %" + memoryReg);
-            SymbolCon symbolCon = new SymbolCon(symbolType, name, line, "%" + memoryReg, initVal);
+            module.addCode("store " + llvmType + " " + initVal + ", " + llvmType + "* %" + memoryReg);
+            SymbolCon symbolCon = new SymbolCon(symbolType, name, line, memoryReg.irOut(), initVal);
             symbolTable.addSymbol(symbolCon);
+        }
+    }
+
+    private static void assignVarIntArray(RetValue memoryReg, int size, ArrayList<RetValue> initVal) {
+        RetValue lastReg = memoryReg;
+        for (int i = 0; i < initVal.size(); i++) {
+            RetValue thisReg = new RetValue(Register.allocReg(), 1);
+            if (i == 0) {
+                module.addCode(thisReg.irOut() + " = getelementptr inbounds [" + size + " x i32], [" + size + " x i32]* " + lastReg.irOut() +", i32 0, i32 0");
+            } else {
+                module.addCode(thisReg.irOut() + " = getelementptr inbounds i32, i32* " + lastReg.irOut() + ", i32 1");
+            }
+            module.addCode("store i32 " + initVal.get(i).irOut() + ", i32* " + thisReg.irOut());
+            lastReg = thisReg;
         }
     }
 
     private static void visitVarDef(VarDef varDef, String type, SymbolTable symbolTable) {
         String symbolType = type;
+        String llvmType = Support.varTransfer(type);
         String name = varDef.getIdent().getIdenfr();
         int line = varDef.getIdent().getLine();
         if (varDef.isArray()) {
             symbolType += "Array";
             int size = GlobalDecl.visitGlobalConstExp(varDef.getConstExp(), symbolTable);
-            InitValEle initValEle = varDef.getInitVal().getInitValEle();
+            RetValue memoryReg = new RetValue(Register.allocReg(), 1);
+            module.addCode(memoryReg.irOut() + " = alloca [" + size + " x " + llvmType + "]");
 
-            // TODO
-            if (initValEle instanceof ExpSet) {
-                ArrayList<Integer> initVal = visitExpSet((ExpSet) initValEle, symbolTable);
-            } else if (initValEle instanceof StringConst) {
-                String initVal = ((StringConst) initValEle).getToken().getContent();
+            if (varDef.hasInitValue()) {
+                InitValEle initValEle = varDef.getInitVal().getInitValEle();
+                if (initValEle instanceof ExpSet) {
+                    ArrayList<RetValue> initVal = visitExpSet((ExpSet) initValEle, symbolTable);
+                    assignVarIntArray(memoryReg, size, initVal);
+                    SymbolVar symbolVar = new SymbolVar(symbolType, name, line, memoryReg.irOut(), new ArrayList<>(), size);
+                    symbolTable.addSymbol(symbolVar);
+                } else if (initValEle instanceof StringConst) {
+                    String initVal = ((StringConst) initValEle).getToken().getContent();
+                    assignCharArray(memoryReg, size, initVal);
+                    SymbolVar symbolVar = new SymbolVar(symbolType, name, line, memoryReg.irOut(), initVal, size);
+                    symbolTable.addSymbol(symbolVar);
+                }
             }
         } else {
-            int memoryReg = Register.allocReg();
-            module.addCode("%" + memoryReg + " = alloca i32");
+            RetValue memoryReg = new RetValue(Register.allocReg(), 1);
+            module.addCode(memoryReg.irOut() + " = alloca " + llvmType);
             if (varDef.hasInitValue()) {
                 RetValue result = visitExp((Exp) varDef.getInitVal().getInitValEle(), symbolTable);
-                module.addCode("store i32 " + result.irOut() + ", i32* %" + memoryReg);
+                module.addCode("store " + llvmType + " " + result.irOut() + ", " + llvmType + "* " + memoryReg.irOut());
             }
-            SymbolVar symbolVar = new SymbolVar(symbolType, name, line, "%" + memoryReg);
+            SymbolVar symbolVar = new SymbolVar(symbolType, name, line, memoryReg.irOut());
             symbolTable.addSymbol(symbolVar);
         }
     }
 
-    private static ArrayList<Integer> visitExpSet(ExpSet expSet, SymbolTable symbolTable) {
-        return null;
+    private static ArrayList<RetValue> visitExpSet(ExpSet expSet, SymbolTable symbolTable) {
+        ArrayList<Exp> exps = expSet.getExps();
+        ArrayList<RetValue> results = new ArrayList<>();
+        for (Exp exp : exps) {
+            RetValue result = visitExp(exp, symbolTable);
+            results.add(result);
+        }
+        return results;
     }
 
     public static RetValue visitExp(Exp exp, SymbolTable symbolTable) {
@@ -182,8 +250,11 @@ public class LocalDecl {
             int len = funcExps.size();
             for (int i = 0; i < len; i++) {
                 RetValue result = visitExp(funcExps.get(i), symbolTable);
-                String type = fParams.get(i).getSymbolType().contains("Int") ? "i32" : "i8";
-                passRParam += type + " " + result.irOut() + ", ";
+                // TODO
+                // if result is array
+
+                String llvmType = Support.varTransfer(fParams.get(i).getSymbolType());
+                passRParam += llvmType + " " + result.irOut() + ", ";
             }
         }
         passRParam = passRParam.length() > 2 ? passRParam.substring(0, passRParam.length() - 2) : passRParam;
@@ -192,10 +263,9 @@ public class LocalDecl {
         if (symbolFunc.getSymbolType().contains("Void")) {
             Register.cancelReg();
             module.addCode("call void @" + funcName + "(" + passRParam + ")");
-        } else if (symbolFunc.getSymbolType().contains("Int")) {
-            module.addCode(result.irOut() + " = call i32 @" + funcName + "(" + passRParam + ")");
         } else {
-            module.addCode(result.irOut() + " = call i8 @" + funcName + "(" + passRParam + ")");
+            String llvmType = Support.varTransfer(symbolFunc.getSymbolType());
+            module.addCode(result.irOut() + " = call " + llvmType + " @" + funcName + "(" + passRParam + ")");
         }
         return result;
     }
@@ -234,17 +304,21 @@ public class LocalDecl {
 
     public static RetValue visitLVal(LVal lVal, SymbolTable symbolTable) {
         Ident ident = lVal.getIdent();
+        Symbol symbol = symbolTable.getSymbol(ident.getIdenfr());
+        String memory = symbol.getMemory();
+        String llvmType = Support.varTransfer(symbol.getSymbolType());
         if (lVal.isArray()) {
-            Exp exp = lVal.getExp();
-            visitExp(exp, symbolTable);
+            int size = symbol.getArraySize();
+            RetValue loc = visitExp(lVal.getExp(), symbolTable);
+            RetValue temp = new RetValue(Register.allocReg(), 1);
+            module.addCode(temp.irOut() + " = getelementptr inbounds [" + size + " x i32], [" + size + " x i32]* " + memory + ", i32 0, i32 " + loc.irOut());
+            RetValue result = new RetValue(Register.allocReg(), 1);
+            module.addCode(result.irOut() + " = load i32, i32* " + temp.irOut());
+            return result;
         } else {
-            Symbol symbol = symbolTable.getSymbol(ident.getIdenfr());
-            String memory = symbol.getMemory();
             RetValue result = new RetValue(Register.allocReg(), 1);
             module.addCode(result.irOut() + " = load i32, i32* " + memory);
             return result;
         }
-        return new RetValue(0, 0);
     }
-
 }

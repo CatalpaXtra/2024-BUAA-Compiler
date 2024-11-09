@@ -76,33 +76,38 @@ public class LocalStmt {
         }
     }
 
-    private static void visitStmtAssign(StmtAssign stmtAssign, SymbolTable symbolTable) {
-        Ident ident = stmtAssign.getlVal().getIdent();
-        Symbol symbol = symbolTable.getSymbol(ident.getIdenfr());
+    private static void storeLVal(RetValue result, LVal lVal, SymbolTable symbolTable) {
+        Symbol symbol = symbolTable.getSymbol(lVal.getIdent().getIdenfr());
         String memory = symbol.getMemory();
+        if (lVal.isArray()) {
+            int size = symbol.getArraySize();
+            RetValue loc = LocalDecl.visitExp(lVal.getExp(), symbolTable);
+            RetValue temp = new RetValue(Register.allocReg(), 1);
+            module.addCode(temp.irOut() + " = getelementptr inbounds [" + size + " x i32], [" + size + " x i32]* " + memory + ", i32 0, i32 " + loc.irOut());
+            module.addCode("store i32 " + result.irOut() + ", [" + size + " x i32]* " + temp.irOut());
+        } else {
+            module.addCode("store i32 " + result.irOut() + ", i32* " + memory);
+        }
+    }
+
+    private static void visitStmtAssign(StmtAssign stmtAssign, SymbolTable symbolTable) {
         RetValue result = LocalDecl.visitExp(stmtAssign.getExp(), symbolTable);
-        module.addCode("store i32 " + result.irOut() + ", i32* " + memory);
+        storeLVal(result, stmtAssign.getlVal(), symbolTable);
     }
 
     private static void visitStmtGetInt(StmtGetInt stmtGetInt, SymbolTable symbolTable) {
-        int memoryReg = Register.allocReg();
-        module.addCode("%" + memoryReg + " = call i32 @getint()");
-        Ident ident = stmtGetInt.getlVal().getIdent();
-        Symbol symbol = symbolTable.getSymbol(ident.getIdenfr());
-        String memory = symbol.getMemory();
-        module.addCode("store i32 %" + memoryReg + ", i32* " + memory);
+        RetValue result = new RetValue(Register.allocReg(), 1);
+        module.addCode(result.irOut() + " = call i32 @getint()");
+        storeLVal(result, stmtGetInt.getlVal(), symbolTable);
     }
 
     private static void visitStmtGetChar(StmtGetChar stmtGetChar, SymbolTable symbolTable) {
-        int memoryReg = Register.allocReg();
-        module.addCode("%" + memoryReg + " = call i32 @getchar()");
-        Ident ident = stmtGetChar.getlVal().getIdent();
-        Symbol symbol = symbolTable.getSymbol(ident.getIdenfr());
-        String memory = symbol.getMemory();
-        module.addCode("store i32 %" + memoryReg + ", i32* " + memory);
+        RetValue result = new RetValue(Register.allocReg(), 1);
+        module.addCode(result.irOut() + " = call i32 @getchar()");
+        storeLVal(result, stmtGetChar.getlVal(), symbolTable);
     }
 
-    private static ArrayList<String> handleString(String string) {
+    private static ArrayList<String> splitString(String string) {
         StringBuilder part = new StringBuilder();
         ArrayList<String> parts = new ArrayList<>();
         for (int i = 1; i < string.length() - 1; i++) {
@@ -142,7 +147,7 @@ public class LocalStmt {
 
     private static void visitStmtPrint(StmtPrint stmtPrint, SymbolTable symbolTable) {
         String string = stmtPrint.getStringConst().getToken().getContent();
-        ArrayList<String> parts = handleString(string);
+        ArrayList<String> parts = splitString(string);
         ArrayList<Exp> exps = stmtPrint.getExps();
         int expCount = 0;
         for (int i = 0; i < parts.size(); i++) {
@@ -248,14 +253,8 @@ public class LocalStmt {
     }
 
     private static void visitForStmt(ForStmt forStmt, SymbolTable symbolTable) {
-        LVal lVal = forStmt.getlVal();
-        if (lVal.isArray()) {
-            // TODO
-        }
-        Symbol symbol = symbolTable.getSymbol(lVal.getIdent().getIdenfr());
-        String memory = symbol.getMemory();
         RetValue result = LocalDecl.visitExp(forStmt.getExp(), symbolTable);
-        module.addCode("store i32 " + result.irOut() + ", i32* " + memory);
+        storeLVal(result, forStmt.getlVal(), symbolTable);
     }
 
     private static void visitCond(Cond cond, SymbolTable symbolTable) {
@@ -384,7 +383,7 @@ public class LocalStmt {
         for (int i = 1; i < relExps.size(); i++) {
             // TODO value transfer
 
-            String cond = condTransfer(operators.get(i-1).getType());
+            String cond = Support.condTransfer(operators.get(i-1).getType());
             RetValue left = result;
             RetValue right = visitRelExp(relExps.get(i), symbolTable);
             result = new RetValue(Register.allocReg(), 1);
@@ -405,7 +404,7 @@ public class LocalStmt {
         for (int i = 1; i < addExps.size(); i++) {
             // TODO value transfer
 
-            String cond = condTransfer(operators.get(i-1).getType());
+            String cond = Support.condTransfer(operators.get(i-1).getType());
             RetValue left = result;
             RetValue right = LocalDecl.visitAddExp(addExps.get(i), symbolTable);
             result = new RetValue(Register.allocReg(), 1);
@@ -413,25 +412,5 @@ public class LocalStmt {
             module.addCode(result.irOut() + " = icmp " + cond + " i32 " + left.irOut() + ", " + right.irOut());
         }
         return result;
-    }
-
-    private static String condTransfer(Token.Type type) {
-        switch (type) {
-            case GRE:
-                return "sgt";
-            case GEQ:
-                return "sge";
-            case LSS:
-                return "slt";
-            case LEQ:
-                return "sle";
-            case EQL:
-                return "eq";
-            case NEQ:
-                return "ne";
-            default:
-                System.out.println("Cond Reach Unknown Branch");
-                return "ERROR";
-        }
     }
 }

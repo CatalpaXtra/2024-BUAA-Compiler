@@ -24,7 +24,6 @@ import frontend.parser.expression.unary.UnaryEle;
 import frontend.parser.expression.unary.UnaryExp;
 import frontend.parser.expression.unary.UnaryOp;
 import frontend.parser.expression.unary.UnaryOpExp;
-import frontend.parser.terminal.Ident;
 import frontend.parser.terminal.StringConst;
 import midend.symbol.*;
 
@@ -62,6 +61,46 @@ public class GlobalDecl {
         }
     }
 
+    private static String intArrayInit(int arraySize, ArrayList<Integer> initVal) {
+        boolean zeroinitializer = true;
+        String arrayFormat = "[";
+        for (Integer val : initVal) {
+            if (val != 0) {
+                zeroinitializer = false;
+            }
+            arrayFormat += "i32 " + val + ", ";
+        }
+        if (zeroinitializer) {
+            return "zeroinitializer";
+        }
+        for (int i = initVal.size(); i < arraySize; i++) {
+            arrayFormat += "i32 0, ";
+        }
+        return arrayFormat.substring(0, arrayFormat.length() - 2) + "]";
+    }
+
+    public static String charArrayInit(int arraySize, String initVal) {
+        initVal = initVal.substring(1, initVal.length() - 1);
+        String arrayFormat = "\"";
+        for (int i = 0; i < initVal.length(); i++) {
+            if (initVal.charAt(i) == '\\' && i + 1 < initVal.length()) {
+                char next = initVal.charAt(i + 1);
+                if (next == '0') {
+                    arrayFormat += "\\00";
+                } else if (next == 'n') {
+                    arrayFormat += "\\0A";
+                }
+                i++;
+            } else {
+                arrayFormat += initVal.charAt(i);
+            }
+        }
+        for (int i = initVal.length(); i < arraySize; i++) {
+            arrayFormat += "\\00";
+        }
+        return arrayFormat + "\"";
+    }
+
     private static void visitGlobalConstDef(ConstDef constDef, String type, SymbolTable symbolTable) {
         String symbolType = "Const" + type;
         String name = constDef.getIdent().getIdenfr();
@@ -71,15 +110,21 @@ public class GlobalDecl {
             int size = visitGlobalConstExp(constDef.getConstExp(), symbolTable);
             ConstInitValEle constInitValEle = constDef.getConstInitVal().getConstInitValEle();
 
-            // TODO
             if (constInitValEle instanceof ConstExpSet) {
                 ArrayList<Integer> initVal = visitGlobalConstExpSet((ConstExpSet) constInitValEle, symbolTable);
+                module.addGlobalVar("@" + name + " = dso_local global [" + size + " x i32] " + intArrayInit(size, initVal));
+                SymbolCon symbolCon = new SymbolCon(symbolType, name, line, "@" + name, initVal, size);
+                symbolTable.addSymbol(symbolCon);
             } else if (constInitValEle instanceof StringConst) {
                 String initVal = ((StringConst) constInitValEle).getToken().getContent();
+                module.addGlobalVar("@" + name + " = dso_local global [" + size + " x i8] c" + charArrayInit(size, initVal) + ", align 1");
+                SymbolCon symbolCon = new SymbolCon(symbolType, name, line, "@" + name, initVal, size);
+                symbolTable.addSymbol(symbolCon);
             }
         } else {
             int initVal = visitGlobalConstExp((ConstExp) constDef.getConstInitVal().getConstInitValEle(), symbolTable);
-            module.addGlobalVar("@" + name + " = dso_local global i32 " + initVal);
+            String llvmType = Support.varTransfer(type);
+            module.addGlobalVar("@" + name + " = dso_local global " + llvmType + " " + initVal);
             SymbolCon symbolCon = new SymbolCon(symbolType, name, line, "@" + name, initVal);
             symbolTable.addSymbol(symbolCon);
         }
@@ -92,24 +137,37 @@ public class GlobalDecl {
         if (varDef.isArray()) {
             symbolType += "Array";
             int size = visitGlobalConstExp(varDef.getConstExp(), symbolTable);
-            InitValEle initValEle = varDef.getInitVal().getInitValEle();
-
-            // TODO
-//            if (initValEle instanceof ExpSet) {
-//                ArrayList<Integer> initVal = visitGlobalExpSet((ExpSet) initValEle, symbolTable);
-//                SymbolArray symbolArray = new SymbolArray(symbolType, name, line, size, initVal);
-//                symbolTable.addSymbol(symbolArray);
-//            } else if (initValEle instanceof StringConst) {
-//                String initVal = ((StringConst) initValEle).getToken().getContent();
-//                SymbolArray symbolArray = new SymbolArray(symbolType, name, line, size, initVal);
-//                symbolTable.addSymbol(symbolArray);
-//            }
+            if (varDef.hasInitValue()) {
+                InitValEle initValEle = varDef.getInitVal().getInitValEle();
+                if (initValEle instanceof ExpSet) {
+                    ArrayList<Integer> initVal = visitGlobalExpSet((ExpSet) initValEle, symbolTable);
+                    module.addGlobalVar("@" + name + " = dso_local global [" + size + " x i32] " + intArrayInit(size, initVal));
+                    SymbolVar symbolVar = new SymbolVar(symbolType, name, line, "@" + name, initVal, size);
+                    symbolTable.addSymbol(symbolVar);
+                } else if (initValEle instanceof StringConst) {
+                    String initVal = ((StringConst) initValEle).getToken().getContent();
+                    module.addGlobalVar("@" + name + " = dso_local global [" + size + " x i8] c" + charArrayInit(size, initVal) + ", align 1");
+                    SymbolVar symbolVar = new SymbolVar(symbolType, name, line, "@" + name, initVal, size);
+                    symbolTable.addSymbol(symbolVar);
+                }
+            } else {
+                if (symbolType.contains("Int")) {
+                    module.addGlobalVar("@" + name + " = dso_local global [" + size + " x i32] zeroinitializer");
+                    SymbolVar symbolVar = new SymbolVar(symbolType, name, line, "@" + name, new ArrayList<>(), size);
+                    symbolTable.addSymbol(symbolVar);
+                } else {
+                    module.addGlobalVar("@" + name + " = dso_local global [" + size + " x i8] c" + charArrayInit(size, "") + ", align 1");
+                    SymbolVar symbolVar = new SymbolVar(symbolType, name, line, "@" + name, "", size);
+                    symbolTable.addSymbol(symbolVar);
+                }
+            }
         } else {
             int initVal = 0;
             if (varDef.hasInitValue()) {
                 initVal = visitGlobalExp((Exp) varDef.getInitVal().getInitValEle(), symbolTable);
             }
-            module.addGlobalVar("@" + name + " = dso_local global i32 " + initVal);
+            String llvmType = Support.varTransfer(type);
+            module.addGlobalVar("@" + name + " = dso_local global " + llvmType + " " + initVal);
             SymbolVar symbolVar = new SymbolVar(symbolType, name, line, "@" + name, initVal);
             symbolTable.addSymbol(symbolVar);
         }
@@ -137,6 +195,10 @@ public class GlobalDecl {
 
     public static int visitGlobalConstExp(ConstExp constExp, SymbolTable symbolTable) {
         return visitGlobalAddExp(constExp.getAddExp(), symbolTable);
+    }
+
+    private static int visitGlobalExp(Exp exp, SymbolTable symbolTable) {
+        return visitGlobalAddExp(exp.getAddExp(), symbolTable);
     }
 
     private static int visitGlobalAddExp(AddExp addExp, SymbolTable symbolTable) {
@@ -205,18 +267,14 @@ public class GlobalDecl {
         return 0;
     }
 
-    private static int visitGlobalExp(Exp exp, SymbolTable symbolTable) {
-        return visitGlobalAddExp(exp.getAddExp(), symbolTable);
-    }
-
     private static int visitGlobalLVal(LVal lVal, SymbolTable symbolTable) {
-        Ident ident = lVal.getIdent();
         int value = 0;
-        Symbol symbol = symbolTable.getSymbol(ident.getIdenfr());
+        Symbol symbol = symbolTable.getSymbol(lVal.getIdent().getIdenfr());
         if (lVal.isArray()) {
-            Exp exp = lVal.getExp();
-            int loc = visitGlobalExp(exp, symbolTable);
-            // TODO
+            int loc = visitGlobalExp(lVal.getExp(), symbolTable);
+            if (symbol instanceof SymbolCon) {
+                value = ((SymbolCon) symbol).getValueAtLoc(loc);
+            }
         } else {
             if (symbol instanceof SymbolCon) {
                 value = ((SymbolCon) symbol).getValue();

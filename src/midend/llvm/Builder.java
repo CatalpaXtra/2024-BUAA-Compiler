@@ -64,8 +64,11 @@ public class Builder {
         ArrayList<FuncFParam> funcFParamList = funcDef.getFuncFParams() == null ? new ArrayList<>() : funcDef.getFuncFParams().getFuncFParamList();
         String declFParam = "";
         for (FuncFParam funcFParam : funcFParamList) {
+            // TODO
+            // if funcFParam is array
+
             int reg = Register.allocReg();
-            declFParam += typeTransfer(funcFParam.getBType().getToken().getType()) + " %" + reg + ", ";
+            declFParam += Support.tokenTypeTransfer(funcFParam.getBType().getToken().getType()) + " %" + reg + ", ";
         }
 
         /* load FuncFParams */
@@ -73,9 +76,9 @@ public class Builder {
         ArrayList<String> storeFParam = new ArrayList<>();
         for (FuncFParam funcFParam : funcFParamList) {
             int memory = Register.allocReg();
-            String valueType = typeTransfer(funcFParam.getBType().getToken().getType());
+            String llvmType = Support.tokenTypeTransfer(funcFParam.getBType().getToken().getType());
             storeFParam.add("%" + memory + " = alloca i32");
-            storeFParam.add("store " +  valueType + " %" + (memory - funcFParamList.size()) + ", i32* %" + memory);
+            storeFParam.add("store " +  llvmType + " %" + (memory - funcFParamList.size()) + ", i32* %" + memory);
 
             String type = funcFParam.getBType().identifyType();
             symbolType = funcFParam.isArray() ? type + "Array" : type;
@@ -88,7 +91,7 @@ public class Builder {
 
         /* load Func Declare */
         module.addCode("");
-        String funcType = typeTransfer(funcDef.getFuncType().getToken().getType());
+        String funcType = Support.tokenTypeTransfer(funcDef.getFuncType().getToken().getType());
         declFParam = declFParam.length() > 2 ? declFParam.substring(0, declFParam.length() - 2) : declFParam;
         module.addCode("define dso_local " + funcType + " @" + funcName + "(" + declFParam + ") {");
         module.addCode(storeFParam);
@@ -104,15 +107,5 @@ public class Builder {
         SymbolTable childSymbolTable = new SymbolTable(globalSymbolTable);
         LocalStmt.visitBlock(mainFuncDef.getBlock(), childSymbolTable, Token.Type.INTTK, false);
         module.addCode("}");
-    }
-
-    private String typeTransfer(Token.Type type) {
-        if (type.equals(Token.Type.INTTK)) {
-            return "i32";
-        } else if (type.equals(Token.Type.CHARTK)) {
-            return "i8";
-        } else {
-            return "void";
-        }
     }
 }
