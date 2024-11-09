@@ -15,10 +15,6 @@ public class Register {
         return regNum++;
     }
 
-    public static int cancelReg() {
-        return regNum--;
-    }
-
     public static int getRegNum() {
         return regNum;
     }

@@ -64,21 +64,25 @@ public class Builder {
         ArrayList<FuncFParam> funcFParamList = funcDef.getFuncFParams() == null ? new ArrayList<>() : funcDef.getFuncFParams().getFuncFParamList();
         String declFParam = "";
         for (FuncFParam funcFParam : funcFParamList) {
-            // TODO
-            // if funcFParam is array
-
+            String fParamType = Support.tokenTypeTransfer(funcFParam.getBType().getToken().getType());
+            if (funcFParam.isArray()) {
+                fParamType += "*";
+            }
             int reg = Register.allocReg();
-            declFParam += Support.tokenTypeTransfer(funcFParam.getBType().getToken().getType()) + " %" + reg + ", ";
+            declFParam += fParamType + " %" + reg + ", ";
         }
 
         /* load FuncFParams */
         Register.allocReg();
         ArrayList<String> storeFParam = new ArrayList<>();
         for (FuncFParam funcFParam : funcFParamList) {
+            String fParamType = Support.tokenTypeTransfer(funcFParam.getBType().getToken().getType());
+            if (funcFParam.isArray()) {
+                fParamType += "*";
+            }
             int memory = Register.allocReg();
-            String llvmType = Support.tokenTypeTransfer(funcFParam.getBType().getToken().getType());
-            storeFParam.add("%" + memory + " = alloca i32");
-            storeFParam.add("store " +  llvmType + " %" + (memory - funcFParamList.size()) + ", i32* %" + memory);
+            storeFParam.add("%" + memory + " = alloca " + fParamType);
+            storeFParam.add("store " +  fParamType + " %" + (memory - funcFParamList.size() - 1) + ", " + fParamType + "* %" + memory);
 
             String type = funcFParam.getBType().identifyType();
             symbolType = funcFParam.isArray() ? type + "Array" : type;

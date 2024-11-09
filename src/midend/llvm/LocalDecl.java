@@ -66,11 +66,11 @@ public class LocalDecl {
         for (int i = 0; i < initVal.size(); i++) {
             RetValue thisReg = new RetValue(Register.allocReg(), 1);
             if (i == 0) {
-                module.addCode(thisReg.irOut() + " = getelementptr inbounds [" + size + " x i32], [" + size + " x i32]* " + lastReg.irOut() +", i32 0, i32 0");
+                module.addInstrGetelementptr1(thisReg, size, "i32", lastReg.irOut());
             } else {
-                module.addCode(thisReg.irOut() + " = getelementptr inbounds i32, i32* " + lastReg.irOut() + ", i32 1");
+                module.addInstrGetelementptr2(thisReg, "i32", lastReg.irOut(), "1");
             }
-            module.addCode("store i32 " + initVal.get(i) + ", i32* " + thisReg.irOut());
+            module.addInstrStoreVar("i32", ""+initVal.get(i), thisReg.irOut());
             lastReg = thisReg;
         }
     }
@@ -81,12 +81,12 @@ public class LocalDecl {
         for (int i = 0; i < initVal.length(); i++) {
             RetValue thisReg = new RetValue(Register.allocReg(), 1);
             if (i == 0) {
-                module.addCode(thisReg.irOut() + " = getelementptr inbounds [" + size + " x i8], [" + size + " x i8]* " + lastReg.irOut() +", i8 0, i8 0");
+                module.addInstrGetelementptr1(thisReg, size, "i8", lastReg.irOut());
             } else {
-                module.addCode(thisReg.irOut() + " = getelementptr inbounds i8, i8* " + lastReg.irOut() + ", i8 1");
+                module.addInstrGetelementptr2(thisReg, "i8", lastReg.irOut(), "1");
             }
             int value = initVal.charAt(i);
-            module.addCode("store i8 " + value + ", i8* " + thisReg.irOut());
+            module.addInstrStoreVar("i8", ""+value, thisReg.irOut());
             lastReg = thisReg;
         }
     }
@@ -100,7 +100,7 @@ public class LocalDecl {
             symbolType += "Array";
             int size = GlobalDecl.visitGlobalConstExp(constDef.getConstExp(), symbolTable);
             RetValue memoryReg = new RetValue(Register.allocReg(), 1);
-            module.addCode(memoryReg.irOut() + " = alloca [" + size + " x " + llvmType + "]");
+            module.addInstrAllocaArray(memoryReg, size, llvmType);
 
             ConstInitValEle constInitValEle = constDef.getConstInitVal().getConstInitValEle();
             if (constInitValEle instanceof ConstExpSet) {
@@ -116,9 +116,9 @@ public class LocalDecl {
             }
         } else {
             RetValue memoryReg = new RetValue(Register.allocReg(), 1);
-            module.addCode(memoryReg.irOut() + " = alloca " + llvmType);
+            module.addInstrAllocaVar(memoryReg, llvmType);
             int initVal = GlobalDecl.visitGlobalConstExp((ConstExp) constDef.getConstInitVal().getConstInitValEle(), symbolTable);
-            module.addCode("store " + llvmType + " " + initVal + ", " + llvmType + "* %" + memoryReg);
+            module.addInstrStoreVar(llvmType, ""+initVal, memoryReg.irOut());
             SymbolCon symbolCon = new SymbolCon(symbolType, name, line, memoryReg.irOut(), initVal);
             symbolTable.addSymbol(symbolCon);
         }
@@ -129,11 +129,11 @@ public class LocalDecl {
         for (int i = 0; i < initVal.size(); i++) {
             RetValue thisReg = new RetValue(Register.allocReg(), 1);
             if (i == 0) {
-                module.addCode(thisReg.irOut() + " = getelementptr inbounds [" + size + " x i32], [" + size + " x i32]* " + lastReg.irOut() +", i32 0, i32 0");
+                module.addInstrGetelementptr1(thisReg, size, "i32", lastReg.irOut());
             } else {
-                module.addCode(thisReg.irOut() + " = getelementptr inbounds i32, i32* " + lastReg.irOut() + ", i32 1");
+                module.addInstrGetelementptr2(thisReg, "i32", lastReg.irOut(), "1");
             }
-            module.addCode("store i32 " + initVal.get(i).irOut() + ", i32* " + thisReg.irOut());
+            module.addInstrStoreVar("i32", initVal.get(i).irOut(), thisReg.irOut());
             lastReg = thisReg;
         }
     }
@@ -147,7 +147,7 @@ public class LocalDecl {
             symbolType += "Array";
             int size = GlobalDecl.visitGlobalConstExp(varDef.getConstExp(), symbolTable);
             RetValue memoryReg = new RetValue(Register.allocReg(), 1);
-            module.addCode(memoryReg.irOut() + " = alloca [" + size + " x " + llvmType + "]");
+            module.addInstrAllocaArray(memoryReg, size, llvmType);
 
             if (varDef.hasInitValue()) {
                 InitValEle initValEle = varDef.getInitVal().getInitValEle();
@@ -165,10 +165,10 @@ public class LocalDecl {
             }
         } else {
             RetValue memoryReg = new RetValue(Register.allocReg(), 1);
-            module.addCode(memoryReg.irOut() + " = alloca " + llvmType);
+            module.addInstrAllocaVar(memoryReg, llvmType);
             if (varDef.hasInitValue()) {
                 RetValue result = visitExp((Exp) varDef.getInitVal().getInitValEle(), symbolTable);
-                module.addCode("store " + llvmType + " " + result.irOut() + ", " + llvmType + "* " + memoryReg.irOut());
+                module.addInstrStoreVar(llvmType, result.irOut(), memoryReg.irOut());
             }
             SymbolVar symbolVar = new SymbolVar(symbolType, name, line, memoryReg.irOut());
             symbolTable.addSymbol(symbolVar);
@@ -199,9 +199,9 @@ public class LocalDecl {
             result = new RetValue(Register.allocReg(), 1);
             Token op = operators.get(i - 1);
             if (op.getType().equals(Token.Type.PLUS)) {
-                module.addCode(result.irOut() + " = add i32 " + left.irOut() + ", " + right.irOut());
+                module.addInstrAdd(result, left, right);
             } else if (op.getType().equals(Token.Type.MINU)) {
-                module.addCode(result.irOut() + " = sub i32 " + left.irOut() + ", " + right.irOut());
+                module.addInstrSub(result, left.irOut(), right);
             }
         }
         return result;
@@ -217,11 +217,11 @@ public class LocalDecl {
             result = new RetValue(Register.allocReg(), 1);
             Token op = operators.get(i - 1);
             if (op.getType().equals(Token.Type.MULT)) {
-                module.addCode(result.irOut() + " = mul i32 " + left.irOut() + ", " + right.irOut());
+                module.addInstrMul(result, left, right);
             } else if (op.getType().equals(Token.Type.DIV)) {
-                module.addCode(result.irOut() + " = sdiv i32 " + left.irOut() + ", " + right.irOut());
+                module.addInstrSdiv(result, left, right);
             } else if (op.getType().equals(Token.Type.MOD)) {
-                module.addCode(result.irOut() + " = srem i32 " + left.irOut() + ", " + right.irOut());
+                module.addInstrSrem(result, left, right);
             }
         }
         return result;
@@ -250,24 +250,21 @@ public class LocalDecl {
             int len = funcExps.size();
             for (int i = 0; i < len; i++) {
                 RetValue result = visitExp(funcExps.get(i), symbolTable);
-                // TODO
-                // if result is array
-
                 String llvmType = Support.varTransfer(fParams.get(i).getSymbolType());
                 passRParam += llvmType + " " + result.irOut() + ", ";
             }
         }
         passRParam = passRParam.length() > 2 ? passRParam.substring(0, passRParam.length() - 2) : passRParam;
 
-        RetValue result = new RetValue(Register.allocReg(), 1);
         if (symbolFunc.getSymbolType().contains("Void")) {
-            Register.cancelReg();
-            module.addCode("call void @" + funcName + "(" + passRParam + ")");
+            module.addInstrCall(null, "void", funcName, passRParam);
+            return null;
         } else {
+            RetValue result = new RetValue(Register.allocReg(), 1);
             String llvmType = Support.varTransfer(symbolFunc.getSymbolType());
-            module.addCode(result.irOut() + " = call " + llvmType + " @" + funcName + "(" + passRParam + ")");
+            module.addInstrCall(result, llvmType, funcName, passRParam);
+            return result;
         }
-        return result;
     }
 
     private static RetValue visitUnaryOpExp(UnaryOpExp unaryOpExp, SymbolTable symbolTable) {
@@ -281,7 +278,7 @@ public class LocalDecl {
                 return new RetValue(-retValue.getValue(), 0);
             } else {
                 RetValue result = new RetValue(Register.allocReg(), 1);
-                module.addCode(result.irOut() + " = sub i32 0, " + retValue.irOut());
+                module.addInstrSub(result, "0", retValue);
                 return result;
             }
         }
@@ -308,16 +305,25 @@ public class LocalDecl {
         String memory = symbol.getMemory();
         String llvmType = Support.varTransfer(symbol.getSymbolType());
         if (lVal.isArray()) {
-            int size = symbol.getArraySize();
             RetValue loc = visitExp(lVal.getExp(), symbolTable);
-            RetValue temp = new RetValue(Register.allocReg(), 1);
-            module.addCode(temp.irOut() + " = getelementptr inbounds [" + size + " x i32], [" + size + " x i32]* " + memory + ", i32 0, i32 " + loc.irOut());
+            RetValue temp1 = new RetValue(Register.allocReg(), 1);
+            module.addInstrLoad(temp1, llvmType + "*", memory);
+            RetValue temp2 = new RetValue(Register.allocReg(), 1);
+            module.addInstrGetelementptr2(temp2, llvmType, temp1.irOut(), loc.irOut());
             RetValue result = new RetValue(Register.allocReg(), 1);
-            module.addCode(result.irOut() + " = load i32, i32* " + temp.irOut());
+            module.addInstrLoad(result, llvmType, temp2.irOut());
             return result;
         } else {
+            if (symbol.isArray()) {
+                /* Exist In Call Func While Pass Param */
+                /* int c[10]; a = func(c); */
+                int size = symbol.getArraySize();
+                RetValue result = new RetValue(Register.allocReg(), 1);
+                module.addInstrGetelementptr1(result, size, llvmType, memory);
+                return result;
+            }
             RetValue result = new RetValue(Register.allocReg(), 1);
-            module.addCode(result.irOut() + " = load i32, i32* " + memory);
+            module.addInstrLoad(result, llvmType, memory);
             return result;
         }
     }

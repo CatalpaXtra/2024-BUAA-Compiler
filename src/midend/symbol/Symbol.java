@@ -46,6 +46,10 @@ public class Symbol {
         return arraySize;
     }
 
+    public boolean isArray() {
+        return symbolType.contains("Array");
+    }
+
     @Override
     public String toString() {
         return scope + " " + name + " " + symbolType;

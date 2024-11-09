@@ -65,28 +65,31 @@ public class LocalStmt {
         } else if (stmtEle instanceof StmtReturn) {
             if (((StmtReturn) stmtEle).existReturnValue()) {
                 RetValue result = LocalDecl.visitExp(((StmtReturn) stmtEle).getExp(), symbolTable);
-                module.addCode("ret i32 " + result.irOut());
+                // TODO fix ret
+                module.addInstrRet("i32", result);
             } else {
-                module.addCode("ret void");
+                module.addInstrRet("void", null);
             }
         } else if (stmtEle instanceof StmtBreak) {
-            module.addCode("br label <BLOCK2 OR STMT>");
+            module.addInstrBr("<BLOCK2 OR STMT>");
         } else if (stmtEle instanceof StmtContinue) {
-            module.addCode("br label <FORSTMT2>");
+            module.addInstrBr("<FORSTMT2>");
         }
     }
 
     private static void storeLVal(RetValue result, LVal lVal, SymbolTable symbolTable) {
+        /* LVal Must Be Var */
         Symbol symbol = symbolTable.getSymbol(lVal.getIdent().getIdenfr());
         String memory = symbol.getMemory();
+        String llvmType = Support.varTransfer(symbol.getSymbolType());
         if (lVal.isArray()) {
-            int size = symbol.getArraySize();
             RetValue loc = LocalDecl.visitExp(lVal.getExp(), symbolTable);
-            RetValue temp = new RetValue(Register.allocReg(), 1);
-            module.addCode(temp.irOut() + " = getelementptr inbounds [" + size + " x i32], [" + size + " x i32]* " + memory + ", i32 0, i32 " + loc.irOut());
-            module.addCode("store i32 " + result.irOut() + ", [" + size + " x i32]* " + temp.irOut());
+            RetValue temp1 = new RetValue(Register.allocReg(), 1);
+            module.addInstrGetelementptr2(temp1, llvmType, memory, loc.irOut());
+            RetValue temp2 = new RetValue(Register.allocReg(), 1);
+            module.addInstrStoreVar(llvmType, temp2.irOut(), temp1.irOut());
         } else {
-            module.addCode("store i32 " + result.irOut() + ", i32* " + memory);
+            module.addInstrStoreVar(llvmType, result.irOut(), memory);
         }
     }
 
@@ -97,13 +100,13 @@ public class LocalStmt {
 
     private static void visitStmtGetInt(StmtGetInt stmtGetInt, SymbolTable symbolTable) {
         RetValue result = new RetValue(Register.allocReg(), 1);
-        module.addCode(result.irOut() + " = call i32 @getint()");
+        module.addInstrCall(result, "i32", "getint", "");
         storeLVal(result, stmtGetInt.getlVal(), symbolTable);
     }
 
     private static void visitStmtGetChar(StmtGetChar stmtGetChar, SymbolTable symbolTable) {
         RetValue result = new RetValue(Register.allocReg(), 1);
-        module.addCode(result.irOut() + " = call i32 @getchar()");
+        module.addInstrCall(result, "i32", "getchar", "");
         storeLVal(result, stmtGetChar.getlVal(), symbolTable);
     }
 
@@ -153,8 +156,8 @@ public class LocalStmt {
         for (int i = 0; i < parts.size(); i++) {
             if (parts.get(i).equals("%d") || parts.get(i).equals("%c")) {
                 RetValue result = LocalDecl.visitExp(exps.get(expCount), symbolTable);
-                String putFormat = parts.get(i).equals("%d") ? "putint" : "putch";
-                module.addCode("call void @" + putFormat + "(i32 " + result.irOut() + ")");
+                String funcName = parts.get(i).equals("%d") ? "putint" : "putch";
+                module.addInstrCall(null, "void", funcName, "i32 " + result.irOut());
                 expCount++;
             } else {
                 int strLen = parts.get(i).length();
@@ -164,43 +167,44 @@ public class LocalStmt {
                     }
                 }
                 String strName = module.addGlobalStr( strLen, parts.get(i));
-                module.addCode("call void @putstr(i8* getelementptr inbounds ([" + strLen + " x i8], [" + strLen + " x i8]* " + strName + ", i64 0, i64 0))");
+                String rParams = "i8* getelementptr inbounds ([" + strLen + " x i8], [" + strLen + " x i8]* " + strName + ", i64 0, i64 0)";
+                module.addInstrCall(null, "void", "putstr", rParams);
             }
         }
     }
 
     private static void visitStmtIf(StmtIf stmtIf, SymbolTable symbolTable, Token.Type type, boolean isInFor) {
         /* Handle Cond */
-        LocalStmt.nextLabel = Register.allocReg();
-        module.addCode("br label %" + LocalStmt.nextLabel);
+        nextLabel = Register.allocReg();
+        module.addInstrBr("%" + nextLabel);
         module.addCode("");
         int left = module.getLoc() + 1;
-        LocalStmt.visitCond(stmtIf.getCond(), symbolTable);
+        visitCond(stmtIf.getCond(), symbolTable);
         int right = module.getLoc();
-        module.addCode(LocalStmt.nextLabel + ":");
+        module.addCode(nextLabel + ":");
 
         /* Handle Stmt1 */
         visitStmt(stmtIf.getStmt1(), symbolTable, type, isInFor);
-        module.replaceInterval(left, right, "%" + (LocalStmt.nextLabel + 1), "<BLOCK2 OR STMT>");
+        module.replaceInterval(left, right, "%" + (nextLabel + 1), "<BLOCK2 OR STMT>");
 
         /* Handle Stmt2 */
         if (stmtIf.getStmt2() != null) {
             int replaceLoc = module.getLoc() + 1;
             /* Branch to Next Stmt */
-            LocalStmt.nextLabel = Register.allocReg();
-            module.addCode("br label <NEXT STMT>");
+            nextLabel = Register.allocReg();
+            module.addInstrBr("<NEXT STMT>");
             module.addCode("");
-            module.addCode(LocalStmt.nextLabel + ":");
+            module.addCode(nextLabel + ":");
 
             visitStmt(stmtIf.getStmt2(), symbolTable, type, isInFor);
-            module.replaceInterval(replaceLoc, replaceLoc, "%" + (LocalStmt.nextLabel + 1), "<NEXT STMT>");
+            module.replaceInterval(replaceLoc, replaceLoc, "%" + (nextLabel + 1), "<NEXT STMT>");
         }
 
         /* Branch To Next Stmt */
-        LocalStmt.nextLabel = Register.allocReg();
-        module.addCode("br label %" + LocalStmt.nextLabel);
+        nextLabel = Register.allocReg();
+        module.addInstrBr("%" + nextLabel);
         module.addCode("");
-        module.addCode(LocalStmt.nextLabel + ":");
+        module.addCode(nextLabel + ":");
     }
 
     private static void visitStmtFor(StmtFor stmtFor, SymbolTable symbolTable, Token.Type type) {
@@ -213,42 +217,42 @@ public class LocalStmt {
         int condLabel = Register.getRegNum();
         int left = module.getLoc() + 1;
         if (stmtFor.getCond() != null) {
-            LocalStmt.nextLabel = Register.allocReg();
-            module.addCode("br label %" + LocalStmt.nextLabel);
+            nextLabel = Register.allocReg();
+            module.addInstrBr("%" + nextLabel);
             module.addCode("");
-            LocalStmt.visitCond(stmtFor.getCond(), symbolTable);
-            module.addCode(LocalStmt.nextLabel + ":");
+            visitCond(stmtFor.getCond(), symbolTable);
+            module.addCode(nextLabel + ":");
         } else {
             /* Directly Branch to Stmt */
-            LocalStmt.nextLabel = Register.allocReg();
-            module.addCode("br label %" + LocalStmt.nextLabel);
+            nextLabel = Register.allocReg();
+            module.addInstrBr("%" + nextLabel);
             module.addCode("");
-            module.addCode(LocalStmt.nextLabel + ":");
+            module.addCode(nextLabel + ":");
         }
 
         /* Handle Stmt */
         visitStmt(stmtFor.getStmt(), symbolTable, type, true);
         int right = module.getLoc();
         /* Branch to ForStmt2 */
-        LocalStmt.nextLabel = Register.allocReg();
-        module.addCode("br label %" + LocalStmt.nextLabel);
+        nextLabel = Register.allocReg();
+        module.addInstrBr("%" + nextLabel);
         module.addCode("");
-        module.addCode(LocalStmt.nextLabel + ":");
+        module.addCode(nextLabel + ":");
 
         /* Handle ForStmt2 */
-        int forstmt2Label = LocalStmt.nextLabel;
+        int forstmt2Label = nextLabel;
         if (stmtFor.getForStmt2() != null) {
             visitForStmt(stmtFor.getForStmt2(), symbolTable);
         }
 
         /* Reach Loop Bottom */
-        LocalStmt.nextLabel = Register.allocReg();
+        nextLabel = Register.allocReg();
         /* Branch to Cond */
-        module.addCode("br label %" + condLabel);
+        module.addInstrBr("%" + condLabel);
         module.addCode("");
-        module.addCode(LocalStmt.nextLabel + ":");
+        module.addCode(nextLabel + ":");
 
-        module.replaceInterval(left, right, "%" + LocalStmt.nextLabel, "<BLOCK2 OR STMT>");
+        module.replaceInterval(left, right, "%" + nextLabel, "<BLOCK2 OR STMT>");
         module.replaceInterval(left, right, "%" + forstmt2Label, "<FORSTMT2>");
     }
 
@@ -272,13 +276,13 @@ public class LocalStmt {
                 return;
             } else {
                 /* Cond is false, Jump to BLOCK2 OR STMT */
-                module.addCode("br label <BLOCK2 OR STMT>");
+                module.addInstrBr("<BLOCK2 OR STMT>");
                 module.addCode("");
                 nextLabel = Register.allocReg();
             }
         } else if (result.isReg()) {
             nextLabel = Register.allocReg();
-            module.addCode("br i1 " + result.irOut() + ", label %" + nextLabel + ", label <BLOCK2 OR STMT>");
+            module.addInstrBrCond(result, "%" + nextLabel, "<BLOCK2 OR STMT>");
             module.addCode("");
         }
         module.replaceInterval(left, module.getLoc(), "%" + nextLabel, "<BLOCK1>");
@@ -299,7 +303,7 @@ public class LocalStmt {
                 if (result.getValue() != 0) {
                     /* Cond is true, end */
                     nextLabel = Register.allocReg();
-                    module.addCode("br label <BLOCK1>");
+                    module.addInstrBr("<BLOCK1>");
                     module.addCode("");
                     module.replaceInterval(left, module.getLoc(), "%" + nextLabel, "<BLOCK1>");
                     return;
@@ -310,13 +314,13 @@ public class LocalStmt {
             } else if (result.isReg()) {
                 /* Return Value In Register */
                 RetValue temp = new RetValue(Register.allocReg(), 1);
-                module.addCode(temp.irOut() + " = icmp ne i32 " + result.irOut() + ", 0");
+                module.addInstrIcmp(temp, "ne", result, "0");
 
                 nextLabel = Register.allocReg();
                 if (i == lAndExps.size() - 1) {
-                    module.addCode("br i1 " + temp.irOut() + ", label <BLOCK1>, label <BLOCK2 OR STMT>");
+                    module.addInstrBrCond(temp, "<BLOCK1>", "<BLOCK2 OR STMT>");
                 } else {
-                    module.addCode("br i1 " + temp.irOut() + ", label <BLOCK1>, label %" + nextLabel);
+                    module.addInstrBrCond(temp, "<BLOCK1>", "%" + nextLabel);
                 }
                 module.addCode("");
             }
@@ -338,7 +342,7 @@ public class LocalStmt {
             if (result.isDigit()) {
                 if (result.getValue() == 0) {
                     /* Cond is false, end */
-                    module.addCode("br label <NEXT LOREXP>");
+                    module.addInstrBr("<NEXT LOREXP>");
                     module.addCode("");
 
                     nextLabel = Register.allocReg();
@@ -353,13 +357,13 @@ public class LocalStmt {
             } else if (result.isReg()) {
                 /* Return Value In Register */
                 RetValue temp = new RetValue(Register.allocReg(), 1);
-                module.addCode(temp.irOut() + " = icmp ne i32 " + result.irOut() + ", 0");
+                module.addInstrIcmp(temp, "ne", result, "0");
 
                 nextLabel = Register.allocReg();
                 if (i == eqExps.size() - 1) {
-                    module.addCode("br i1 " + temp.irOut() + ", label <BLOCK1>, label <NEXT LOREXP>");
+                    module.addInstrBrCond(temp, "<BLOCK1>", "<NEXT LOREXP>");
                 } else {
-                    module.addCode("br i1 " + temp.irOut() + ", label %" + nextLabel + ", label <NEXT LOREXP>");
+                    module.addInstrBrCond(temp, "%" + nextLabel, "<NEXT LOREXP>");
                 }
                 module.addCode("");
             }
@@ -388,7 +392,7 @@ public class LocalStmt {
             RetValue right = visitRelExp(relExps.get(i), symbolTable);
             result = new RetValue(Register.allocReg(), 1);
 
-            module.addCode(result.irOut() + " = icmp " + cond + " i32 " + left.irOut() + ", " + right.irOut());
+            module.addInstrIcmp(result, cond, left, right.irOut());
         }
         return result;
     }
@@ -409,7 +413,7 @@ public class LocalStmt {
             RetValue right = LocalDecl.visitAddExp(addExps.get(i), symbolTable);
             result = new RetValue(Register.allocReg(), 1);
 
-            module.addCode(result.irOut() + " = icmp " + cond + " i32 " + left.irOut() + ", " + right.irOut());
+            module.addInstrIcmp(result, cond, left, right.irOut());
         }
         return result;
     }
