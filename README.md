@@ -593,27 +593,98 @@ ret i32 0
 }
 ```
 
-TODO
-- 回填改为使用 LLVM IR 中的 SlotTracker
-- 消除`break` `continue`之后可能多余的语句
-
 #### 数组
+##### 定义
+- 全局数组
+    在自定义函数声明前定义
+    ```c
+    int a[1 + 2 + 3 + 4] = { 1, 1 + 1, 1 + 3 - 1, 0, 0, 0, 0, 0, 0, 0 };
+    int b[20];
+    char c[8] = "foobar";
+    ```
+    ```llvm
+    @a = dso_local global [10 x i32] [i32 1, i32 2, i32 3, i32 0, i32 0, i32 0, i32 0, i32 0, i32 0, i32 0]
+    @b = dso_local global [20 x i32] zeroinitializer
+    @c = dso_local global [8 x i8] c"foobar\00\00", align 1
+    ```
+- 局部数组
+    逐一初始化元素，往对应位置中存值。**char**与**int**同理，需将初始值转为int形式
+    ```c
+    int c[3] = {1, 2, 3};
+    ```
+    ```llvm
+    %1 = alloca [3 x i32]
+    %2 = getelementptr inbounds [3 x i32], [3 x i32]* %1, i32 0, i32 0
+    store i32 1, i32* %2
+    %3 = getelementptr inbounds i32, i32* %2, i32 1
+    store i32 2, i32* %3
+    %4 = getelementptr inbounds i32, i32* %3, i32 1
+    store i32 3, i32* %4
+    ```
 
+##### 访问地址
+如获取`a[3]`的地址，有以下方法
+```llvm
+%1 = getelementptr [5 x i32], [5 x i32]* @a, i32 0, i32 3
+
+%2 = getelementptr [5 x i32], [5 x i32]* @a, i32 0
+%3 = getelementptr i32, i32* %2, i32 3
+
+%3 = getelementptr i32, i32* @a, i32 3
+```
+后续进行`store` `load`操作
+
+##### 函数传参
+以指针形式传入函数中
+```c
+void foo(int y[]) {
+    return;
+}
+
+int main() {
+    int c[3];
+    foo(c);
+    return 0;
+}
+```
+
+```llvm
+define dso_local void @foo(i32* %0) {
+    %2 = alloca i32*
+    store i32* %0, i32** %2
+    ret void
+}
+
+define dso_local i32 @main() {
+    %1 = alloca [3 x i32]
+    %2 = getelementptr inbounds [3 x i32], [3 x i32]* %1, i32 0, i32 0
+    call void @foo(i32* %2)
+    ret i32 0
+}
+```
 
 #### 类型转换
 - 函数传参
 - 函数返回值(getchar)
+- `cond`中`EqExp` `RelExp`返回值从i1转到i32
 
-Attention:
-- 无返回值函数最后需要返回
-- 未及时更新nextLabel的值，if跳转到非label的临时寄存器
-- ignore UnaryOpExp忽视NOT
+
+
+#### debug与重构
+Done:
+- [x] 无返回值函数最后需要返回
+- [x] `cond`未及时更新nextLabel的值，跳转到非label的临时寄存器
+- [x] 函数调用(putch)传参的时候对参数进行类型转换
+
 
 TODO:
-- char类型转义字符，如'\t'正确输出
-- break continue 忽略后续代码生成
-- ret br 不能在同一语句块
-- 多个br不能在同一语句块
+- 忽视`!`出现在`cond`中的情况
 
-- 数组访问类型规范
-- ！出现在Cond中的情况
+- 数组访问格式问题
+
+- `break` `continue`忽略后续代码生成
+- `ret` `br`不能在同一语句块
+- 多个`br`不能在同一语句块
+
+- char类型转义字符的输出，如`'\t'`
+- 回填改为使用 LLVM IR 中的 SlotTracker

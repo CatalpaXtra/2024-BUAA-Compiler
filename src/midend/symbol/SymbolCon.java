@@ -20,10 +20,12 @@ public class SymbolCon extends Symbol {
     public SymbolCon(String symbolType, String name, int line, String memory, ArrayList<Integer> intInitVal, int arraySize) {
         super(symbolType, name, line, 0, memory, arraySize);
         this.intInitVal = intInitVal;
+        this.charInitVal = null;
     }
 
     public SymbolCon(String symbolType, String name, int line, String memory, String charInitVal, int arraySize) {
         super(symbolType, name, line, 0, memory, arraySize);
+        this.intInitVal = null;
         this.charInitVal = charInitVal;
     }
 
@@ -32,10 +34,18 @@ public class SymbolCon extends Symbol {
     }
 
     public int getValueAtLoc(int loc) {
-        if (loc > intInitVal.size() - 1) {
-            return 0;
+        if (intInitVal != null) {
+            if (loc > intInitVal.size() - 1) {
+                return 0;
+            } else {
+                return intInitVal.get(loc);
+            }
         } else {
-            return intInitVal.get(loc);
+            if (loc > charInitVal.length() - 1) {
+                return 0;
+            } else {
+                return charInitVal.charAt(loc);
+            }
         }
     }
 }

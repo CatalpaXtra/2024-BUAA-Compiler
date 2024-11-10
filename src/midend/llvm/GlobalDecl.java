@@ -158,7 +158,7 @@ public class GlobalDecl {
                     SymbolVar symbolVar = new SymbolVar(symbolType, name, line, "@" + name, new ArrayList<>(), size);
                     symbolTable.addSymbol(symbolVar);
                 } else {
-                    module.addGlobalVar("@" + name + " = dso_local global [" + size + " x i8] c" + charArrayInit(size, "") + ", align 1");
+                    module.addGlobalVar("@" + name + " = dso_local global [" + size + " x i8] zeroinitializer, align 1");
                     SymbolVar symbolVar = new SymbolVar(symbolType, name, line, "@" + name, "", size);
                     symbolTable.addSymbol(symbolVar);
                 }

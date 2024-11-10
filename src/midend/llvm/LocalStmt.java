@@ -100,9 +100,13 @@ public class LocalStmt {
         if (lVal.isArray()) {
             RetValue loc = LocalDecl.visitExp(lVal.getExp(), symbolTable);
             RetValue temp1 = new RetValue(Register.allocReg(), 1);
-            module.addInstrGetelementptr2(temp1, llvmType, memory, loc.irOut());
-            RetValue temp2 = new RetValue(Register.allocReg(), 1);
-            module.addInstrStoreVar(llvmType, temp2.irOut(), temp1.irOut());
+            // TODO Visit Array
+            if (memory.contains("@")) {
+                module.addInstrGetelementptr1(temp1, symbol.getArraySize(), llvmType, memory, loc.irOut());
+            } else {
+                module.addInstrGetelementptr2(temp1, llvmType, memory, loc.irOut());
+            }
+            module.addInstrStoreVar(llvmType, result.irOut(), temp1.irOut());
         } else {
             if (symbol.isChar()) {
                 RetValue value = result;
@@ -176,8 +180,14 @@ public class LocalStmt {
         for (int i = 0; i < parts.size(); i++) {
             if (parts.get(i).equals("%d") || parts.get(i).equals("%c")) {
                 RetValue result = LocalDecl.visitExp(exps.get(expCount), symbolTable);
-                String funcName = parts.get(i).equals("%d") ? "putint" : "putch";
-                module.addInstrCall(null, "void", funcName, "i32 " + result.irOut());
+                if (parts.get(i).equals("%d")) {
+                    module.addInstrCall(null, "void", "putint", "i32 " + result.irOut());
+                } else {
+                    RetValue value = result;
+                    result = new RetValue(Register.allocReg(), 1);
+                    module.addInstrTrunc(result, "i32", value, "i8");
+                    module.addInstrCall(null, "void", "putch", "i8 " + result.irOut());
+                }
                 expCount++;
             } else {
                 int strLen = parts.get(i).length();
@@ -374,6 +384,8 @@ public class LocalStmt {
                     nextLabel = Register.allocReg();
                     if (isLast) {
                         module.replaceInterval(left, module.getLoc(), "<BLOCK2 OR STMT>", "<NEXT LOREXP>");
+                    } else {
+                        module.replaceInterval(left, module.getLoc(), "%" + nextLabel, "<NEXT LOREXP>");
                     }
                     return new RetValue(nextLabel, 2);
                 } else {
