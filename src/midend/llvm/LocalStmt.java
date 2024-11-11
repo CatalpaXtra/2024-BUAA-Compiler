@@ -100,11 +100,18 @@ public class LocalStmt {
         if (lVal.isArray()) {
             RetValue loc = LocalDecl.visitExp(lVal.getExp(), symbolTable);
             RetValue temp1 = new RetValue(Register.allocReg(), 1);
-            // TODO Visit Array
-            if (memory.contains("@")) {
-                module.addInstrGetelementptr1(temp1, symbol.getArraySize(), llvmType, memory, loc.irOut());
+            if (symbol.isPointer()) {
+                module.addInstrLoad(temp1, llvmType + "*", memory);
+                RetValue temp2 = temp1;
+                temp1 = new RetValue(Register.allocReg(), 1);
+                module.addInstrGetelementptrPointer(temp1, llvmType, temp2.irOut(), loc.irOut());
             } else {
-                module.addInstrGetelementptr2(temp1, llvmType, memory, loc.irOut());
+                module.addInstrGetelementptrArray(temp1, symbol.getArraySize(), llvmType, memory, loc.irOut());
+            }
+            if (symbol.isChar()) {
+                RetValue value = result;
+                result = new RetValue(Register.allocReg(), 1);
+                module.addInstrTrunc(result, "i32", value, "i8");
             }
             module.addInstrStoreVar(llvmType, result.irOut(), temp1.irOut());
         } else {

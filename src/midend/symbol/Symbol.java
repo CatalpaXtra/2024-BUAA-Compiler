@@ -50,6 +50,10 @@ public class Symbol {
         return symbolType.contains("Array");
     }
 
+    public boolean isPointer() {
+        return symbolType.contains("Pointer");
+    }
+
     public boolean isChar() {
         return symbolType.contains("Char");
     }

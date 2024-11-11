@@ -61,20 +61,20 @@ public class GlobalDecl {
         }
     }
 
-    private static String intArrayInit(int arraySize, ArrayList<Integer> initVal) {
+    private static String intArrayInit(int arraySize, ArrayList<Integer> initVal, String llvmType) {
         boolean zeroinitializer = true;
         String arrayFormat = "[";
         for (Integer val : initVal) {
             if (val != 0) {
                 zeroinitializer = false;
             }
-            arrayFormat += "i32 " + val + ", ";
+            arrayFormat += llvmType + " " + val + ", ";
         }
         if (zeroinitializer) {
             return "zeroinitializer";
         }
         for (int i = initVal.size(); i < arraySize; i++) {
-            arrayFormat += "i32 0, ";
+            arrayFormat += llvmType + " 0, ";
         }
         return arrayFormat.substring(0, arrayFormat.length() - 2) + "]";
     }
@@ -114,7 +114,8 @@ public class GlobalDecl {
 
             if (constInitValEle instanceof ConstExpSet) {
                 ArrayList<Integer> initVal = visitGlobalConstExpSet((ConstExpSet) constInitValEle, symbolTable);
-                module.addGlobalVar("@" + name + " = dso_local global [" + size + " x i32] " + intArrayInit(size, initVal));
+                String llvmType = Support.varTransfer(type);
+                module.addGlobalVar("@" + name + " = dso_local global [" + size + " x " + llvmType + "] " + intArrayInit(size, initVal, llvmType));
                 SymbolCon symbolCon = new SymbolCon(symbolType, name, line, "@" + name, initVal, size);
                 symbolTable.addSymbol(symbolCon);
             } else if (constInitValEle instanceof StringConst) {
@@ -143,7 +144,8 @@ public class GlobalDecl {
                 InitValEle initValEle = varDef.getInitVal().getInitValEle();
                 if (initValEle instanceof ExpSet) {
                     ArrayList<Integer> initVal = visitGlobalExpSet((ExpSet) initValEle, symbolTable);
-                    module.addGlobalVar("@" + name + " = dso_local global [" + size + " x i32] " + intArrayInit(size, initVal));
+                    String llvmType = Support.varTransfer(type);
+                    module.addGlobalVar("@" + name + " = dso_local global [" + size + " x " + llvmType + "] " + intArrayInit(size, initVal, llvmType));
                     SymbolVar symbolVar = new SymbolVar(symbolType, name, line, "@" + name, initVal, size);
                     symbolTable.addSymbol(symbolVar);
                 } else if (initValEle instanceof StringConst) {

@@ -67,9 +67,9 @@ public class LocalDecl {
         for (int i = 0; i < initVal.size(); i++) {
             RetValue thisReg = new RetValue(Register.allocReg(), 1);
             if (i == 0) {
-                module.addInstrGetelementptr1(thisReg, size, "i32", lastReg.irOut(), "0");
+                module.addInstrGetelementptrArray(thisReg, size, "i32", lastReg.irOut(), "0");
             } else {
-                module.addInstrGetelementptr2(thisReg, "i32", lastReg.irOut(), "1");
+                module.addInstrGetelementptrPointer(thisReg, "i32", lastReg.irOut(), "1");
             }
             module.addInstrStoreVar("i32", ""+initVal.get(i), thisReg.irOut());
             lastReg = thisReg;
@@ -82,9 +82,9 @@ public class LocalDecl {
         for (int i = 0; i < initVal.length(); i++) {
             RetValue thisReg = new RetValue(Register.allocReg(), 1);
             if (i == 0) {
-                module.addInstrGetelementptr1(thisReg, size, "i8", lastReg.irOut(), "0");
+                module.addInstrGetelementptrArray(thisReg, size, "i8", lastReg.irOut(), "0");
             } else {
-                module.addInstrGetelementptr2(thisReg, "i8", lastReg.irOut(), "1");
+                module.addInstrGetelementptrPointer(thisReg, "i8", lastReg.irOut(), "1");
             }
             int value = initVal.charAt(i);
             module.addInstrStoreVar("i8", ""+value, thisReg.irOut());
@@ -136,9 +136,9 @@ public class LocalDecl {
         for (int i = 0; i < initVal.size(); i++) {
             RetValue thisReg = new RetValue(Register.allocReg(), 1);
             if (i == 0) {
-                module.addInstrGetelementptr1(thisReg, size, "i32", lastReg.irOut(), "0");
+                module.addInstrGetelementptrArray(thisReg, size, "i32", lastReg.irOut(), "0");
             } else {
-                module.addInstrGetelementptr2(thisReg, "i32", lastReg.irOut(), "1");
+                module.addInstrGetelementptrPointer(thisReg, "i32", lastReg.irOut(), "1");
             }
             module.addInstrStoreVar("i32", initVal.get(i).irOut(), thisReg.irOut());
             lastReg = thisReg;
@@ -311,9 +311,20 @@ public class LocalDecl {
             }
         } else {
             /* Only Exist In Cond */
-            // TODO
-            // RetValue result = new RetValue(Register.allocReg(), 1);
-            return retValue;
+            if (retValue.isDigit()) {
+                if (retValue.irOut().equals("0")) {
+                    return new RetValue(1, 0);
+                } else {
+                    return new RetValue(0, 0);
+                }
+            } else {
+                RetValue result = new RetValue(Register.allocReg(), 1);
+                module.addInstrIcmp(result, "eq", retValue, "0");
+                RetValue value = result;
+                result = new RetValue(Register.allocReg(), 1);
+                module.addInstrZext(result, "i1", value, "i32");
+                return result;
+            }
         }
     }
 
@@ -337,14 +348,22 @@ public class LocalDecl {
         String memory = symbol.getMemory();
         String llvmType = Support.varTransfer(symbol.getSymbolType());
         if (lVal.isArray()) {
-            // TODO Visit Array
             RetValue loc = visitExp(lVal.getExp(), symbolTable);
-            RetValue temp1 = new RetValue(Register.allocReg(), 1);
-            module.addInstrLoad(temp1, llvmType + "*", memory);
-            RetValue temp2 = new RetValue(Register.allocReg(), 1);
-            module.addInstrGetelementptr2(temp2, llvmType, temp1.irOut(), loc.irOut());
-            RetValue result = new RetValue(Register.allocReg(), 1);
-            module.addInstrLoad(result, llvmType, temp2.irOut());
+            RetValue result;
+            if (symbol.isPointer()) {
+                RetValue temp1 = new RetValue(Register.allocReg(), 1);
+                module.addInstrLoad(temp1, llvmType + "*", memory);
+                RetValue temp2 = new RetValue(Register.allocReg(), 1);
+                module.addInstrGetelementptrPointer(temp2, llvmType, temp1.irOut(), loc.irOut());
+                result = new RetValue(Register.allocReg(), 1);
+                module.addInstrLoad(result, llvmType, temp2.irOut());
+            } else {
+                RetValue temp1 = new RetValue(Register.allocReg(), 1);
+                module.addInstrGetelementptrArray(temp1, symbol.getArraySize(), llvmType, memory, loc.irOut());
+                result = new RetValue(Register.allocReg(), 1);
+                module.addInstrLoad(result, llvmType, temp1.irOut());
+            }
+
             if (symbol.isChar()) {
                 RetValue value = result;
                 result = new RetValue(Register.allocReg(), 1);
@@ -357,7 +376,7 @@ public class LocalDecl {
                 /* int c[10]; a = func(c); */
                 int size = symbol.getArraySize();
                 RetValue result = new RetValue(Register.allocReg(), 1);
-                module.addInstrGetelementptr1(result, size, llvmType, memory, "0");
+                module.addInstrGetelementptrArray(result, size, llvmType, memory, "0");
                 return result;
             } else {
                 RetValue result = new RetValue(Register.allocReg(), 1);

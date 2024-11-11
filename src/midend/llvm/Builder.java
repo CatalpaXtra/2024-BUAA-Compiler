@@ -51,14 +51,14 @@ public class Builder {
 
     private void visitFuncDef(FuncDef funcDef) {
         /* visit FuncType and FuncIdent */
-        String symbolType = funcDef.getFuncType().identifyFuncType() + "Func";
+        String funcType = funcDef.getFuncType().identifyFuncType() + "Func";
         String funcName = funcDef.getIdent().getIdenfr();
         int line = funcDef.getIdent().getLine();
 
         ArrayList<FuncFParam> funcFParamList = funcDef.getFuncFParams() == null ? new ArrayList<>() : funcDef.getFuncFParams().getFuncFParamList();
-        SymbolFunc symbolFunc = new SymbolFunc(symbolType, funcName, line, 1, funcFParamList);
+        SymbolFunc symbolFunc = new SymbolFunc(funcType, funcName, line, 1, funcFParamList);
         globalSymbolTable.addSymbol(symbolFunc);
-        LocalStmt.setFuncType(symbolType);
+        LocalStmt.setFuncType(funcType);
 
         /* extend symbolTable */
         SymbolTable childSymbolTable = new SymbolTable(globalSymbolTable);
@@ -78,16 +78,16 @@ public class Builder {
         Register.allocReg();
         ArrayList<String> storeFParam = new ArrayList<>();
         for (FuncFParam funcFParam : funcFParamList) {
-            String fParamType = Support.tokenTypeTransfer(funcFParam.getBType().getToken().getType());
+            String llvmType = Support.tokenTypeTransfer(funcFParam.getBType().getToken().getType());
+            String symbolType = funcFParam.getBType().identifyType();
             if (funcFParam.isArray()) {
-                fParamType += "*";
+                llvmType += "*";
+                symbolType += "Pointer";
             }
             int memory = Register.allocReg();
-            storeFParam.add("%" + memory + " = alloca " + fParamType);
-            storeFParam.add("store " +  fParamType + " %" + (memory - funcFParamList.size() - 1) + ", " + fParamType + "* %" + memory);
+            storeFParam.add("%" + memory + " = alloca " + llvmType);
+            storeFParam.add("store " +  llvmType + " %" + (memory - funcFParamList.size() - 1) + ", " + llvmType + "* %" + memory);
 
-            String type = funcFParam.getBType().identifyType();
-            symbolType = funcFParam.isArray() ? type + "Array" : type;
             String name = funcFParam.getIdent().getIdenfr();
             line = funcFParam.getIdent().getLine();
             SymbolVar symbolVar = new SymbolVar(symbolType, name, line, "%" + memory);
@@ -97,9 +97,9 @@ public class Builder {
 
         /* load Func Declare */
         module.addCode("");
-        String funcType = Support.tokenTypeTransfer(funcDef.getFuncType().getToken().getType());
+        String llvmType = Support.tokenTypeTransfer(funcDef.getFuncType().getToken().getType());
         declFParam = declFParam.length() > 2 ? declFParam.substring(0, declFParam.length() - 2) : declFParam;
-        module.addCode("define dso_local " + funcType + " @" + funcName + "(" + declFParam + ") {");
+        module.addCode("define dso_local " + llvmType + " @" + funcName + "(" + declFParam + ") {");
         module.addCode(storeFParam);
 
         /* visit Block */
