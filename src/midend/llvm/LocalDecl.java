@@ -107,12 +107,12 @@ public class LocalDecl {
             if (constInitValEle instanceof ConstExpSet) {
                 ArrayList<Integer> initVal = GlobalDecl.visitGlobalConstExpSet((ConstExpSet) constInitValEle, symbolTable);
                 assignIntArray(memoryReg, size, initVal);
-                SymbolCon symbolCon = new SymbolCon(symbolType, name, line, "%" + memoryReg, initVal, size);
+                SymbolCon symbolCon = new SymbolCon(symbolType, name, line, memoryReg.irOut(), initVal, size);
                 symbolTable.addSymbol(symbolCon);
             } else if (constInitValEle instanceof StringConst) {
                 String initVal = ((StringConst) constInitValEle).getToken().getContent();
                 assignCharArray(memoryReg, size, initVal);
-                SymbolCon symbolCon = new SymbolCon(symbolType, name, line, "%" + memoryReg, initVal, size);
+                SymbolCon symbolCon = new SymbolCon(symbolType, name, line, memoryReg.irOut(), initVal, size);
                 symbolTable.addSymbol(symbolCon);
             }
         } else {

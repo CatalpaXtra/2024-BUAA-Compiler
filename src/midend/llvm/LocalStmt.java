@@ -12,7 +12,6 @@ import frontend.parser.expression.Exp;
 import frontend.parser.expression.add.AddExp;
 import frontend.parser.expression.cond.*;
 import frontend.parser.expression.primary.LVal;
-import frontend.parser.terminal.Ident;
 import midend.symbol.Symbol;
 import midend.symbol.SymbolTable;
 
@@ -31,7 +30,7 @@ public class LocalStmt {
         funcType = type;
     }
 
-    public static void visitBlock(Block block, SymbolTable symbolTable, Token.Type type, boolean isInFor) {
+    public static boolean visitBlock(Block block, SymbolTable symbolTable, Token.Type type, boolean isInFor) {
         ArrayList<BlockItem> blockItems = block.getBlockItems();
         for (BlockItem blockItem : blockItems) {
             BlockItemEle blockItemEle = blockItem.getBlockItemEle();
@@ -39,11 +38,16 @@ public class LocalStmt {
                 LocalDecl.visitDecl((Decl) blockItemEle, symbolTable);
             } else {
                 visitStmt((Stmt) blockItemEle, symbolTable, type, isInFor);
+                StmtEle stmtEle = ((Stmt) blockItemEle).getStmtEle();
+                if (stmtEle instanceof StmtReturn || stmtEle instanceof StmtBreak || stmtEle instanceof StmtContinue) {
+                    return true;
+                }
             }
         }
+        return false;
     }
 
-    private static void visitStmt(Stmt stmt, SymbolTable symbolTable, Token.Type type, boolean isInFor) {
+    private static boolean visitStmt(Stmt stmt, SymbolTable symbolTable, Token.Type type, boolean isInFor) {
         StmtEle stmtEle = stmt.getStmtEle();
         if (stmtEle instanceof StmtAssign) {
             visitStmtAssign((StmtAssign) stmtEle, symbolTable);
@@ -66,16 +70,18 @@ public class LocalStmt {
 
         else if (stmtEle instanceof Block) {
             SymbolTable childSymbolTable = new SymbolTable(symbolTable);
-            visitBlock((Block) stmtEle, childSymbolTable, type, isInFor);
+            return visitBlock((Block) stmtEle, childSymbolTable, type, isInFor);
         } else if (stmtEle instanceof StmtReturn) {
             visitStmtReturn((StmtReturn) stmtEle, symbolTable);
+            return true;
         } else if (stmtEle instanceof StmtBreak) {
-            // TODO 省略后续语句
             module.addInstrBr("<BLOCK2 OR STMT>");
+            return true;
         } else if (stmtEle instanceof StmtContinue) {
-            // TODO 省略后续语句
             module.addInstrBr("<FORSTMT2>");
+            return true;
         }
+        return false;
     }
 
     private static void visitStmtReturn(StmtReturn stmtReturn, SymbolTable symbolTable) {
@@ -141,47 +147,9 @@ public class LocalStmt {
         storeLVal(result, stmtGetChar.getlVal(), symbolTable);
     }
 
-    private static ArrayList<String> splitString(String string) {
-        StringBuilder part = new StringBuilder();
-        ArrayList<String> parts = new ArrayList<>();
-        for (int i = 1; i < string.length() - 1; i++) {
-            char current = string.charAt(i);
-            if (current == '%' && i + 1 < string.length()) {
-                char next = string.charAt(i + 1);
-                if (next == 'd' || next == 'c') {
-                    if (!part.isEmpty()) {
-                        parts.add(part.toString() + "\\00");
-                        part = new StringBuilder();
-                    }
-                    parts.add("%" + next);
-                    i++;
-                } else {
-                    part.append(current);
-                }
-            } else if (current == '\\' && i + 1 < string.length()) {
-                char next = string.charAt(i + 1);
-                if (next == 'n') {
-                    part.append("\\0A");
-                    i++;
-                } else if (next == '0') {
-                    part.append("\\00");
-                    i++;
-                } else {
-                    part.append(current);
-                }
-            } else {
-                part.append(current);
-            }
-        }
-        if (!part.isEmpty()) {
-            parts.add(part.toString() + "\\00");
-        }
-        return parts;
-    }
-
     private static void visitStmtPrint(StmtPrint stmtPrint, SymbolTable symbolTable) {
         String string = stmtPrint.getStringConst().getToken().getContent();
-        ArrayList<String> parts = splitString(string);
+        ArrayList<String> parts = Support.splitPrintString(string);
         ArrayList<Exp> exps = stmtPrint.getExps();
         int expCount = 0;
         for (int i = 0; i < parts.size(); i++) {
@@ -221,7 +189,7 @@ public class LocalStmt {
         module.addCode(nextLabel + ":");
 
         /* Handle Stmt1 */
-        visitStmt(stmtIf.getStmt1(), symbolTable, type, isInFor);
+        boolean stop = visitStmt(stmtIf.getStmt1(), symbolTable, type, isInFor);
         module.replaceInterval(left, right, "%" + Register.getRegNum(), "<BLOCK2 OR STMT>");
 
         /* Handle Stmt2 */
@@ -229,17 +197,22 @@ public class LocalStmt {
             int replaceLoc = module.getLoc() + 1;
             /* Branch to Next Stmt */
             nextLabel = Register.allocReg();
-            module.addInstrBr("<NEXT STMT>");
+            if (!stop) {
+                module.addInstrBr("<NEXT STMT>");
+            }
             module.addCode("");
             module.addCode(nextLabel + ":");
 
-            visitStmt(stmtIf.getStmt2(), symbolTable, type, isInFor);
+            stop = visitStmt(stmtIf.getStmt2(), symbolTable, type, isInFor);
             module.replaceInterval(replaceLoc, replaceLoc, "%" + Register.getRegNum(), "<NEXT STMT>");
         }
 
         /* Branch To Next Stmt */
         nextLabel = Register.allocReg();
-        module.addInstrBr("%" + nextLabel);
+        if (!stop) {
+            module.addInstrBr("%" + nextLabel);
+        }
+
         module.addCode("");
         module.addCode(nextLabel + ":");
     }
@@ -268,11 +241,13 @@ public class LocalStmt {
         }
 
         /* Handle Stmt */
-        visitStmt(stmtFor.getStmt(), symbolTable, type, true);
+        boolean stop = visitStmt(stmtFor.getStmt(), symbolTable, type, true);
         int right = module.getLoc();
         /* Branch to ForStmt2 */
         nextLabel = Register.allocReg();
-        module.addInstrBr("%" + nextLabel);
+        if (!stop) {
+            module.addInstrBr("%" + nextLabel);
+        }
         module.addCode("");
         module.addCode(nextLabel + ":");
 
@@ -321,7 +296,7 @@ public class LocalStmt {
             if (result.isReg()) {
                 RetValue value = result;
                 result = new RetValue(Register.allocReg(), 1);
-                module.addInstrTrunc(result, "i32", value, "i1");
+                module.addInstrIcmp(result, "ne", value, "0");
             }
             nextLabel = Register.allocReg();
             module.addInstrBrCond(result, "%" + nextLabel, "<BLOCK2 OR STMT>");
@@ -353,16 +328,18 @@ public class LocalStmt {
                     /* Cond may be true, continue */
                     module.delLastCode();
                 }
-            } else if (result.isReg()) {
+            } else if (result.isReg() || result.isMany()) {
                 /* Return Value In Register */
-                RetValue temp = new RetValue(Register.allocReg(), 1);
-                module.addInstrIcmp(temp, "ne", result, "0");
-
+                if (result.isReg()) {
+                    RetValue temp = result;
+                    result = new RetValue(Register.allocReg(), 1);
+                    module.addInstrIcmp(result, "ne", temp, "0");
+                }
                 nextLabel = Register.allocReg();
                 if (i == lAndExps.size() - 1) {
-                    module.addInstrBrCond(temp, "<BLOCK1>", "<BLOCK2 OR STMT>");
+                    module.addInstrBrCond(result, "<BLOCK1>", "<BLOCK2 OR STMT>");
                 } else {
-                    module.addInstrBrCond(temp, "<BLOCK1>", "%" + nextLabel);
+                    module.addInstrBrCond(result, "<BLOCK1>", "%" + nextLabel);
                 }
                 module.addCode("");
             }

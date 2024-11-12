@@ -2,6 +2,8 @@ package midend.llvm;
 
 import frontend.lexer.Token;
 
+import java.util.ArrayList;
+
 public class Support {
     public static String condTransfer(Token.Type type) {
         switch (type) {
@@ -41,5 +43,44 @@ public class Support {
         } else {
             return "void";
         }
+    }
+
+
+    public static ArrayList<String> splitPrintString(String string) {
+        StringBuilder part = new StringBuilder();
+        ArrayList<String> parts = new ArrayList<>();
+        for (int i = 1; i < string.length() - 1; i++) {
+            char current = string.charAt(i);
+            if (current == '%' && i + 1 < string.length()) {
+                char next = string.charAt(i + 1);
+                if (next == 'd' || next == 'c') {
+                    if (!part.isEmpty()) {
+                        parts.add(part.toString() + "\\00");
+                        part = new StringBuilder();
+                    }
+                    parts.add("%" + next);
+                    i++;
+                } else {
+                    part.append(current);
+                }
+            } else if (current == '\\' && i + 1 < string.length()) {
+                char next = string.charAt(i + 1);
+                if (next == 'n') {
+                    part.append("\\0A");
+                    i++;
+                } else if (next == '0') {
+                    part.append("\\00");
+                    i++;
+                } else {
+                    part.append(current);
+                }
+            } else {
+                part.append(current);
+            }
+        }
+        if (!part.isEmpty()) {
+            parts.add(part.toString() + "\\00");
+        }
+        return parts;
     }
 }
