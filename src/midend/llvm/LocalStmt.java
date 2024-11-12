@@ -119,14 +119,14 @@ public class LocalStmt {
                 result = new RetValue(Register.allocReg(), 1);
                 module.addInstrTrunc(result, "i32", value, "i8");
             }
-            module.addInstrStoreVar(llvmType, result.irOut(), temp1.irOut());
+            module.addInstrStore(llvmType, result.irOut(), temp1.irOut());
         } else {
             if (symbol.isChar()) {
                 RetValue value = result;
                 result = new RetValue(Register.allocReg(), 1);
                 module.addInstrTrunc(result, "i32", value, "i8");
             }
-            module.addInstrStoreVar(llvmType, result.irOut(), memory);
+            module.addInstrStore(llvmType, result.irOut(), memory);
         }
     }
 

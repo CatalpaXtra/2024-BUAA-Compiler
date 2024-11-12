@@ -45,7 +45,6 @@ public class Support {
         }
     }
 
-
     public static ArrayList<String> splitPrintString(String string) {
         StringBuilder part = new StringBuilder();
         ArrayList<String> parts = new ArrayList<>();

@@ -101,7 +101,7 @@ public class Module {
         codeList.add(instr);
     }
 
-    public void addInstrStoreVar(String llvmType, String value, String pointer) {
+    public void addInstrStore(String llvmType, String value, String pointer) {
         /* store <ty> <value>, ptr <pointer> */
         String instr = "store " + llvmType + " " + value + ", " + llvmType + "* " + pointer;
         codeList.add(instr);
@@ -110,13 +110,13 @@ public class Module {
     public void addInstrGetelementptrArray(RetValue result, int size, String llvmType, String pointer, String offset) {
         /* %1 = getelementptr [5 x i32], [5 x i32]* @a, i32 0, i32 3 */
         String instr = result.irOut() + " = getelementptr inbounds [" + size + " x " + llvmType + "]";
-        instr += ", [" + size + " x " + llvmType + "]* " + pointer +", " + llvmType + " 0, " + llvmType + " " + offset;
+        instr += ", [" + size + " x " + llvmType + "]* " + pointer + ", i32 0, i32 " + offset;
         codeList.add(instr);
     }
 
     public void addInstrGetelementptrPointer(RetValue result, String llvmType, String pointer, String offset) {
         /* %3 = getelementptr i32, i32* %2, i32 3 */
-        String instr = result.irOut() + " = getelementptr inbounds " + llvmType + ", " + llvmType + "* " + pointer + ", " + llvmType + " " + offset;
+        String instr = result.irOut() + " = getelementptr inbounds " + llvmType + ", " + llvmType + "* " + pointer + ", i32 " + offset;
         codeList.add(instr);
     }
 
