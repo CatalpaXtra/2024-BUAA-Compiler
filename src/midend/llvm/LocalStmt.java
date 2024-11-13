@@ -411,17 +411,22 @@ public class LocalStmt {
 
         ArrayList<Token> operators = eqExp.getOperators();
         RetValue result = visitRelExp(relExps.get(0), symbolTable);
+        if (result.isMany()) {
+            /* Value Transfer */
+            RetValue value = result;
+            result = new RetValue(Register.allocReg(), 1);
+            module.addInstrZext(result, "i1", value, "i32");
+        }
         for (int i = 1; i < relExps.size(); i++) {
-            if (result.isMany()) {
-                /* Value Transfer */
-                RetValue value = result;
-                result = new RetValue(Register.allocReg(), 1);
-                module.addInstrZext(result, "i1", value, "i32");
-            }
-
             String cond = Support.condTransfer(operators.get(i-1).getType());
             RetValue left = result;
             RetValue right = visitRelExp(relExps.get(i), symbolTable);
+            if (right.isMany()) {
+                /* Value Transfer */
+                RetValue value = right;
+                right = new RetValue(Register.allocReg(), 1);
+                module.addInstrZext(right, "i1", value, "i32");
+            }
             result = new RetValue(Register.allocReg(), 1);
             module.addInstrIcmp(result, cond, left, right.irOut());
 
