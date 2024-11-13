@@ -668,24 +668,26 @@ define dso_local i32 @main() {
 - 函数返回值(getchar)
 - `cond`中`EqExp` `RelExp`返回值从i1转到i32
 
-
-
 #### debug与重构
 Done:
 - [x] 无返回值函数最后需要返回
 - [x] `cond`未及时更新nextLabel的值，跳转到非label的临时寄存器
-- [x] 函数调用(putch)传参的时候对参数进行类型转换
+- [x] 语句块中若出现`break` `continue` `return`，则停止生成此语句块的后续内容，直接转到下一语句块
+
 - [x] 忽视`!`出现在`cond`中的情况
     返回 `retValue == 0` 判断情况即可
 - [x] 数组访问格式问题
     对传入函数的指针，采取`%3 = getelementptr i32, i32* %2, i32 3`
     对定义的数组，采取`%1 = getelementptr [5 x i32], [5 x i32]* @a, i32 0, i32 3`
+    数组偏移时，无论指针类型为`i8`或`i32`，最后均应为`i32`
 
+- [x] `CharConst`转义字符的输出，如转义符`'\t' = 9`
+- [x] 有初始值的字符数组，空余部分应全部补0
+- [x] `char`数组初始化有整数需用`i8`形式存储
+- [x] 函数调用(putch)传参的时候对参数进行类型转换
 
 TODO:
-- `break` `continue`忽略后续代码生成
-- `ret` `br`不能在同一语句块
-- 多个`br`不能在同一语句块
-
-- char类型转义字符的输出，如`'\t'`
 - 回填改为使用 LLVM IR 中的 SlotTracker
+- 重构
+
+

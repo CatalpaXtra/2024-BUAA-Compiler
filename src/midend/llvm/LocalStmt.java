@@ -158,10 +158,7 @@ public class LocalStmt {
                 if (parts.get(i).equals("%d")) {
                     module.addInstrCall(null, "void", "putint", "i32 " + result.irOut());
                 } else {
-                    RetValue value = result;
-                    result = new RetValue(Register.allocReg(), 1);
-                    module.addInstrTrunc(result, "i32", value, "i8");
-                    module.addInstrCall(null, "void", "putch", "i8 " + result.irOut());
+                    module.addInstrCall(null, "void", "putch", "i32 " + result.irOut());
                 }
                 expCount++;
             } else {

@@ -142,13 +142,7 @@ public class LocalDecl {
             RetValue memoryReg = new RetValue(Register.allocReg(), 1);
             module.addInstrAllocaVar(memoryReg, llvmType);
             int initVal = GlobalDecl.visitGlobalConstExp((ConstExp) constDef.getConstInitVal().getConstInitValEle(), symbolTable);
-            if (symbolType.contains("Char")) {
-                RetValue result = new RetValue(Register.allocReg(), 1);
-                module.addInstrTrunc(result, "i32", new RetValue(initVal, 0), "i8");
-                module.addInstrStore(llvmType, result.irOut(), memoryReg.irOut());
-            } else {
-                module.addInstrStore(llvmType, ""+initVal, memoryReg.irOut());
-            }
+            module.addInstrStore(llvmType, ""+initVal, memoryReg.irOut());
             SymbolCon symbolCon = new SymbolCon(symbolType, name, line, memoryReg.irOut(), initVal);
             symbolTable.addSymbol(symbolCon);
         }
@@ -163,7 +157,13 @@ public class LocalDecl {
             } else {
                 module.addInstrGetelementptrPointer(thisReg, llvmType, lastReg.irOut(), "1");
             }
-            module.addInstrStore(llvmType, initVal.get(i).irOut(), thisReg.irOut());
+            if (initVal.get(i).isReg() && llvmType.equals("i8")) {
+                RetValue temp = new RetValue(Register.allocReg(), 1);
+                module.addInstrTrunc(temp, "i32", initVal.get(i), "i8");
+                module.addInstrStore(llvmType, temp.irOut(), thisReg.irOut());
+            } else {
+                module.addInstrStore(llvmType, initVal.get(i).irOut(), thisReg.irOut());
+            }
             lastReg = thisReg;
         }
         if (llvmType.equals("i8")) {
@@ -209,7 +209,7 @@ public class LocalDecl {
             module.addInstrAllocaVar(memoryReg, llvmType);
             if (varDef.hasInitValue()) {
                 RetValue result = visitExp((Exp) varDef.getInitVal().getInitValEle(), symbolTable);
-                if (symbolType.contains("Char")) {
+                if (result.isReg() && symbolType.contains("Char")) {
                     RetValue value = result;
                     result = new RetValue(Register.allocReg(), 1);
                     module.addInstrTrunc(result, "i32", value, "i8");

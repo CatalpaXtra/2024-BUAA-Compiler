@@ -14,7 +14,7 @@ public class Module {
             declare i32 @getint()
             declare i32 @getchar()
             declare void @putint(i32)
-            declare void @putch(i8)
+            declare void @putch(i32)
             declare void @putstr(i8*)
             """);
     }
