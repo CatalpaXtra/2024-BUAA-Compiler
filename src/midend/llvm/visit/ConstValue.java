@@ -1,4 +1,4 @@
-package midend.llvm.decl;
+package midend.llvm.visit;
 
 import frontend.lexer.Token;
 import frontend.parser.declaration.constDecl.constInitVal.ConstExpSet;

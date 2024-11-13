@@ -1,39 +1,25 @@
 package midend.llvm;
 
+import midend.llvm.global.GlobalStr;
+import midend.llvm.global.GlobalVal;
+
 import java.util.ArrayList;
 
 public class Module {
-    private final ArrayList<String> globalDecl;
-    private static int strNum = 0;
+    private static ArrayList<GlobalVal> globalVals = new ArrayList<>();
+    private static ArrayList<GlobalStr> globalStrs = new ArrayList<>();
     private final ArrayList<String> codeList;
 
     public Module() {
-        this.globalDecl = new ArrayList<>();
         this.codeList = new ArrayList<>();
-        globalDecl.add("""
-            declare i32 @getint()
-            declare i32 @getchar()
-            declare void @putint(i32)
-            declare void @putch(i32)
-            declare void @putstr(i8*)
-            """);
     }
 
-    public void addGlobalVar(String code) {
-        globalDecl.add(code);
+    public static void addGlobalVal(GlobalVal globalVal) {
+        globalVals.add(globalVal);
     }
 
-    public String addGlobalStr(int strLen, String string) {
-        String strName;
-        if (strNum == 0) {
-            strName = "@.str";
-            globalDecl.add("");
-        } else {
-            strName = "@.str." + strNum;
-        }
-        globalDecl.add(strName + " = private unnamed_addr constant [" + strLen + " x i8] c\"" + string + "\", align 1");
-        strNum++;
-        return strName;
+    public void addGlobalStr(GlobalStr globalStr) {
+        globalStrs.add(globalStr);
     }
 
     public void addInstrAdd(RetValue result, RetValue op1, RetValue op2) {
@@ -191,9 +177,20 @@ public class Module {
 
     public String irOut() {
         StringBuilder sb = new StringBuilder();
-        for (String code : globalDecl) {
-            sb.append(code).append('\n');
+        sb.append("""
+            declare i32 @getint()
+            declare i32 @getchar()
+            declare void @putint(i32)
+            declare void @putch(i32)
+            declare void @putstr(i8*)
+            """);
+        for (GlobalVal globalVal : globalVals) {
+            sb.append(globalVal.irOut()).append('\n');
         }
+        for (GlobalStr globalStr : globalStrs) {
+            sb.append(globalStr.irOut()).append('\n');
+        }
+
         for (String code : codeList) {
             sb.append(code).append('\n');
         }

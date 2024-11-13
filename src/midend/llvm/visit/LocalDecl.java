@@ -1,6 +1,5 @@
-package midend.llvm.decl;
+package midend.llvm.visit;
 
-import frontend.lexer.Token;
 import frontend.parser.declaration.Decl;
 import frontend.parser.declaration.DeclEle;
 import frontend.parser.declaration.constDecl.ConstDecl;
@@ -13,16 +12,6 @@ import frontend.parser.declaration.varDecl.initVal.ExpSet;
 import frontend.parser.declaration.varDecl.initVal.InitValEle;
 import frontend.parser.expression.ConstExp;
 import frontend.parser.expression.Exp;
-import frontend.parser.expression.add.AddExp;
-import frontend.parser.expression.add.MulExp;
-import frontend.parser.expression.primary.Character;
-import frontend.parser.expression.primary.ExpInParent;
-import frontend.parser.expression.primary.LVal;
-import frontend.parser.expression.primary.PrimaryEle;
-import frontend.parser.expression.primary.PrimaryExp;
-import frontend.parser.expression.unary.*;
-import frontend.parser.function.params.FuncFParam;
-import frontend.parser.terminal.Ident;
 import frontend.parser.terminal.StringConst;
 import midend.llvm.Module;
 import midend.llvm.Register;

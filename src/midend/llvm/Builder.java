@@ -6,10 +6,7 @@ import frontend.parser.declaration.Decl;
 import frontend.parser.function.FuncDef;
 import frontend.parser.function.MainFuncDef;
 import frontend.parser.function.params.FuncFParam;
-import midend.llvm.decl.Cond;
-import midend.llvm.decl.GlobalDecl;
-import midend.llvm.decl.LocalDecl;
-import midend.llvm.decl.VarValue;
+import midend.llvm.visit.*;
 import midend.llvm.symbol.*;
 
 import java.util.ArrayList;
@@ -36,7 +33,6 @@ public class Builder {
     }
 
     public void build() {
-        GlobalDecl.setGlobalDecl(module);
         for (Decl decl : decls) {
             GlobalDecl.visitGlobalDecl(decl, globalSymbolTable);
         }

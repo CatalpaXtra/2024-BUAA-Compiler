@@ -1,4 +1,4 @@
-package midend.llvm;
+package midend.llvm.visit;
 
 import frontend.lexer.Token;
 import frontend.parser.block.Block;
@@ -9,9 +9,14 @@ import frontend.parser.block.statement.stmtVariant.*;
 import frontend.parser.declaration.Decl;
 import frontend.parser.expression.Exp;
 import frontend.parser.expression.primary.LVal;
-import midend.llvm.decl.Cond;
-import midend.llvm.decl.LocalDecl;
-import midend.llvm.decl.VarValue;
+import midend.llvm.Module;
+import midend.llvm.Register;
+import midend.llvm.RetValue;
+import midend.llvm.Support;
+import midend.llvm.visit.Cond;
+import midend.llvm.visit.LocalDecl;
+import midend.llvm.visit.VarValue;
+import midend.llvm.global.GlobalStr;
 import midend.llvm.symbol.*;
 
 import java.util.ArrayList;
@@ -167,8 +172,9 @@ public class Stmt {
                         strLen -= 2;
                     }
                 }
-                String strName = module.addGlobalStr(strLen, parts.get(i));
-                String rParams = "i8* getelementptr inbounds ([" + strLen + " x i8], [" + strLen + " x i8]* " + strName + ", i64 0, i64 0)";
+                GlobalStr globalStr = new GlobalStr(parts.get(i), strLen);
+                module.addGlobalStr(globalStr);
+                String rParams = "i8* getelementptr inbounds ([" + strLen + " x i8], [" + strLen + " x i8]* " + globalStr.getName() + ", i64 0, i64 0)";
                 module.addInstrCall(null, "void", "putstr", rParams);
             }
         }
