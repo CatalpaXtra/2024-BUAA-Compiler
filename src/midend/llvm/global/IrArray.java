@@ -2,7 +2,7 @@ package midend.llvm.global;
 
 import java.util.ArrayList;
 
-public class IrArray extends Constant{
+public class IrArray extends IrConstant {
     private final String irType;
     private final ArrayList<Integer> constExpSet;
     private final int size;

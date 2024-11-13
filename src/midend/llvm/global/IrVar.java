@@ -1,6 +1,6 @@
 package midend.llvm.global;
 
-public class IrVar extends Constant{
+public class IrVar extends IrConstant {
     private final int value;
 
     public IrVar(int value) {

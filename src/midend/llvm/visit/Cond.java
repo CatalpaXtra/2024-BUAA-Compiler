@@ -72,6 +72,13 @@ public class Cond {
                     return;
                 } else {
                     /* Cond may be true, continue */
+                    if (i == lAndExps.size() - 1) {
+                        Stmt.nextLabel = Register.allocReg();
+                        module.addInstrBr("<BLOCK2 OR STMT>");
+                        module.addCode("");
+                        module.replaceInterval(left, module.getLoc(), "%" + Stmt.nextLabel, "<BLOCK1>");
+                        return;
+                    }
                     module.delLastCode();
                 }
             } else if (result.isReg() || result.isMany()) {
@@ -120,7 +127,19 @@ public class Cond {
                     return new RetValue(Stmt.nextLabel, 2);
                 } else {
                     /* Cond may be false, continue */
-                    module.delLastCode();
+                    if (i == eqExps.size() - 1) {
+                        module.addInstrBr("<BLOCK1>");
+                        module.addCode("");
+                        Stmt.nextLabel = Register.allocReg();
+                        if (isLast) {
+                            module.replaceInterval(left, module.getLoc(), "<BLOCK2 OR STMT>", "<NEXT LOREXP>");
+                        } else {
+                            module.replaceInterval(left, module.getLoc(), "%" + Stmt.nextLabel, "<NEXT LOREXP>");
+                        }
+                        return new RetValue(Stmt.nextLabel, 2);
+                    } else {
+                        module.delLastCode();
+                    }
                 }
             } else if (result.isReg()) {
                 /* Return Value In Register */

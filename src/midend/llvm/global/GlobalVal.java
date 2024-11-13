@@ -6,10 +6,10 @@ import midend.llvm.symbol.Symbol;
 public class GlobalVal extends Symbol {
     private final String name;
     private final String irType;
-    private final Constant value;
+    private final IrConstant value;
     private final int size;
 
-    public GlobalVal(String name, String symbolType, Constant value, int size) {
+    public GlobalVal(String name, String symbolType, IrConstant value, int size) {
         super(symbolType, name, "@"+name, size);
         this.name = name;
         this.irType = Support.varTransfer(symbolType);

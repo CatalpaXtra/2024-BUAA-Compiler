@@ -1,6 +1,6 @@
 package midend.llvm.global;
 
-public class IrString extends Constant{
+public class IrString extends IrConstant {
     private final String stringConst;
     private final int size;
 

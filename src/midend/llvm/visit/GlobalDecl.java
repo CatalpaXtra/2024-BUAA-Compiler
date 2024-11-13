@@ -50,7 +50,7 @@ public class GlobalDecl {
         String symbolType = "Const" + type;
         String irType = Support.varTransfer(type);
         String name = constDef.getIdent().getIdenfr();
-        Constant constant = null;
+        IrConstant constant = null;
         int size = -1;
         if (constDef.isArray()) {
             symbolType += "Array";
@@ -77,7 +77,7 @@ public class GlobalDecl {
         String symbolType = type;
         String irType = Support.varTransfer(type);
         String name = varDef.getIdent().getIdenfr();
-        Constant constant = null;
+        IrConstant constant = null;
         int size = -1;
         if (varDef.isArray()) {
             symbolType += "Array";
