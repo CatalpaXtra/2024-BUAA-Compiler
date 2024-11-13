@@ -1,4 +1,4 @@
-package midend;
+package midend.semantic;
 
 import frontend.lexer.Token;
 import frontend.parser.CompUnit;
@@ -34,7 +34,7 @@ import frontend.parser.function.FuncDef;
 import frontend.parser.function.MainFuncDef;
 import frontend.parser.function.params.FuncFParam;
 import frontend.parser.terminal.Ident;
-import midend.symbol.*;
+import midend.semantic.symbol.*;
 
 import java.util.ArrayList;
 
@@ -237,8 +237,7 @@ public class Semantic {
         String name = funcDef.getIdent().getIdenfr();
         int line = funcDef.getIdent().getLine();
 
-        ArrayList<FuncFParam> funcFParamList = funcDef.getFuncFParams() == null ? new ArrayList<>() : funcDef.getFuncFParams().getFuncFParamList();
-        SymbolFunc symbolFunc = new SymbolFunc(symbolType, name, line, 1, funcFParamList);
+        SymbolFunc symbolFunc = new SymbolFunc(symbolType, name, line, 1);
         globalSymbolTable.addSymbol(symbolFunc);
 
         /* extend symbolTable */
@@ -247,6 +246,7 @@ public class Semantic {
         symbolTables.add(childSymbolTable);
 
         /* visit FuncFParams */
+        ArrayList<FuncFParam> funcFParamList = funcDef.getFuncFParams() == null ? new ArrayList<>() : funcDef.getFuncFParams().getFuncFParamList();
         for (FuncFParam funcFParam : funcFParamList) {
             String type = funcFParam.getBType().identifyType();
             symbolType = funcFParam.isArray() ? type + "Array" : type;

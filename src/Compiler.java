@@ -3,8 +3,8 @@ import frontend.lexer.LexerErrors;
 import frontend.parser.CompUnit;
 import frontend.parser.Parser;
 import frontend.parser.ParserErrors;
-import midend.Semantic;
-import midend.SemanticErrors;
+import midend.semantic.Semantic;
+import midend.semantic.SemanticErrors;
 import midend.llvm.Builder;
 import midend.llvm.Module;
 

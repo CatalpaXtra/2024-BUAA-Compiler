@@ -1,4 +1,4 @@
-package midend;
+package midend.semantic;
 
 import frontend.lexer.Error;
 import frontend.lexer.Token;
@@ -21,9 +21,9 @@ import frontend.parser.expression.unary.FuncRParams;
 import frontend.parser.expression.unary.UnaryEle;
 import frontend.parser.expression.unary.UnaryExp;
 import frontend.parser.terminal.Ident;
-import midend.symbol.Symbol;
-import midend.symbol.SymbolFunc;
-import midend.symbol.SymbolTable;
+import midend.semantic.symbol.Symbol;
+import midend.semantic.symbol.SymbolFunc;
+import midend.semantic.symbol.SymbolTable;
 
 import java.util.ArrayList;
 import java.util.HashMap;

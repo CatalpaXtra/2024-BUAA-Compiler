@@ -1,27 +1,21 @@
-package midend.symbol;
+package midend.llvm.symbol;
 
 public class Symbol {
     private final String symbolType;
     private final String name;
-    private final int line;
-    private final int scope; // 作用域序号
     private final String memory;
     private final int arraySize;
 
-    public Symbol(String symbolType, String name, int line, int scope) {
+    public Symbol(String symbolType, String name) {
         this.symbolType = symbolType;
         this.name = name;
-        this.line = line;
-        this.scope = scope;
         this.memory = "";
         this.arraySize = -1;
     }
 
-    public Symbol(String symbolType, String name, int line, int scope, String memory, int arraySize) {
+    public Symbol(String symbolType, String name, String memory, int arraySize) {
         this.symbolType = symbolType;
         this.name = name;
-        this.line = line;
-        this.scope = scope;
         this.memory = memory;
         this.arraySize = arraySize;
     }
@@ -32,10 +26,6 @@ public class Symbol {
 
     public String getName() {
         return name;
-    }
-
-    public int getLine() {
-        return line;
     }
 
     public String getMemory() {
@@ -60,7 +50,7 @@ public class Symbol {
 
     @Override
     public String toString() {
-        return scope + " " + name + " " + symbolType;
+        return name + " " + symbolType;
     }
 
 }

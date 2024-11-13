@@ -1,6 +1,6 @@
-package midend.symbol;
+package midend.semantic.symbol;
 
-import midend.ErrorHandler;
+import midend.semantic.ErrorHandler;
 
 import java.util.ArrayList;
 import java.util.HashMap;

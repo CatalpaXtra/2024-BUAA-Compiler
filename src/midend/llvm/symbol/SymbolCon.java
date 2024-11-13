@@ -1,30 +1,25 @@
-package midend.symbol;
+package midend.llvm.symbol;
 
 import java.util.ArrayList;
 
 public class SymbolCon extends Symbol {
     private int value;
-    private int arraySize;
     private ArrayList<Integer> intInitVal;
     private String charInitVal;
 
-    public SymbolCon(String symbolType, String name, int line, int scope) {
-        super(symbolType, name, line, scope);
-    }
-
-    public SymbolCon(String symbolType, String name, int line, String memory, int value) {
-        super(symbolType, name, line, 0, memory, -1);
+    public SymbolCon(String symbolType, String name, String memory, int value) {
+        super(symbolType, name, memory, -1);
         this.value = value;
     }
 
-    public SymbolCon(String symbolType, String name, int line, String memory, ArrayList<Integer> intInitVal, int arraySize) {
-        super(symbolType, name, line, 0, memory, arraySize);
+    public SymbolCon(String symbolType, String name, String memory, ArrayList<Integer> intInitVal, int arraySize) {
+        super(symbolType, name, memory, arraySize);
         this.intInitVal = intInitVal;
         this.charInitVal = null;
     }
 
-    public SymbolCon(String symbolType, String name, int line, String memory, String charInitVal, int arraySize) {
-        super(symbolType, name, line, 0, memory, arraySize);
+    public SymbolCon(String symbolType, String name, String memory, String charInitVal, int arraySize) {
+        super(symbolType, name, memory, arraySize);
         this.intInitVal = null;
         this.charInitVal = charInitVal;
     }

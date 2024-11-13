@@ -1,4 +1,4 @@
-package midend;
+package midend.semantic;
 
 import frontend.lexer.Error;
 
