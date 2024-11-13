@@ -27,6 +27,8 @@ public class Builder {
         this.mainFuncDef = compUnit.getMainFuncDef();
         this.globalSymbolTable = new SymbolTable();
         this.module = new Module();
+
+        build();
     }
 
     public Module getModule() {
@@ -41,7 +43,7 @@ public class Builder {
 
         VarValue.setVarValue(globalSymbolTable, module);
         Cond.setCond(module);
-        LocalDecl.setLocalDecl(globalSymbolTable, module);
+        LocalDecl.setLocalDecl(module);
         Stmt.setLocalStmt(module);
         for (FuncDef funcDef : funcDefs) {
             Register.resetReg();

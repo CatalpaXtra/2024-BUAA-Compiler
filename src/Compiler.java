@@ -35,7 +35,6 @@ public class Compiler {
         }
 
         Builder builder = new Builder(compUnit);
-        builder.build();
         Module module = builder.getModule();
         try (PrintWriter writer = new PrintWriter("llvm_ir.txt")) {
             writer.println(module.irOut());

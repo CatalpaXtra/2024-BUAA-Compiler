@@ -1,6 +1,7 @@
 package midend.llvm.decl;
 
 import frontend.lexer.Token;
+import frontend.parser.declaration.varDecl.initVal.ExpSet;
 import frontend.parser.expression.Exp;
 import frontend.parser.expression.add.AddExp;
 import frontend.parser.expression.add.MulExp;
@@ -29,6 +30,16 @@ public class VarValue {
     public static void setVarValue(SymbolTable globalSymbolTable, Module module) {
         VarValue.module = module;
         VarValue.globalSymbolTable = globalSymbolTable;
+    }
+
+    public static ArrayList<RetValue> visitExpSet(ExpSet expSet, SymbolTable symbolTable) {
+        ArrayList<Exp> exps = expSet.getExps();
+        ArrayList<RetValue> results = new ArrayList<>();
+        for (Exp exp : exps) {
+            RetValue result = visitExp(exp, symbolTable);
+            results.add(result);
+        }
+        return results;
     }
 
     public static RetValue visitExp(Exp exp, SymbolTable symbolTable) {

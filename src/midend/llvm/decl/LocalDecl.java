@@ -33,11 +33,9 @@ import midend.llvm.symbol.*;
 import java.util.ArrayList;
 
 public class LocalDecl {
-    private static SymbolTable globalSymbolTable;
     private static Module module;
 
-    public static void setLocalDecl(SymbolTable symbolTable, Module md) {
-        globalSymbolTable = symbolTable;
+    public static void setLocalDecl(Module md) {
         module = md;
     }
 
@@ -192,7 +190,7 @@ public class LocalDecl {
             if (varDef.hasInitValue()) {
                 InitValEle initValEle = varDef.getInitVal().getInitValEle();
                 if (initValEle instanceof ExpSet) {
-                    ArrayList<RetValue> initVal = visitExpSet((ExpSet) initValEle, symbolTable);
+                    ArrayList<RetValue> initVal = VarValue.visitExpSet((ExpSet) initValEle, symbolTable);
                     initLocalVarIntArray(memoryReg, size, initVal, llvmType);
                     SymbolVar symbolVar = new SymbolVar(symbolType, name, memoryReg.irOut(), new ArrayList<>(), size);
                     symbolTable.addSymbol(symbolVar);
@@ -222,16 +220,5 @@ public class LocalDecl {
             symbolTable.addSymbol(symbolVar);
         }
     }
-
-    private static ArrayList<RetValue> visitExpSet(ExpSet expSet, SymbolTable symbolTable) {
-        ArrayList<Exp> exps = expSet.getExps();
-        ArrayList<RetValue> results = new ArrayList<>();
-        for (Exp exp : exps) {
-            RetValue result = VarValue.visitExp(exp, symbolTable);
-            results.add(result);
-        }
-        return results;
-    }
-
 
 }
