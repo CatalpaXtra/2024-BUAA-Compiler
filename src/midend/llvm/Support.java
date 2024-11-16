@@ -30,6 +30,8 @@ public class Support {
             return "i32";
         } else if (type.contains("Char")) {
             return "i8";
+        } else if (type.contains("Void")) {
+            return "void";
         } else {
             return "varTransfer Error!!";
         }

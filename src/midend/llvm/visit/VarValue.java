@@ -13,10 +13,10 @@ import frontend.parser.expression.primary.PrimaryExp;
 import frontend.parser.expression.unary.*;
 import frontend.parser.function.params.FuncFParam;
 import frontend.parser.terminal.Ident;
-import midend.llvm.Module;
 import midend.llvm.Register;
 import midend.llvm.RetValue;
 import midend.llvm.Support;
+import midend.llvm.function.IrBlock;
 import midend.llvm.symbol.Symbol;
 import midend.llvm.symbol.SymbolFunc;
 import midend.llvm.symbol.SymbolTable;
@@ -25,11 +25,14 @@ import java.util.ArrayList;
 
 public class VarValue {
     private static SymbolTable globalSymbolTable;
-    private static Module module;
+    private static IrBlock irBlock;
 
-    public static void setVarValue(SymbolTable globalSymbolTable, Module module) {
-        VarValue.module = module;
+    public static void setVarValue(SymbolTable globalSymbolTable) {
         VarValue.globalSymbolTable = globalSymbolTable;
+    }
+
+    public static void setVarValueIrBlock(IrBlock irBlock) {
+        VarValue.irBlock = irBlock;
     }
 
     public static ArrayList<RetValue> visitExpSet(ExpSet expSet, SymbolTable symbolTable) {
@@ -56,9 +59,9 @@ public class VarValue {
             result = new RetValue(Register.allocReg(), 1);
             Token op = operators.get(i - 1);
             if (op.getType().equals(Token.Type.PLUS)) {
-                module.addInstrAdd(result, left, right);
+                irBlock.addInstrAdd(result, left, right);
             } else if (op.getType().equals(Token.Type.MINU)) {
-                module.addInstrSub(result, left.irOut(), right);
+                irBlock.addInstrSub(result, left.irOut(), right);
             }
         }
         return result;
@@ -74,11 +77,11 @@ public class VarValue {
             result = new RetValue(Register.allocReg(), 1);
             Token op = operators.get(i - 1);
             if (op.getType().equals(Token.Type.MULT)) {
-                module.addInstrMul(result, left, right);
+                irBlock.addInstrMul(result, left, right);
             } else if (op.getType().equals(Token.Type.DIV)) {
-                module.addInstrSdiv(result, left, right);
+                irBlock.addInstrSdiv(result, left, right);
             } else if (op.getType().equals(Token.Type.MOD)) {
-                module.addInstrSrem(result, left, right);
+                irBlock.addInstrSrem(result, left, right);
             }
         }
         return result;
@@ -115,7 +118,7 @@ public class VarValue {
                 if (llvmType.equals("i8")) {
                     RetValue value = result;
                     result = new RetValue(Register.allocReg(), 1);
-                    module.addInstrTrunc(result, "i32", value, "i8");
+                    irBlock.addInstrTrunc(result, "i32", value, "i8");
                 }
                 passRParam += llvmType + " " + result.irOut() + ", ";
             }
@@ -123,16 +126,16 @@ public class VarValue {
         passRParam = passRParam.length() > 2 ? passRParam.substring(0, passRParam.length() - 2) : passRParam;
 
         if (symbolFunc.getSymbolType().contains("Void")) {
-            module.addInstrCall(null, "void", funcName, passRParam);
+            irBlock.addInstrCall(null, "void", funcName, passRParam);
             return null;
         } else {
             RetValue result = new RetValue(Register.allocReg(), 1);
             String llvmType = Support.varTransfer(symbolFunc.getSymbolType());
-            module.addInstrCall(result, llvmType, funcName, passRParam);
+            irBlock.addInstrCall(result, llvmType, funcName, passRParam);
             if (symbolFunc.isChar()) {
                 RetValue value = result;
                 result = new RetValue(Register.allocReg(), 1);
-                module.addInstrZext(result, "i8", value, "i32");
+                irBlock.addInstrZext(result, "i8", value, "i32");
             }
             return result;
         }
@@ -148,7 +151,7 @@ public class VarValue {
                 return new RetValue(-retValue.getValue(), 0);
             } else {
                 RetValue result = new RetValue(Register.allocReg(), 1);
-                module.addInstrSub(result, "0", retValue);
+                irBlock.addInstrSub(result, "0", retValue);
                 return result;
             }
         } else {
@@ -161,10 +164,10 @@ public class VarValue {
                 }
             } else {
                 RetValue result = new RetValue(Register.allocReg(), 1);
-                module.addInstrIcmp(result, "eq", retValue, "0");
+                irBlock.addInstrIcmp(result, "eq", retValue, "0");
                 RetValue value = result;
                 result = new RetValue(Register.allocReg(), 1);
-                module.addInstrZext(result, "i1", value, "i32");
+                irBlock.addInstrZext(result, "i1", value, "i32");
                 return result;
             }
         }
@@ -194,22 +197,22 @@ public class VarValue {
             RetValue result;
             if (symbol.isPointer()) {
                 RetValue temp1 = new RetValue(Register.allocReg(), 1);
-                module.addInstrLoad(temp1, llvmType + "*", memory);
+                irBlock.addInstrLoad(temp1, llvmType + "*", memory);
                 RetValue temp2 = new RetValue(Register.allocReg(), 1);
-                module.addInstrGetelementptrPointer(temp2, llvmType, temp1.irOut(), loc.irOut());
+                irBlock.addInstrGetelementptrPointer(temp2, llvmType, temp1.irOut(), loc.irOut());
                 result = new RetValue(Register.allocReg(), 1);
-                module.addInstrLoad(result, llvmType, temp2.irOut());
+                irBlock.addInstrLoad(result, llvmType, temp2.irOut());
             } else {
                 RetValue temp1 = new RetValue(Register.allocReg(), 1);
-                module.addInstrGetelementptrArray(temp1, symbol.getArraySize(), llvmType, memory, loc.irOut());
+                irBlock.addInstrGetelementptrArray(temp1, symbol.getArraySize(), llvmType, memory, loc.irOut());
                 result = new RetValue(Register.allocReg(), 1);
-                module.addInstrLoad(result, llvmType, temp1.irOut());
+                irBlock.addInstrLoad(result, llvmType, temp1.irOut());
             }
 
             if (symbol.isChar()) {
                 RetValue value = result;
                 result = new RetValue(Register.allocReg(), 1);
-                module.addInstrZext(result, "i8", value, "i32");
+                irBlock.addInstrZext(result, "i8", value, "i32");
             }
             return result;
         } else {
@@ -218,20 +221,20 @@ public class VarValue {
                 /* int c[10]; a = func(c); */
                 int size = symbol.getArraySize();
                 RetValue result = new RetValue(Register.allocReg(), 1);
-                module.addInstrGetelementptrArray(result, size, llvmType, memory, "0");
+                irBlock.addInstrGetelementptrArray(result, size, llvmType, memory, "0");
                 return result;
             } else if (symbol.isPointer()) {
                 /* Exist In Call Func While Pass Param */
                 RetValue result = new RetValue(Register.allocReg(), 1);
-                module.addInstrLoad(result, llvmType+"*", memory);
+                irBlock.addInstrLoad(result, llvmType+"*", memory);
                 return result;
             } else {
                 RetValue result = new RetValue(Register.allocReg(), 1);
-                module.addInstrLoad(result, llvmType, memory);
+                irBlock.addInstrLoad(result, llvmType, memory);
                 if (symbol.isChar()) {
                     RetValue value = result;
                     result = new RetValue(Register.allocReg(), 1);
-                    module.addInstrZext(result, "i8", value, "i32");
+                    irBlock.addInstrZext(result, "i8", value, "i32");
                 }
                 return result;
             }

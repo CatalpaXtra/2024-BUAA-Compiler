@@ -9,7 +9,7 @@ public class SymbolFunc extends Symbol {
     private final ArrayList<FuncFParam> funcFParams;
 
     public SymbolFunc(String symbolType, String name, ArrayList<FuncFParam> funcFParams) {
-        super(symbolType, name);
+        super(symbolType, name, "", -1);
         this.symbols =  new ArrayList<>();
         this.funcFParams = funcFParams;
     }

@@ -13,19 +13,19 @@ import frontend.parser.declaration.varDecl.initVal.InitValEle;
 import frontend.parser.expression.ConstExp;
 import frontend.parser.expression.Exp;
 import frontend.parser.terminal.StringConst;
-import midend.llvm.Module;
 import midend.llvm.Register;
 import midend.llvm.RetValue;
 import midend.llvm.Support;
+import midend.llvm.function.IrBlock;
 import midend.llvm.symbol.*;
 
 import java.util.ArrayList;
 
 public class LocalDecl {
-    private static Module module;
+    private static IrBlock irBlock;
 
-    public static void setLocalDecl(Module md) {
-        module = md;
+    public static void setLocalDeclIrBlock(IrBlock irBlock) {
+        LocalDecl.irBlock = irBlock;
     }
 
     public static void visitDecl(Decl decl, SymbolTable symbolTable) {
@@ -58,18 +58,18 @@ public class LocalDecl {
         for (int i = 0; i < initVal.size(); i++) {
             RetValue thisReg = new RetValue(Register.allocReg(), 1);
             if (i == 0) {
-                module.addInstrGetelementptrArray(thisReg, size, llvmType, lastReg.irOut(), "0");
+                irBlock.addInstrGetelementptrArray(thisReg, size, llvmType, lastReg.irOut(), "0");
             } else {
-                module.addInstrGetelementptrPointer(thisReg, llvmType, lastReg.irOut(), "1");
+                irBlock.addInstrGetelementptrPointer(thisReg, llvmType, lastReg.irOut(), "1");
             }
-            module.addInstrStore(llvmType, ""+initVal.get(i), thisReg.irOut());
+            irBlock.addInstrStore(llvmType, ""+initVal.get(i), thisReg.irOut());
             lastReg = thisReg;
         }
         if (llvmType.equals("i8")) {
             for (int i = initVal.size(); i < size; i++) {
                 RetValue thisReg = new RetValue(Register.allocReg(), 1);
-                module.addInstrGetelementptrPointer(thisReg, "i8", lastReg.irOut(), "1");
-                module.addInstrStore("i8", "0", thisReg.irOut());
+                irBlock.addInstrGetelementptrPointer(thisReg, "i8", lastReg.irOut(), "1");
+                irBlock.addInstrStore("i8", "0", thisReg.irOut());
                 lastReg = thisReg;
             }
         }
@@ -82,9 +82,9 @@ public class LocalDecl {
         for (int i = 0; i < initVal.length(); i++) {
             RetValue thisReg = new RetValue(Register.allocReg(), 1);
             if (i == 0) {
-                module.addInstrGetelementptrArray(thisReg, size, "i8", lastReg.irOut(), "0");
+                irBlock.addInstrGetelementptrArray(thisReg, size, "i8", lastReg.irOut(), "0");
             } else {
-                module.addInstrGetelementptrPointer(thisReg, "i8", lastReg.irOut(), "1");
+                irBlock.addInstrGetelementptrPointer(thisReg, "i8", lastReg.irOut(), "1");
             }
 
             int value = initVal.charAt(i);
@@ -94,14 +94,14 @@ public class LocalDecl {
                     i++;
                 }
             }
-            module.addInstrStore("i8", ""+value, thisReg.irOut());
+            irBlock.addInstrStore("i8", ""+value, thisReg.irOut());
             lastReg = thisReg;
             len++;
         }
         for (int i = len; i < size; i++) {
             RetValue thisReg = new RetValue(Register.allocReg(), 1);
-            module.addInstrGetelementptrPointer(thisReg, "i8", lastReg.irOut(), "1");
-            module.addInstrStore("i8", "0", thisReg.irOut());
+            irBlock.addInstrGetelementptrPointer(thisReg, "i8", lastReg.irOut(), "1");
+            irBlock.addInstrStore("i8", "0", thisReg.irOut());
             lastReg = thisReg;
         }
     }
@@ -114,7 +114,7 @@ public class LocalDecl {
             symbolType += "Array";
             int size = ConstValue.visitConstExp(constDef.getConstExp(), symbolTable);
             RetValue memoryReg = new RetValue(Register.allocReg(), 1);
-            module.addInstrAllocaArray(memoryReg, size, llvmType);
+            irBlock.addInstrAllocaArray(memoryReg, size, llvmType);
 
             ConstInitValEle constInitValEle = constDef.getConstInitVal().getConstInitValEle();
             if (constInitValEle instanceof ConstExpSet) {
@@ -130,9 +130,9 @@ public class LocalDecl {
             }
         } else {
             RetValue memoryReg = new RetValue(Register.allocReg(), 1);
-            module.addInstrAllocaVar(memoryReg, llvmType);
+            irBlock.addInstrAllocaVar(memoryReg, llvmType);
             int initVal = ConstValue.visitConstExp((ConstExp) constDef.getConstInitVal().getConstInitValEle(), symbolTable);
-            module.addInstrStore(llvmType, ""+initVal, memoryReg.irOut());
+            irBlock.addInstrStore(llvmType, ""+initVal, memoryReg.irOut());
             SymbolCon symbolCon = new SymbolCon(symbolType, name, memoryReg.irOut(), initVal);
             symbolTable.addSymbol(symbolCon);
         }
@@ -143,24 +143,24 @@ public class LocalDecl {
         for (int i = 0; i < initVal.size(); i++) {
             RetValue thisReg = new RetValue(Register.allocReg(), 1);
             if (i == 0) {
-                module.addInstrGetelementptrArray(thisReg, size, llvmType, lastReg.irOut(), "0");
+                irBlock.addInstrGetelementptrArray(thisReg, size, llvmType, lastReg.irOut(), "0");
             } else {
-                module.addInstrGetelementptrPointer(thisReg, llvmType, lastReg.irOut(), "1");
+                irBlock.addInstrGetelementptrPointer(thisReg, llvmType, lastReg.irOut(), "1");
             }
             if (initVal.get(i).isReg() && llvmType.equals("i8")) {
                 RetValue temp = new RetValue(Register.allocReg(), 1);
-                module.addInstrTrunc(temp, "i32", initVal.get(i), "i8");
-                module.addInstrStore(llvmType, temp.irOut(), thisReg.irOut());
+                irBlock.addInstrTrunc(temp, "i32", initVal.get(i), "i8");
+                irBlock.addInstrStore(llvmType, temp.irOut(), thisReg.irOut());
             } else {
-                module.addInstrStore(llvmType, initVal.get(i).irOut(), thisReg.irOut());
+                irBlock.addInstrStore(llvmType, initVal.get(i).irOut(), thisReg.irOut());
             }
             lastReg = thisReg;
         }
         if (llvmType.equals("i8")) {
             for (int i = initVal.size(); i < size; i++) {
                 RetValue thisReg = new RetValue(Register.allocReg(), 1);
-                module.addInstrGetelementptrPointer(thisReg, "i8", lastReg.irOut(), "1");
-                module.addInstrStore("i8", "0", thisReg.irOut());
+                irBlock.addInstrGetelementptrPointer(thisReg, "i8", lastReg.irOut(), "1");
+                irBlock.addInstrStore("i8", "0", thisReg.irOut());
                 lastReg = thisReg;
             }
         }
@@ -174,7 +174,7 @@ public class LocalDecl {
             symbolType += "Array";
             int size = ConstValue.visitConstExp(varDef.getConstExp(), symbolTable);
             RetValue memoryReg = new RetValue(Register.allocReg(), 1);
-            module.addInstrAllocaArray(memoryReg, size, llvmType);
+            irBlock.addInstrAllocaArray(memoryReg, size, llvmType);
 
             if (varDef.hasInitValue()) {
                 InitValEle initValEle = varDef.getInitVal().getInitValEle();
@@ -195,15 +195,15 @@ public class LocalDecl {
             }
         } else {
             RetValue memoryReg = new RetValue(Register.allocReg(), 1);
-            module.addInstrAllocaVar(memoryReg, llvmType);
+            irBlock.addInstrAllocaVar(memoryReg, llvmType);
             if (varDef.hasInitValue()) {
                 RetValue result = VarValue.visitExp((Exp) varDef.getInitVal().getInitValEle(), symbolTable);
                 if (result.isReg() && symbolType.contains("Char")) {
                     RetValue value = result;
                     result = new RetValue(Register.allocReg(), 1);
-                    module.addInstrTrunc(result, "i32", value, "i8");
+                    irBlock.addInstrTrunc(result, "i32", value, "i8");
                 }
-                module.addInstrStore(llvmType, result.irOut(), memoryReg.irOut());
+                irBlock.addInstrStore(llvmType, result.irOut(), memoryReg.irOut());
             }
             SymbolVar symbolVar = new SymbolVar(symbolType, name, memoryReg.irOut());
             symbolTable.addSymbol(symbolVar);

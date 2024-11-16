@@ -6,13 +6,6 @@ public class Symbol {
     private final String memory;
     private final int arraySize;
 
-    public Symbol(String symbolType, String name) {
-        this.symbolType = symbolType;
-        this.name = name;
-        this.memory = "";
-        this.arraySize = -1;
-    }
-
     public Symbol(String symbolType, String name, String memory, int arraySize) {
         this.symbolType = symbolType;
         this.name = name;

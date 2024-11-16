@@ -35,9 +35,9 @@ public class Compiler {
         }
 
         Builder builder = new Builder(compUnit);
-        Module module = builder.getModule();
+        builder.build();
         try (PrintWriter writer = new PrintWriter("llvm_ir.txt")) {
-            writer.println(module.irOut());
+            writer.println(Module.irOut());
         } catch (FileNotFoundException ignored) {}
     }
 }

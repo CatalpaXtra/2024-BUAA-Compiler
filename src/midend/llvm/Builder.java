@@ -6,6 +6,9 @@ import frontend.parser.declaration.Decl;
 import frontend.parser.function.FuncDef;
 import frontend.parser.function.MainFuncDef;
 import frontend.parser.function.params.FuncFParam;
+import midend.llvm.function.Function;
+import midend.llvm.function.IrBlock;
+import midend.llvm.function.Param;
 import midend.llvm.visit.*;
 import midend.llvm.symbol.*;
 
@@ -16,20 +19,12 @@ public class Builder {
     private final ArrayList<FuncDef> funcDefs;
     private final MainFuncDef mainFuncDef;
     private final SymbolTable globalSymbolTable;
-    private final Module module;
 
     public Builder(CompUnit compUnit) {
         this.decls = compUnit.getDecls();
         this.funcDefs = compUnit.getFuncDefs();
         this.mainFuncDef = compUnit.getMainFuncDef();
         this.globalSymbolTable = new SymbolTable();
-        this.module = new Module();
-
-        build();
-    }
-
-    public Module getModule() {
-        return module;
     }
 
     public void build() {
@@ -37,10 +32,7 @@ public class Builder {
             GlobalDecl.visitGlobalDecl(decl, globalSymbolTable);
         }
 
-        VarValue.setVarValue(globalSymbolTable, module);
-        Cond.setCond(module);
-        LocalDecl.setLocalDecl(module);
-        Stmt.setLocalStmt(module);
+        VarValue.setVarValue(globalSymbolTable);
         for (FuncDef funcDef : funcDefs) {
             Register.resetReg();
             visitFuncDef(funcDef);
@@ -59,25 +51,25 @@ public class Builder {
         ArrayList<FuncFParam> funcFParamList = funcDef.getFuncFParams() == null ? new ArrayList<>() : funcDef.getFuncFParams().getFuncFParamList();
         SymbolFunc symbolFunc = new SymbolFunc(funcType, funcName, funcFParamList);
         globalSymbolTable.addSymbol(symbolFunc);
-        Stmt.setFuncType(funcType);
 
         /* extend symbolTable */
         SymbolTable childSymbolTable = new SymbolTable(globalSymbolTable);
 
         /* create FuncFParams */
-        String declFParam = "";
+        ArrayList<Param> params = new ArrayList<>();
         for (FuncFParam funcFParam : funcFParamList) {
-            String fParamType = Support.tokenTypeTransfer(funcFParam.getBType().getToken().getType());
+            String llvmType = Support.tokenTypeTransfer(funcFParam.getBType().getToken().getType());
             if (funcFParam.isArray()) {
-                fParamType += "*";
+                llvmType += "*";
             }
             int reg = Register.allocReg();
-            declFParam += fParamType + " %" + reg + ", ";
+            Param param = new Param(llvmType, "%"+reg);
+            params.add(param);
         }
 
         /* load FuncFParams */
         Register.allocReg();
-        ArrayList<String> storeFParam = new ArrayList<>();
+        IrBlock irBlock = new IrBlock();
         for (FuncFParam funcFParam : funcFParamList) {
             String llvmType = Support.tokenTypeTransfer(funcFParam.getBType().getToken().getType());
             String symbolType = funcFParam.getBType().identifyType();
@@ -86,8 +78,8 @@ public class Builder {
                 symbolType += "Pointer";
             }
             int memory = Register.allocReg();
-            storeFParam.add("%" + memory + " = alloca " + llvmType);
-            storeFParam.add("store " +  llvmType + " %" + (memory - funcFParamList.size() - 1) + ", " + llvmType + "* %" + memory);
+            irBlock.addCode("%" + memory + " = alloca " + llvmType);
+            irBlock.addCode("store " +  llvmType + " %" + (memory - funcFParamList.size() - 1) + ", " + llvmType + "* %" + memory);
 
             String name = funcFParam.getIdent().getIdenfr();
             SymbolVar symbolVar = new SymbolVar(symbolType, name, "%" + memory);
@@ -95,25 +87,30 @@ public class Builder {
             childSymbolTable.addSymbol(symbolVar);
         }
 
-        /* load Func Declare */
-        module.addCode("");
-        String llvmType = Support.tokenTypeTransfer(funcDef.getFuncType().getToken().getType());
-        declFParam = declFParam.length() > 2 ? declFParam.substring(0, declFParam.length() - 2) : declFParam;
-        module.addCode("define dso_local " + llvmType + " @" + funcName + "(" + declFParam + ") {");
-        module.addCode(storeFParam);
-
         /* visit Block */
+        Stmt.setFuncType(funcType);
+        Stmt.setLocalStmtIrBlock(irBlock);
+        VarValue.setVarValueIrBlock(irBlock);
+        Cond.setCondIrBlock(irBlock);
+        LocalDecl.setLocalDeclIrBlock(irBlock);
         Stmt.visitBlock(funcDef.getBlock(), childSymbolTable, funcDef.getFuncType().getToken().getType(), false);
-        module.addRetIfNotExist();
-        module.addCode("}");
+        irBlock.addRetIfNotExist();
+
+        Function function = new Function(funcName, funcType, params, irBlock);
+        Module.addFunc(function);
     }
 
     private void visitMainFuncDef() {
-        module.addCode("");
-        module.addCode("define dso_local i32 @main() {");
         Stmt.setFuncType("IntFunc");
         SymbolTable childSymbolTable = new SymbolTable(globalSymbolTable);
+        IrBlock irBlock = new IrBlock();
+        Stmt.setLocalStmtIrBlock(irBlock);
+        VarValue.setVarValueIrBlock(irBlock);
+        Cond.setCondIrBlock(irBlock);
+        LocalDecl.setLocalDeclIrBlock(irBlock);
         Stmt.visitBlock(mainFuncDef.getBlock(), childSymbolTable, Token.Type.INTTK, false);
-        module.addCode("}");
+
+        Function function = new Function("main", "IntFunc", new ArrayList<>(), irBlock);
+        Module.addFunc(function);
     }
 }
