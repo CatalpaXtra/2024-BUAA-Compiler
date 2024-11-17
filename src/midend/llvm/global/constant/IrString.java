@@ -1,4 +1,4 @@
-package midend.llvm.global;
+package midend.llvm.global.constant;
 
 public class IrString extends IrConstant {
     private final String stringConst;

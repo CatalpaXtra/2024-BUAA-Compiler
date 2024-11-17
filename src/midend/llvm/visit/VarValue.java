@@ -16,9 +16,10 @@ import frontend.parser.terminal.Ident;
 import midend.llvm.Register;
 import midend.llvm.RetValue;
 import midend.llvm.Support;
+import midend.llvm.function.Function;
 import midend.llvm.function.IrBlock;
+import midend.llvm.function.Param;
 import midend.llvm.symbol.Symbol;
-import midend.llvm.symbol.SymbolFunc;
 import midend.llvm.symbol.SymbolTable;
 
 import java.util.ArrayList;
@@ -59,9 +60,9 @@ public class VarValue {
             result = new RetValue(Register.allocReg(), 1);
             Token op = operators.get(i - 1);
             if (op.getType().equals(Token.Type.PLUS)) {
-                irBlock.addInstrAdd(result, left, right);
+                irBlock.addInstrBinary(result, left, right, "add");
             } else if (op.getType().equals(Token.Type.MINU)) {
-                irBlock.addInstrSub(result, left.irOut(), right);
+                irBlock.addInstrBinary(result, left, right, "sub");
             }
         }
         return result;
@@ -77,11 +78,11 @@ public class VarValue {
             result = new RetValue(Register.allocReg(), 1);
             Token op = operators.get(i - 1);
             if (op.getType().equals(Token.Type.MULT)) {
-                irBlock.addInstrMul(result, left, right);
+                irBlock.addInstrBinary(result, left, right, "mul");
             } else if (op.getType().equals(Token.Type.DIV)) {
-                irBlock.addInstrSdiv(result, left, right);
+                irBlock.addInstrBinary(result, left, right, "sdiv");
             } else if (op.getType().equals(Token.Type.MOD)) {
-                irBlock.addInstrSrem(result, left, right);
+                irBlock.addInstrBinary(result, left, right, "srem");
             }
         }
         return result;
@@ -101,38 +102,34 @@ public class VarValue {
 
     private static RetValue visitUnaryFunc(UnaryFunc unaryFunc, SymbolTable symbolTable) {
         String funcName = unaryFunc.getIdent().getIdenfr();
-        SymbolFunc symbolFunc = (SymbolFunc) globalSymbolTable.getSymbol(funcName);
-        ArrayList<Symbol> fParams = symbolFunc.getSymbols();
+        Function function = (Function) globalSymbolTable.getSymbol(funcName);
         FuncRParams funcRParams = unaryFunc.getFuncRParams();
         String passRParam = "";
         if (funcRParams != null) {
             ArrayList<Exp> funcExps = funcRParams.getExps();
-            ArrayList<FuncFParam> funcFParams = symbolFunc.getFuncFParams();
+            ArrayList<Param> params = function.getParams();
             int len = funcExps.size();
             for (int i = 0; i < len; i++) {
                 RetValue result = visitExp(funcExps.get(i), symbolTable);
-                String llvmType = Support.varTransfer(fParams.get(i).getSymbolType());
-                if (funcFParams.get(i).isArray()) {
-                    llvmType += "*";
-                }
-                if (llvmType.equals("i8")) {
+                String irType = params.get(i).getIrType();
+                if (irType.equals("i8")) {
                     RetValue value = result;
                     result = new RetValue(Register.allocReg(), 1);
                     irBlock.addInstrTrunc(result, "i32", value, "i8");
                 }
-                passRParam += llvmType + " " + result.irOut() + ", ";
+                passRParam += irType + " " + result.irOut() + ", ";
             }
         }
         passRParam = passRParam.length() > 2 ? passRParam.substring(0, passRParam.length() - 2) : passRParam;
 
-        if (symbolFunc.getSymbolType().contains("Void")) {
+        if (function.getIrType().contains("void")) {
             irBlock.addInstrCall(null, "void", funcName, passRParam);
             return null;
         } else {
             RetValue result = new RetValue(Register.allocReg(), 1);
-            String llvmType = Support.varTransfer(symbolFunc.getSymbolType());
-            irBlock.addInstrCall(result, llvmType, funcName, passRParam);
-            if (symbolFunc.isChar()) {
+            String irType = function.getIrType();
+            irBlock.addInstrCall(result, irType, funcName, passRParam);
+            if (function.isChar()) {
                 RetValue value = result;
                 result = new RetValue(Register.allocReg(), 1);
                 irBlock.addInstrZext(result, "i8", value, "i32");
@@ -151,7 +148,8 @@ public class VarValue {
                 return new RetValue(-retValue.getValue(), 0);
             } else {
                 RetValue result = new RetValue(Register.allocReg(), 1);
-                irBlock.addInstrSub(result, "0", retValue);
+                RetValue zero = new RetValue(0, 0);
+                irBlock.addInstrBinary(result, zero, retValue, "sub");
                 return result;
             }
         } else {
@@ -164,7 +162,8 @@ public class VarValue {
                 }
             } else {
                 RetValue result = new RetValue(Register.allocReg(), 1);
-                irBlock.addInstrIcmp(result, "eq", retValue, "0");
+                RetValue zero = new RetValue(0, 0);
+                irBlock.addInstrIcmp(result, "eq", retValue, zero);
                 RetValue value = result;
                 result = new RetValue(Register.allocReg(), 1);
                 irBlock.addInstrZext(result, "i1", value, "i32");
@@ -191,22 +190,22 @@ public class VarValue {
         Ident ident = lVal.getIdent();
         Symbol symbol = symbolTable.getSymbol(ident.getIdenfr());
         String memory = symbol.getMemory();
-        String llvmType = Support.varTransfer(symbol.getSymbolType());
+        String irType = Support.varTransfer(symbol.getSymbolType());
         if (lVal.isArray()) {
             RetValue loc = visitExp(lVal.getExp(), symbolTable);
             RetValue result;
             if (symbol.isPointer()) {
                 RetValue temp1 = new RetValue(Register.allocReg(), 1);
-                irBlock.addInstrLoad(temp1, llvmType + "*", memory);
+                irBlock.addInstrLoad(temp1, irType + "*", memory);
                 RetValue temp2 = new RetValue(Register.allocReg(), 1);
-                irBlock.addInstrGetelementptrPointer(temp2, llvmType, temp1.irOut(), loc.irOut());
+                irBlock.addInstrGetelementptr(temp2, -1, irType, temp1.irOut(), loc.irOut());
                 result = new RetValue(Register.allocReg(), 1);
-                irBlock.addInstrLoad(result, llvmType, temp2.irOut());
+                irBlock.addInstrLoad(result, irType, temp2.irOut());
             } else {
                 RetValue temp1 = new RetValue(Register.allocReg(), 1);
-                irBlock.addInstrGetelementptrArray(temp1, symbol.getArraySize(), llvmType, memory, loc.irOut());
+                irBlock.addInstrGetelementptr(temp1, symbol.getArraySize(), irType, memory, loc.irOut());
                 result = new RetValue(Register.allocReg(), 1);
-                irBlock.addInstrLoad(result, llvmType, temp1.irOut());
+                irBlock.addInstrLoad(result, irType, temp1.irOut());
             }
 
             if (symbol.isChar()) {
@@ -221,16 +220,16 @@ public class VarValue {
                 /* int c[10]; a = func(c); */
                 int size = symbol.getArraySize();
                 RetValue result = new RetValue(Register.allocReg(), 1);
-                irBlock.addInstrGetelementptrArray(result, size, llvmType, memory, "0");
+                irBlock.addInstrGetelementptr(result, size, irType, memory, "0");
                 return result;
             } else if (symbol.isPointer()) {
                 /* Exist In Call Func While Pass Param */
                 RetValue result = new RetValue(Register.allocReg(), 1);
-                irBlock.addInstrLoad(result, llvmType+"*", memory);
+                irBlock.addInstrLoad(result, irType+"*", memory);
                 return result;
             } else {
                 RetValue result = new RetValue(Register.allocReg(), 1);
-                irBlock.addInstrLoad(result, llvmType, memory);
+                irBlock.addInstrLoad(result, irType, memory);
                 if (symbol.isChar()) {
                     RetValue value = result;
                     result = new RetValue(Register.allocReg(), 1);

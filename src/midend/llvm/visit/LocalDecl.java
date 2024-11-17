@@ -17,6 +17,7 @@ import midend.llvm.Register;
 import midend.llvm.RetValue;
 import midend.llvm.Support;
 import midend.llvm.function.IrBlock;
+import midend.llvm.global.GlobalBuilder;
 import midend.llvm.symbol.*;
 
 import java.util.ArrayList;
@@ -53,22 +54,22 @@ public class LocalDecl {
         }
     }
 
-    private static void initLocalIntArray(RetValue memoryReg, int size, ArrayList<Integer> initVal, String llvmType) {
+    private static void initLocalIntArray(RetValue memoryReg, int size, ArrayList<Integer> initVal, String irType) {
         RetValue lastReg = memoryReg;
         for (int i = 0; i < initVal.size(); i++) {
             RetValue thisReg = new RetValue(Register.allocReg(), 1);
             if (i == 0) {
-                irBlock.addInstrGetelementptrArray(thisReg, size, llvmType, lastReg.irOut(), "0");
+                irBlock.addInstrGetelementptr(thisReg, size, irType, lastReg.irOut(), "0");
             } else {
-                irBlock.addInstrGetelementptrPointer(thisReg, llvmType, lastReg.irOut(), "1");
+                irBlock.addInstrGetelementptr(thisReg, -1, irType, lastReg.irOut(), "1");
             }
-            irBlock.addInstrStore(llvmType, ""+initVal.get(i), thisReg.irOut());
+            irBlock.addInstrStore(irType, ""+initVal.get(i), thisReg.irOut());
             lastReg = thisReg;
         }
-        if (llvmType.equals("i8")) {
+        if (irType.equals("i8")) {
             for (int i = initVal.size(); i < size; i++) {
                 RetValue thisReg = new RetValue(Register.allocReg(), 1);
-                irBlock.addInstrGetelementptrPointer(thisReg, "i8", lastReg.irOut(), "1");
+                irBlock.addInstrGetelementptr(thisReg, -1, "i8", lastReg.irOut(), "1");
                 irBlock.addInstrStore("i8", "0", thisReg.irOut());
                 lastReg = thisReg;
             }
@@ -82,9 +83,9 @@ public class LocalDecl {
         for (int i = 0; i < initVal.length(); i++) {
             RetValue thisReg = new RetValue(Register.allocReg(), 1);
             if (i == 0) {
-                irBlock.addInstrGetelementptrArray(thisReg, size, "i8", lastReg.irOut(), "0");
+                irBlock.addInstrGetelementptr(thisReg, size, "i8", lastReg.irOut(), "0");
             } else {
-                irBlock.addInstrGetelementptrPointer(thisReg, "i8", lastReg.irOut(), "1");
+                irBlock.addInstrGetelementptr(thisReg, -1, "i8", lastReg.irOut(), "1");
             }
 
             int value = initVal.charAt(i);
@@ -100,7 +101,7 @@ public class LocalDecl {
         }
         for (int i = len; i < size; i++) {
             RetValue thisReg = new RetValue(Register.allocReg(), 1);
-            irBlock.addInstrGetelementptrPointer(thisReg, "i8", lastReg.irOut(), "1");
+            irBlock.addInstrGetelementptr(thisReg, -1, "i8", lastReg.irOut(), "1");
             irBlock.addInstrStore("i8", "0", thisReg.irOut());
             lastReg = thisReg;
         }
@@ -108,18 +109,18 @@ public class LocalDecl {
 
     private static void visitConstDef(ConstDef constDef, String type, SymbolTable symbolTable) {
         String symbolType = "Const" + type;
-        String llvmType = Support.varTransfer(type);
+        String irType = Support.varTransfer(type);
         String name = constDef.getIdent().getIdenfr();
         if (constDef.isArray()) {
             symbolType += "Array";
-            int size = ConstValue.visitConstExp(constDef.getConstExp(), symbolTable);
+            int size = GlobalBuilder.visitConstExp(constDef.getConstExp(), symbolTable);
             RetValue memoryReg = new RetValue(Register.allocReg(), 1);
-            irBlock.addInstrAllocaArray(memoryReg, size, llvmType);
+            irBlock.addInstrAlloca(memoryReg, irType, size);
 
             ConstInitValEle constInitValEle = constDef.getConstInitVal().getConstInitValEle();
             if (constInitValEle instanceof ConstExpSet) {
-                ArrayList<Integer> initVal = ConstValue.visitConstExpSet((ConstExpSet) constInitValEle, symbolTable);
-                initLocalIntArray(memoryReg, size, initVal, llvmType);
+                ArrayList<Integer> initVal = GlobalBuilder.visitConstExpSet((ConstExpSet) constInitValEle, symbolTable);
+                initLocalIntArray(memoryReg, size, initVal, irType);
                 SymbolCon symbolCon = new SymbolCon(symbolType, name, memoryReg.irOut(), initVal, size);
                 symbolTable.addSymbol(symbolCon);
             } else if (constInitValEle instanceof StringConst) {
@@ -130,36 +131,36 @@ public class LocalDecl {
             }
         } else {
             RetValue memoryReg = new RetValue(Register.allocReg(), 1);
-            irBlock.addInstrAllocaVar(memoryReg, llvmType);
-            int initVal = ConstValue.visitConstExp((ConstExp) constDef.getConstInitVal().getConstInitValEle(), symbolTable);
-            irBlock.addInstrStore(llvmType, ""+initVal, memoryReg.irOut());
+            irBlock.addInstrAlloca(memoryReg, irType, -1);
+            int initVal = GlobalBuilder.visitConstExp((ConstExp) constDef.getConstInitVal().getConstInitValEle(), symbolTable);
+            irBlock.addInstrStore(irType, ""+initVal, memoryReg.irOut());
             SymbolCon symbolCon = new SymbolCon(symbolType, name, memoryReg.irOut(), initVal);
             symbolTable.addSymbol(symbolCon);
         }
     }
 
-    private static void initLocalVarIntArray(RetValue memoryReg, int size, ArrayList<RetValue> initVal, String llvmType) {
+    private static void initLocalVarIntArray(RetValue memoryReg, int size, ArrayList<RetValue> initVal, String irType) {
         RetValue lastReg = memoryReg;
         for (int i = 0; i < initVal.size(); i++) {
             RetValue thisReg = new RetValue(Register.allocReg(), 1);
             if (i == 0) {
-                irBlock.addInstrGetelementptrArray(thisReg, size, llvmType, lastReg.irOut(), "0");
+                irBlock.addInstrGetelementptr(thisReg, size, irType, lastReg.irOut(), "0");
             } else {
-                irBlock.addInstrGetelementptrPointer(thisReg, llvmType, lastReg.irOut(), "1");
+                irBlock.addInstrGetelementptr(thisReg, -1, irType, lastReg.irOut(), "1");
             }
-            if (initVal.get(i).isReg() && llvmType.equals("i8")) {
+            if (initVal.get(i).isReg() && irType.equals("i8")) {
                 RetValue temp = new RetValue(Register.allocReg(), 1);
                 irBlock.addInstrTrunc(temp, "i32", initVal.get(i), "i8");
-                irBlock.addInstrStore(llvmType, temp.irOut(), thisReg.irOut());
+                irBlock.addInstrStore(irType, temp.irOut(), thisReg.irOut());
             } else {
-                irBlock.addInstrStore(llvmType, initVal.get(i).irOut(), thisReg.irOut());
+                irBlock.addInstrStore(irType, initVal.get(i).irOut(), thisReg.irOut());
             }
             lastReg = thisReg;
         }
-        if (llvmType.equals("i8")) {
+        if (irType.equals("i8")) {
             for (int i = initVal.size(); i < size; i++) {
                 RetValue thisReg = new RetValue(Register.allocReg(), 1);
-                irBlock.addInstrGetelementptrPointer(thisReg, "i8", lastReg.irOut(), "1");
+                irBlock.addInstrGetelementptr(thisReg, -1, "i8", lastReg.irOut(), "1");
                 irBlock.addInstrStore("i8", "0", thisReg.irOut());
                 lastReg = thisReg;
             }
@@ -168,19 +169,19 @@ public class LocalDecl {
 
     private static void visitVarDef(VarDef varDef, String type, SymbolTable symbolTable) {
         String symbolType = type;
-        String llvmType = Support.varTransfer(type);
+        String irType = Support.varTransfer(type);
         String name = varDef.getIdent().getIdenfr();
         if (varDef.isArray()) {
             symbolType += "Array";
-            int size = ConstValue.visitConstExp(varDef.getConstExp(), symbolTable);
+            int size = GlobalBuilder.visitConstExp(varDef.getConstExp(), symbolTable);
             RetValue memoryReg = new RetValue(Register.allocReg(), 1);
-            irBlock.addInstrAllocaArray(memoryReg, size, llvmType);
+            irBlock.addInstrAlloca(memoryReg, irType, size);
 
             if (varDef.hasInitValue()) {
                 InitValEle initValEle = varDef.getInitVal().getInitValEle();
                 if (initValEle instanceof ExpSet) {
                     ArrayList<RetValue> initVal = VarValue.visitExpSet((ExpSet) initValEle, symbolTable);
-                    initLocalVarIntArray(memoryReg, size, initVal, llvmType);
+                    initLocalVarIntArray(memoryReg, size, initVal, irType);
                     SymbolVar symbolVar = new SymbolVar(symbolType, name, memoryReg.irOut(), new ArrayList<>(), size);
                     symbolTable.addSymbol(symbolVar);
                 } else if (initValEle instanceof StringConst) {
@@ -195,7 +196,7 @@ public class LocalDecl {
             }
         } else {
             RetValue memoryReg = new RetValue(Register.allocReg(), 1);
-            irBlock.addInstrAllocaVar(memoryReg, llvmType);
+            irBlock.addInstrAlloca(memoryReg, irType, -1);
             if (varDef.hasInitValue()) {
                 RetValue result = VarValue.visitExp((Exp) varDef.getInitVal().getInitValEle(), symbolTable);
                 if (result.isReg() && symbolType.contains("Char")) {
@@ -203,7 +204,7 @@ public class LocalDecl {
                     result = new RetValue(Register.allocReg(), 1);
                     irBlock.addInstrTrunc(result, "i32", value, "i8");
                 }
-                irBlock.addInstrStore(llvmType, result.irOut(), memoryReg.irOut());
+                irBlock.addInstrStore(irType, result.irOut(), memoryReg.irOut());
             }
             SymbolVar symbolVar = new SymbolVar(symbolType, name, memoryReg.irOut());
             symbolTable.addSymbol(symbolVar);

@@ -24,29 +24,30 @@ public class Cond {
     }
 
     private static void visitSingleLOrExp(LAndExp lAndExp, SymbolTable symbolTable) {
-        irBlock.addCode(Stmt.nextLabel + ":");
+        irBlock.addInstrLabel(Stmt.nextLabel);
         int left = irBlock.getLoc() + 1;
         RetValue result = visitLAndExp(lAndExp, symbolTable, true);
         if (result.isDigit()) {
             if (result.getValue() != 0) {
                 /* Cond is true, Jump to Stmt1 */
-                irBlock.delLastCode();
+                irBlock.delLastInstr();
                 return;
             } else {
                 /* Cond is false, Jump to BLOCK2 OR STMT */
                 irBlock.addInstrBr("<BLOCK2 OR STMT>");
-                irBlock.addCode("");
+                irBlock.addInstrNull();
                 Stmt.nextLabel = Register.allocReg();
             }
         } else if (result.isReg() || result.isMany()) {
             if (result.isReg()) {
                 RetValue value = result;
                 result = new RetValue(Register.allocReg(), 1);
-                irBlock.addInstrIcmp(result, "ne", value, "0");
+                RetValue zero = new RetValue(0, 0);
+                irBlock.addInstrIcmp(result, "ne", value, zero);
             }
             Stmt.nextLabel = Register.allocReg();
             irBlock.addInstrBrCond(result, "%" + Stmt.nextLabel, "<BLOCK2 OR STMT>");
-            irBlock.addCode("");
+            irBlock.addInstrNull();
         }
         irBlock.replaceInterval(left, irBlock.getLoc(), "%" + Stmt.nextLabel, "<BLOCK1>");
     }
@@ -60,14 +61,14 @@ public class Cond {
 
         int left = irBlock.getLoc() + 1;
         for (int i = 0; i < lAndExps.size(); i++) {
-            irBlock.addCode(Stmt.nextLabel + ":");
+            irBlock.addInstrLabel(Stmt.nextLabel);
             RetValue result = visitLAndExp(lAndExps.get(i), symbolTable, i == lAndExps.size() - 1);
             if (result.isDigit()) {
                 if (result.getValue() != 0) {
                     /* Cond is true, end */
                     Stmt.nextLabel = Register.allocReg();
                     irBlock.addInstrBr("<BLOCK1>");
-                    irBlock.addCode("");
+                    irBlock.addInstrNull();
                     irBlock.replaceInterval(left, irBlock.getLoc(), "%" + Stmt.nextLabel, "<BLOCK1>");
                     return;
                 } else {
@@ -75,18 +76,19 @@ public class Cond {
                     if (i == lAndExps.size() - 1) {
                         Stmt.nextLabel = Register.allocReg();
                         irBlock.addInstrBr("<BLOCK2 OR STMT>");
-                        irBlock.addCode("");
+                        irBlock.addInstrNull();
                         irBlock.replaceInterval(left, irBlock.getLoc(), "%" + Stmt.nextLabel, "<BLOCK1>");
                         return;
                     }
-                    irBlock.delLastCode();
+                    irBlock.delLastInstr();
                 }
             } else if (result.isReg() || result.isMany()) {
                 /* Return Value In Register */
                 if (result.isReg()) {
                     RetValue temp = result;
                     result = new RetValue(Register.allocReg(), 1);
-                    irBlock.addInstrIcmp(result, "ne", temp, "0");
+                    RetValue zero = new RetValue(0, 0);
+                    irBlock.addInstrIcmp(result, "ne", temp, zero);
                 }
                 Stmt.nextLabel = Register.allocReg();
                 if (i == lAndExps.size() - 1) {
@@ -94,7 +96,7 @@ public class Cond {
                 } else {
                     irBlock.addInstrBrCond(result, "<BLOCK1>", "%" + Stmt.nextLabel);
                 }
-                irBlock.addCode("");
+                irBlock.addInstrNull();
             }
         }
         irBlock.replaceInterval(left, irBlock.getLoc(), "%" + Stmt.nextLabel, "<BLOCK1>");
@@ -107,16 +109,16 @@ public class Cond {
         }
 
         /* Delete Repeat Label */
-        irBlock.delLastCode();
+        irBlock.delLastInstr();
         int left = irBlock.getLoc() + 1;
         for (int i = 0; i < eqExps.size(); i++) {
-            irBlock.addCode(Stmt.nextLabel + ":");
+            irBlock.addInstrLabel(Stmt.nextLabel);
             RetValue result = visitEqExp(eqExps.get(i), symbolTable);
             if (result.isDigit()) {
                 if (result.getValue() == 0) {
                     /* Cond is false, end */
                     irBlock.addInstrBr("<NEXT LOREXP>");
-                    irBlock.addCode("");
+                    irBlock.addInstrNull();
 
                     Stmt.nextLabel = Register.allocReg();
                     if (isLast) {
@@ -129,7 +131,7 @@ public class Cond {
                     /* Cond may be false, continue */
                     if (i == eqExps.size() - 1) {
                         irBlock.addInstrBr("<BLOCK1>");
-                        irBlock.addCode("");
+                        irBlock.addInstrNull();
                         Stmt.nextLabel = Register.allocReg();
                         if (isLast) {
                             irBlock.replaceInterval(left, irBlock.getLoc(), "<BLOCK2 OR STMT>", "<NEXT LOREXP>");
@@ -138,13 +140,14 @@ public class Cond {
                         }
                         return new RetValue(Stmt.nextLabel, 2);
                     } else {
-                        irBlock.delLastCode();
+                        irBlock.delLastInstr();
                     }
                 }
             } else if (result.isReg()) {
                 /* Return Value In Register */
                 RetValue temp = new RetValue(Register.allocReg(), 1);
-                irBlock.addInstrIcmp(temp, "ne", result, "0");
+                RetValue zero = new RetValue(0, 0);
+                irBlock.addInstrIcmp(temp, "ne", result, zero);
 
                 Stmt.nextLabel = Register.allocReg();
                 if (i == eqExps.size() - 1) {
@@ -152,7 +155,7 @@ public class Cond {
                 } else {
                     irBlock.addInstrBrCond(temp, "%" + Stmt.nextLabel, "<NEXT LOREXP>");
                 }
-                irBlock.addCode("");
+                irBlock.addInstrNull();
             } else {
                 Stmt.nextLabel = Register.allocReg();
                 if (i == eqExps.size() - 1) {
@@ -160,7 +163,7 @@ public class Cond {
                 } else {
                     irBlock.addInstrBrCond(result, "%" + Stmt.nextLabel, "<NEXT LOREXP>");
                 }
-                irBlock.addCode("");
+                irBlock.addInstrNull();
             }
         }
         if (isLast) {
@@ -196,7 +199,7 @@ public class Cond {
                 irBlock.addInstrZext(right, "i1", value, "i32");
             }
             result = new RetValue(Register.allocReg(), 1);
-            irBlock.addInstrIcmp(result, cond, left, right.irOut());
+            irBlock.addInstrIcmp(result, cond, left, right);
 
             /* Value Transfer */
             RetValue value = result;
@@ -204,7 +207,7 @@ public class Cond {
             irBlock.addInstrZext(result, "i1", value, "i32");
         }
         Register.cancelAlloc();
-        irBlock.delLastCode();
+        irBlock.delLastInstr();
         return new RetValue(Register.getRegNum() - 1, 3);
     }
 
@@ -221,7 +224,7 @@ public class Cond {
             RetValue left = result;
             RetValue right = VarValue.visitAddExp(addExps.get(i), symbolTable);
             result = new RetValue(Register.allocReg(), 1);
-            irBlock.addInstrIcmp(result, cond, left, right.irOut());
+            irBlock.addInstrIcmp(result, cond, left, right);
 
             /* Value Transfer */
             RetValue value = result;
@@ -229,7 +232,7 @@ public class Cond {
             irBlock.addInstrZext(result, "i1", value, "i32");
         }
         Register.cancelAlloc();
-        irBlock.delLastCode();
+        irBlock.delLastInstr();
         return new RetValue(Register.getRegNum() - 1, 3);
     }
 }

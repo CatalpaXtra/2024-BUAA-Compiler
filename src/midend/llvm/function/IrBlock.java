@@ -1,156 +1,110 @@
 package midend.llvm.function;
 
 import midend.llvm.RetValue;
+import midend.llvm.instr.*;
 
 import java.util.ArrayList;
 
 public class IrBlock {
-    private final ArrayList<String> codeList;
+    private final ArrayList<IrInstr> instructions;
 
     public IrBlock() {
-        this.codeList = new ArrayList<>();
+        this.instructions = new ArrayList<>();
     }
 
-    public void addInstrAdd(RetValue result, RetValue op1, RetValue op2) {
-        /* <result> = add <ty> <op1>, <op2> */
-        String instr = result.irOut() + " = add i32 " + op1.irOut() + ", " + op2.irOut();
-        codeList.add(instr);
+    public void addInstr(IrInstr instr) {
+        instructions.add(instr);
     }
 
-    public void addInstrSub(RetValue result, String op1, RetValue op2) {
-        /* <result> = sub <ty> <op1>, <op2> */
-        String instr = result.irOut() + " = sub i32 " + op1 + ", " + op2.irOut();
-        codeList.add(instr);
+    public void addInstrBinary(RetValue result, RetValue op1, RetValue op2, String operand) {
+        IrBinary irBinary = new IrBinary(result, op1, op2, operand);
+        addInstr(irBinary);
     }
 
-    public void addInstrMul(RetValue result, RetValue op1, RetValue op2) {
-        /* <result> = mul <ty> <op1>, <op2> */
-        String instr = result.irOut() + " = mul i32 " + op1.irOut() + ", " + op2.irOut();
-        codeList.add(instr);
-    }
-
-    public void addInstrSdiv(RetValue result, RetValue op1, RetValue op2) {
-        /* <result> = sdiv <ty> <op1>, <op2> */
-        String instr = result.irOut() + " = sdiv i32 " + op1.irOut() + ", " + op2.irOut();
-        codeList.add(instr);
-    }
-
-    public void addInstrSrem(RetValue result, RetValue op1, RetValue op2) {
-        /* <result> = srem <type> <op1>, <op2> */
-        String instr = result.irOut() + " = srem i32 " + op1.irOut() + ", " + op2.irOut();
-        codeList.add(instr);
-    }
-
-    public void addInstrIcmp(RetValue result, String cond, RetValue op1, String op2) {
-        /* <result> = icmp <cond> <ty> <op1>, <op2> */
-        String instr = result.irOut() + " = icmp " + cond + " i32 " + op1.irOut() + ", " + op2;
-        codeList.add(instr);
+    public void addInstrIcmp(RetValue result, String cond, RetValue op1, RetValue op2) {
+        IrIcmp irIcmp = new IrIcmp(result, cond, op1, op2);
+        addInstr(irIcmp);
     }
 
     public void addInstrCall(RetValue result, String funcType, String funcName, String rParams) {
-        /* <result> = call [ret attrs] <ty> <name>(<...args>) */
-        String instr;
-        if (funcType.equals("void")) {
-            instr = "call void @" + funcName + "(" + rParams + ")";
-        } else {
-            instr = result.irOut() + " = call " + funcType + " @" + funcName + "(" + rParams + ")";
-        }
-        codeList.add(instr);
+        IrCall irCall = new IrCall(result, funcType, funcName, rParams);
+        addInstr(irCall);
     }
 
-    public void addInstrAllocaVar(RetValue result, String llvmType) {
-        /* <result> = alloca <type> */
-        String instr = result.irOut() + " = alloca " + llvmType;
-        codeList.add(instr);
-    }
-
-    public void addInstrAllocaArray(RetValue result, int size, String llvmType) {
-        /* <result> = alloca <type> */
-        String instr = result.irOut() + " = alloca [" + size + " x " + llvmType + "]";
-        codeList.add(instr);
+    public void addInstrAlloca(RetValue result, String llvmType, int size) {
+        IrAlloca irAlloca = new IrAlloca(result, llvmType, size);
+        addInstr(irAlloca);
     }
 
     public void addInstrLoad(RetValue result, String llvmType, String pointer) {
-        /* <result> = load <ty>, ptr <pointer> */
-        String instr = result.irOut() + " = load " + llvmType + ", " + llvmType + "* " + pointer;
-        codeList.add(instr);
+        IrLoad irLoad = new IrLoad(result, llvmType, pointer);
+        addInstr(irLoad);
     }
 
     public void addInstrStore(String llvmType, String value, String pointer) {
-        /* store <ty> <value>, ptr <pointer> */
-        String instr = "store " + llvmType + " " + value + ", " + llvmType + "* " + pointer;
-        codeList.add(instr);
+        IrStore irStore = new IrStore(llvmType, value, pointer);
+        addInstr(irStore);
     }
 
-    public void addInstrGetelementptrArray(RetValue result, int size, String llvmType, String pointer, String offset) {
-        /* %1 = getelementptr [5 x i32], [5 x i32]* @a, i32 0, i32 3 */
-        String instr = result.irOut() + " = getelementptr inbounds [" + size + " x " + llvmType + "]";
-        instr += ", [" + size + " x " + llvmType + "]* " + pointer + ", i32 0, i32 " + offset;
-        codeList.add(instr);
-    }
-
-    public void addInstrGetelementptrPointer(RetValue result, String llvmType, String pointer, String offset) {
-        /* %3 = getelementptr i32, i32* %2, i32 3 */
-        String instr = result.irOut() + " = getelementptr inbounds " + llvmType + ", " + llvmType + "* " + pointer + ", i32 " + offset;
-        codeList.add(instr);
+    public void addInstrGetelementptr(RetValue result, int size, String llvmType, String pointer, String offset) {
+        IrGetelementptr irGetelementptr = new IrGetelementptr(result, llvmType, pointer, offset, size);
+        addInstr(irGetelementptr);
     }
 
     public void addInstrBr(String dest) {
-        /* br label <dest> */
-        String instr = "br label " + dest;
-        codeList.add(instr);
+        IrBr irBr = new IrBr(dest);
+        addInstr(irBr);
     }
 
     public void addInstrBrCond(RetValue result, String ifTrue, String ifFalse) {
-        /* br i1 <cond>, label <iftrue>, label <iffalse> */
-        String instr = "br i1 " + result.irOut() + ", label " + ifTrue + ", label " + ifFalse;
-        codeList.add(instr);
+        IrBr irBr = new IrBr(result, ifTrue, ifFalse);
+        addInstr(irBr);
     }
 
     public void addInstrRet(String retType, RetValue value) {
-        /* ret <type> <value> , ret void */
-        String instr;
-        if (retType.equals("void")) {
-            instr = "ret void";
-        } else {
-            instr = "ret " + retType + " " + value.irOut();
-        }
-        codeList.add(instr);
+        IrRet irRet = new IrRet(retType, value);
+        addInstr(irRet);
     }
 
     public void addInstrZext(RetValue result, String ty1, RetValue value, String ty2) {
-        /* <result> = zext <ty> <value> to <ty2> */
-        String instr = result.irOut() + " = zext " + ty1 + " " + value.irOut() + " to " + ty2;
-        codeList.add(instr);
+        IrZext irZext = new IrZext(result, ty1, value, ty2);
+        addInstr(irZext);
     }
 
     public void addInstrTrunc(RetValue result, String ty1, RetValue value, String ty2) {
-        /* <result> = trunc <ty> <value> to <ty2> */
-        String instr = result.irOut() + " = trunc " + ty1 + " " + value.irOut() + " to " + ty2;
-        codeList.add(instr);
+        IrTrunc irTrunc = new IrTrunc(result, ty1, value, ty2);
+        addInstr(irTrunc);
     }
 
     public void addRetIfNotExist() {
-        if (codeList.isEmpty()) {
-            codeList.add("ret void");
-            return;
-        }
-        String instr = codeList.get(codeList.size() - 1);
-        if (!instr.contains("ret")) {
-            codeList.add("ret void");
+        if (instructions.isEmpty()) {
+            IrRet irRet = new IrRet("void", null);
+            addInstr(irRet);
+        } else {
+            IrInstr instr = instructions.get(instructions.size() - 1);
+            if (!(instr instanceof IrRet)) {
+                IrRet irRet = new IrRet("void", null);
+                addInstr(irRet);
+            }
         }
     }
 
-    public void addCode(String code) {
-        codeList.add(code);
+    public void addInstrLabel(int label) {
+        IrLabel irLabel = new IrLabel(label);
+        addInstr(irLabel);
     }
 
-    public void delLastCode() {
-        codeList.remove(codeList.size() - 1);
+    public void addInstrNull() {
+        IrInstr irInstr = new IrInstr();
+        addInstr(irInstr);
+    }
+
+    public void delLastInstr() {
+        instructions.remove(instructions.size() - 1);
     }
 
     public int getLoc() {
-        return codeList.size() - 1;
+        return instructions.size() - 1;
     }
 
     public void replaceInterval(int left, int right, String replaced, String target) {
@@ -158,16 +112,17 @@ public class IrBlock {
             return;
         }
         for (int i = left; i <= right; i++) {
-            String str = codeList.get(i);
-            str = str.replace(target, replaced);
-            codeList.set(i, str);
+            IrInstr irInstr = instructions.get(i);
+            if (irInstr instanceof IrBr) {
+                ((IrBr) irInstr).backFill(target, replaced);
+            }
         }
     }
 
     public String irOut() {
         StringBuilder sb = new StringBuilder();
-        for (String instr : codeList) {
-            sb.append(instr).append('\n');
+        for (IrInstr instr : instructions) {
+            sb.append(instr.irOut()).append('\n');
         }
         return sb.toString();
     }

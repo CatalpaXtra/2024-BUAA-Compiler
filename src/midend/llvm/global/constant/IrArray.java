@@ -1,4 +1,4 @@
-package midend.llvm.global;
+package midend.llvm.global.constant;
 
 import java.util.ArrayList;
 

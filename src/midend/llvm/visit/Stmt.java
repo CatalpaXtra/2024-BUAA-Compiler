@@ -21,15 +21,12 @@ import java.util.ArrayList;
 
 public class Stmt {
     private static IrBlock irBlock;
-    public static int nextLabel;
     private static String funcType;
+    public static int nextLabel;
 
-    public static void setLocalStmtIrBlock(IrBlock irBlock) {
+    public static void setStmt(IrBlock irBlock, String funcType) {
         Stmt.irBlock = irBlock;
-    }
-
-    public static void setFuncType(String type) {
-        funcType = type;
+        Stmt.funcType = funcType;
     }
 
     public static boolean visitBlock(Block block, SymbolTable symbolTable, Token.Type type, boolean isInFor) {
@@ -104,31 +101,31 @@ public class Stmt {
         /* LVal Must Be Var */
         Symbol symbol = symbolTable.getSymbol(lVal.getIdent().getIdenfr());
         String memory = symbol.getMemory();
-        String llvmType = Support.varTransfer(symbol.getSymbolType());
+        String irType = Support.varTransfer(symbol.getSymbolType());
         if (lVal.isArray()) {
             RetValue loc = VarValue.visitExp(lVal.getExp(), symbolTable);
             RetValue temp1 = new RetValue(Register.allocReg(), 1);
             if (symbol.isPointer()) {
-                irBlock.addInstrLoad(temp1, llvmType + "*", memory);
+                irBlock.addInstrLoad(temp1, irType + "*", memory);
                 RetValue temp2 = temp1;
                 temp1 = new RetValue(Register.allocReg(), 1);
-                irBlock.addInstrGetelementptrPointer(temp1, llvmType, temp2.irOut(), loc.irOut());
+                irBlock.addInstrGetelementptr(temp1, -1, irType, temp2.irOut(), loc.irOut());
             } else {
-                irBlock.addInstrGetelementptrArray(temp1, symbol.getArraySize(), llvmType, memory, loc.irOut());
+                irBlock.addInstrGetelementptr(temp1, symbol.getArraySize(), irType, memory, loc.irOut());
             }
             if (symbol.isChar()) {
                 RetValue value = result;
                 result = new RetValue(Register.allocReg(), 1);
                 irBlock.addInstrTrunc(result, "i32", value, "i8");
             }
-            irBlock.addInstrStore(llvmType, result.irOut(), temp1.irOut());
+            irBlock.addInstrStore(irType, result.irOut(), temp1.irOut());
         } else {
             if (symbol.isChar()) {
                 RetValue value = result;
                 result = new RetValue(Register.allocReg(), 1);
                 irBlock.addInstrTrunc(result, "i32", value, "i8");
             }
-            irBlock.addInstrStore(llvmType, result.irOut(), memory);
+            irBlock.addInstrStore(irType, result.irOut(), memory);
         }
     }
 
@@ -182,11 +179,11 @@ public class Stmt {
         /* Handle Cond */
         nextLabel = Register.allocReg();
         irBlock.addInstrBr("%" + nextLabel);
-        irBlock.addCode("");
+        irBlock.addInstrNull();
         int left = irBlock.getLoc() + 1;
         Cond.visitCond(stmtIf.getCond(), symbolTable);
         int right = irBlock.getLoc();
-        irBlock.addCode(nextLabel + ":");
+        irBlock.addInstrLabel(nextLabel);
 
         /* Handle Stmt1 */
         boolean stop = visitStmt(stmtIf.getStmt1(), symbolTable, type, isInFor);
@@ -200,8 +197,8 @@ public class Stmt {
             if (!stop) {
                 irBlock.addInstrBr("<NEXT STMT>");
             }
-            irBlock.addCode("");
-            irBlock.addCode(nextLabel + ":");
+            irBlock.addInstrNull();
+            irBlock.addInstrLabel(nextLabel);
 
             stop = visitStmt(stmtIf.getStmt2(), symbolTable, type, isInFor);
             irBlock.replaceInterval(replaceLoc, replaceLoc, "%" + Register.getRegNum(), "<NEXT STMT>");
@@ -213,8 +210,8 @@ public class Stmt {
             irBlock.addInstrBr("%" + nextLabel);
         }
 
-        irBlock.addCode("");
-        irBlock.addCode(nextLabel + ":");
+        irBlock.addInstrNull();
+        irBlock.addInstrLabel(nextLabel);
     }
 
     private static void visitStmtFor(StmtFor stmtFor, SymbolTable symbolTable, Token.Type type) {
@@ -229,15 +226,15 @@ public class Stmt {
         if (stmtFor.getCond() != null) {
             nextLabel = Register.allocReg();
             irBlock.addInstrBr("%" + nextLabel);
-            irBlock.addCode("");
+            irBlock.addInstrNull();
             Cond.visitCond(stmtFor.getCond(), symbolTable);
-            irBlock.addCode(nextLabel + ":");
+            irBlock.addInstrLabel(nextLabel);
         } else {
             /* Directly Branch to Stmt */
             nextLabel = Register.allocReg();
             irBlock.addInstrBr("%" + nextLabel);
-            irBlock.addCode("");
-            irBlock.addCode(nextLabel + ":");
+            irBlock.addInstrNull();
+            irBlock.addInstrLabel(nextLabel);
         }
 
         /* Handle Stmt */
@@ -248,8 +245,8 @@ public class Stmt {
         if (!stop) {
             irBlock.addInstrBr("%" + nextLabel);
         }
-        irBlock.addCode("");
-        irBlock.addCode(nextLabel + ":");
+        irBlock.addInstrNull();
+        irBlock.addInstrLabel(nextLabel);
 
         /* Handle ForStmt2 */
         int forstmt2Label = nextLabel;
@@ -261,8 +258,8 @@ public class Stmt {
         nextLabel = Register.allocReg();
         /* Branch to Cond */
         irBlock.addInstrBr("%" + condLabel);
-        irBlock.addCode("");
-        irBlock.addCode(nextLabel + ":");
+        irBlock.addInstrNull();
+        irBlock.addInstrLabel(nextLabel);
 
         irBlock.replaceInterval(left, right, "%" + nextLabel, "<BLOCK2 OR STMT>");
         irBlock.replaceInterval(left, right, "%" + forstmt2Label, "<FORSTMT2>");

@@ -9,6 +9,7 @@ import frontend.parser.function.params.FuncFParam;
 import midend.llvm.function.Function;
 import midend.llvm.function.IrBlock;
 import midend.llvm.function.Param;
+import midend.llvm.global.GlobalBuilder;
 import midend.llvm.visit.*;
 import midend.llvm.symbol.*;
 
@@ -29,7 +30,7 @@ public class Builder {
 
     public void build() {
         for (Decl decl : decls) {
-            GlobalDecl.visitGlobalDecl(decl, globalSymbolTable);
+            GlobalBuilder.visitGlobalDecl(decl, globalSymbolTable);
         }
 
         VarValue.setVarValue(globalSymbolTable);
@@ -44,67 +45,61 @@ public class Builder {
     }
 
     private void visitFuncDef(FuncDef funcDef) {
-        /* visit FuncType and FuncIdent */
+        /* create new Function */
         String funcType = funcDef.getFuncType().identifyFuncType() + "Func";
         String funcName = funcDef.getIdent().getIdenfr();
-
-        ArrayList<FuncFParam> funcFParamList = funcDef.getFuncFParams() == null ? new ArrayList<>() : funcDef.getFuncFParams().getFuncFParamList();
-        SymbolFunc symbolFunc = new SymbolFunc(funcType, funcName, funcFParamList);
-        globalSymbolTable.addSymbol(symbolFunc);
+        ArrayList<Param> params = new ArrayList<>();
+        IrBlock irBlock = new IrBlock();
+        Function function = new Function(funcName, funcType, params, irBlock);
+        Module.addFunc(function);
 
         /* extend symbolTable */
         SymbolTable childSymbolTable = new SymbolTable(globalSymbolTable);
+        globalSymbolTable.addSymbol(function);
 
         /* create FuncFParams */
-        ArrayList<Param> params = new ArrayList<>();
+        ArrayList<FuncFParam> funcFParamList = funcDef.getFuncFParams() == null ? new ArrayList<>() : funcDef.getFuncFParams().getFuncFParamList();
         for (FuncFParam funcFParam : funcFParamList) {
-            String llvmType = Support.tokenTypeTransfer(funcFParam.getBType().getToken().getType());
+            String irType = Support.tokenTypeTransfer(funcFParam.getBType().getToken().getType());
             if (funcFParam.isArray()) {
-                llvmType += "*";
+                irType += "*";
             }
-            int reg = Register.allocReg();
-            Param param = new Param(llvmType, "%"+reg);
+            RetValue reg = new RetValue(Register.allocReg(), 1);
+            Param param = new Param(irType, reg.irOut());
             params.add(param);
         }
 
         /* load FuncFParams */
         Register.allocReg();
-        IrBlock irBlock = new IrBlock();
         for (FuncFParam funcFParam : funcFParamList) {
-            String llvmType = Support.tokenTypeTransfer(funcFParam.getBType().getToken().getType());
+            String irType = Support.tokenTypeTransfer(funcFParam.getBType().getToken().getType());
             String symbolType = funcFParam.getBType().identifyType();
             if (funcFParam.isArray()) {
-                llvmType += "*";
+                irType += "*";
                 symbolType += "Pointer";
             }
-            int memory = Register.allocReg();
-            irBlock.addCode("%" + memory + " = alloca " + llvmType);
-            irBlock.addCode("store " +  llvmType + " %" + (memory - funcFParamList.size() - 1) + ", " + llvmType + "* %" + memory);
+            RetValue memory = new RetValue(Register.allocReg(), 1);
+            irBlock.addInstrAlloca(memory, irType, -1);
+            irBlock.addInstrStore(irType, "%" + (memory.getValue() - funcFParamList.size() - 1), memory.irOut());
 
             String name = funcFParam.getIdent().getIdenfr();
-            SymbolVar symbolVar = new SymbolVar(symbolType, name, "%" + memory);
-            symbolFunc.addSymbol(symbolVar);
+            SymbolVar symbolVar = new SymbolVar(symbolType, name, memory.irOut());
             childSymbolTable.addSymbol(symbolVar);
         }
 
         /* visit Block */
-        Stmt.setFuncType(funcType);
-        Stmt.setLocalStmtIrBlock(irBlock);
+        Stmt.setStmt(irBlock, funcType);
         VarValue.setVarValueIrBlock(irBlock);
         Cond.setCondIrBlock(irBlock);
         LocalDecl.setLocalDeclIrBlock(irBlock);
         Stmt.visitBlock(funcDef.getBlock(), childSymbolTable, funcDef.getFuncType().getToken().getType(), false);
         irBlock.addRetIfNotExist();
-
-        Function function = new Function(funcName, funcType, params, irBlock);
-        Module.addFunc(function);
     }
 
     private void visitMainFuncDef() {
-        Stmt.setFuncType("IntFunc");
         SymbolTable childSymbolTable = new SymbolTable(globalSymbolTable);
         IrBlock irBlock = new IrBlock();
-        Stmt.setLocalStmtIrBlock(irBlock);
+        Stmt.setStmt(irBlock, "IntFunc");
         VarValue.setVarValueIrBlock(irBlock);
         Cond.setCondIrBlock(irBlock);
         LocalDecl.setLocalDeclIrBlock(irBlock);

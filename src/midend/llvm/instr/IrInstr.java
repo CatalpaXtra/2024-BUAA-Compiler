@@ -1,6 +1,6 @@
-package midend.llvm.global;
+package midend.llvm.instr;
 
-public class IrConstant {
+public class IrInstr {
     public String irOut() {
         return "";
     }

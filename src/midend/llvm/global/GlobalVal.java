@@ -1,6 +1,9 @@
 package midend.llvm.global;
 
 import midend.llvm.Support;
+import midend.llvm.global.constant.IrArray;
+import midend.llvm.global.constant.IrConstant;
+import midend.llvm.global.constant.IrVar;
 import midend.llvm.symbol.Symbol;
 
 public class GlobalVal extends Symbol {
