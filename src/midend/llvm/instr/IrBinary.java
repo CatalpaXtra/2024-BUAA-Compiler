@@ -1,15 +1,16 @@
 package midend.llvm.instr;
 
-import midend.llvm.RetValue;
+import midend.llvm.Value;
 
 public class IrBinary extends IrInstr {
     /* <result> = <operand> i32 <op1>, <op2> */
-    private RetValue result;
+    private Value result;
     private String operand;
-    private RetValue op1;
-    private RetValue op2;
+    private Value op1;
+    private Value op2;
 
-    public IrBinary(RetValue result, RetValue op1, RetValue op2, String operand) {
+    public IrBinary(Value result, Value op1, Value op2, String operand) {
+        super(result.irOut(), "i32");
         this.result = result;
         this.op1 = op1;
         this.op2 = op2;

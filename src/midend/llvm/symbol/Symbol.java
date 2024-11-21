@@ -1,12 +1,14 @@
 package midend.llvm.symbol;
 
+import midend.llvm.Value;
+
 public class Symbol {
     private final String symbolType;
     private final String name;
-    private final String memory;
+    private final Value memory;
     private final int arraySize;
 
-    public Symbol(String symbolType, String name, String memory, int arraySize) {
+    public Symbol(String symbolType, String name, Value memory, int arraySize) {
         this.symbolType = symbolType;
         this.name = name;
         this.memory = memory;
@@ -21,7 +23,7 @@ public class Symbol {
         return name;
     }
 
-    public String getMemory() {
+    public Value getMemory() {
         return memory;
     }
 

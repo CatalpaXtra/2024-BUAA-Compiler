@@ -64,8 +64,8 @@ public class Builder {
             if (funcFParam.isArray()) {
                 irType += "*";
             }
-            RetValue reg = new RetValue(Register.allocReg(), 1);
-            Param param = new Param(irType, reg.irOut());
+            Value reg = new Value(Register.allocReg(), irType);
+            Param param = new Param(irType, reg);
             params.add(param);
         }
 
@@ -78,12 +78,14 @@ public class Builder {
                 irType += "*";
                 symbolType += "Pointer";
             }
-            RetValue memory = new RetValue(Register.allocReg(), 1);
+            int regNum = Register.allocReg();
+            Value memory = new Value(regNum, irType);
             irBlock.addInstrAlloca(memory, irType, -1);
-            irBlock.addInstrStore(irType, "%" + (memory.getValue() - funcFParamList.size() - 1), memory.irOut());
+            Value value = new Value(regNum - funcFParamList.size() - 1, irType);
+            irBlock.addInstrStore(irType, value, memory);
 
             String name = funcFParam.getIdent().getIdenfr();
-            SymbolVar symbolVar = new SymbolVar(symbolType, name, memory.irOut());
+            SymbolVar symbolVar = new SymbolVar(symbolType, name, memory);
             childSymbolTable.addSymbol(symbolVar);
         }
 

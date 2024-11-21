@@ -13,6 +13,10 @@ public class IrArray extends IrConstant {
         this.size = size;
     }
 
+    public int getNumAt(int loc) {
+        return constExpSet.get(loc);
+    }
+
     public String irOut() {
         boolean zeroinitializer = true;
         String arrayFormat = "[";

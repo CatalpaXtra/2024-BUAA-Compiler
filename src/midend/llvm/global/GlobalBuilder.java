@@ -27,6 +27,7 @@ import frontend.parser.expression.unary.UnaryOpExp;
 import frontend.parser.terminal.StringConst;
 import midend.llvm.Module;
 import midend.llvm.Support;
+import midend.llvm.Value;
 import midend.llvm.global.constant.IrArray;
 import midend.llvm.global.constant.IrConstant;
 import midend.llvm.global.constant.IrString;
@@ -83,7 +84,7 @@ public class GlobalBuilder {
             int initVal = visitConstExp((ConstExp) constDef.getConstInitVal().getConstInitValEle(), symbolTable);
             constant = new IrVar(initVal);
         }
-        GlobalVal globalVal = new GlobalVal(name, symbolType, constant, size);
+        GlobalVal globalVal = new GlobalVal(name, symbolType, new Value("@"+name, irType), constant, size);
         Module.addGlobalVal(globalVal);
         symbolTable.addSymbol(globalVal);
     }
@@ -114,7 +115,7 @@ public class GlobalBuilder {
             }
             constant = new IrVar(initVal);
         }
-        GlobalVal globalVal = new GlobalVal(name, symbolType, constant, size);
+        GlobalVal globalVal = new GlobalVal(name, symbolType, new Value("@"+name, irType), constant, size);
         Module.addGlobalVal(globalVal);
         symbolTable.addSymbol(globalVal);
     }

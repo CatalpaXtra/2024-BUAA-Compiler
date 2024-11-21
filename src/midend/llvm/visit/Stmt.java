@@ -11,7 +11,7 @@ import frontend.parser.expression.Exp;
 import frontend.parser.expression.primary.LVal;
 import midend.llvm.Module;
 import midend.llvm.Register;
-import midend.llvm.RetValue;
+import midend.llvm.Value;
 import midend.llvm.Support;
 import midend.llvm.function.IrBlock;
 import midend.llvm.global.GlobalStr;
@@ -85,10 +85,10 @@ public class Stmt {
 
     private static void visitStmtReturn(StmtReturn stmtReturn, SymbolTable symbolTable) {
         if (stmtReturn.existReturnValue()) {
-            RetValue result = VarValue.visitExp(stmtReturn.getExp(), symbolTable);
+            Value result = VarValue.visitExp(stmtReturn.getExp(), symbolTable);
             if (funcType.contains("Char")) {
-                RetValue value = result;
-                result = new RetValue(Register.allocReg(), 1);
+                Value value = result;
+                result = new Value(Register.allocReg(), "i32");
                 irBlock.addInstrTrunc(result, "i32", value, "i8");
             }
             irBlock.addInstrRet(Support.varTransfer(funcType), result);
@@ -97,51 +97,52 @@ public class Stmt {
         }
     }
 
-    private static void storeLVal(RetValue result, LVal lVal, SymbolTable symbolTable) {
+    private static void storeLVal(Value result, LVal lVal, SymbolTable symbolTable) {
         /* LVal Must Be Var */
         Symbol symbol = symbolTable.getSymbol(lVal.getIdent().getIdenfr());
-        String memory = symbol.getMemory();
+//        Value symValue = symbol.getMemory();
+        Value memory = symbol.getMemory();
         String irType = Support.varTransfer(symbol.getSymbolType());
         if (lVal.isArray()) {
-            RetValue loc = VarValue.visitExp(lVal.getExp(), symbolTable);
-            RetValue temp1 = new RetValue(Register.allocReg(), 1);
+            Value loc = VarValue.visitExp(lVal.getExp(), symbolTable);
+            Value temp1 = new Value(Register.allocReg(), "i32");
             if (symbol.isPointer()) {
                 irBlock.addInstrLoad(temp1, irType + "*", memory);
-                RetValue temp2 = temp1;
-                temp1 = new RetValue(Register.allocReg(), 1);
-                irBlock.addInstrGetelementptr(temp1, -1, irType, temp2.irOut(), loc.irOut());
+                Value temp2 = temp1;
+                temp1 = new Value(Register.allocReg(), "i32");
+                irBlock.addInstrGetelementptr(temp1, -1, irType, temp2, loc);
             } else {
-                irBlock.addInstrGetelementptr(temp1, symbol.getArraySize(), irType, memory, loc.irOut());
+                irBlock.addInstrGetelementptr(temp1, symbol.getArraySize(), irType, memory, loc);
             }
             if (symbol.isChar()) {
-                RetValue value = result;
-                result = new RetValue(Register.allocReg(), 1);
+                Value value = result;
+                result = new Value(Register.allocReg(), "i32");
                 irBlock.addInstrTrunc(result, "i32", value, "i8");
             }
-            irBlock.addInstrStore(irType, result.irOut(), temp1.irOut());
+            irBlock.addInstrStore(irType, result, temp1);
         } else {
             if (symbol.isChar()) {
-                RetValue value = result;
-                result = new RetValue(Register.allocReg(), 1);
+                Value value = result;
+                result = new Value(Register.allocReg(), "i32");
                 irBlock.addInstrTrunc(result, "i32", value, "i8");
             }
-            irBlock.addInstrStore(irType, result.irOut(), memory);
+            irBlock.addInstrStore(irType, result, memory);
         }
     }
 
     private static void visitStmtAssign(StmtAssign stmtAssign, SymbolTable symbolTable) {
-        RetValue result = VarValue.visitExp(stmtAssign.getExp(), symbolTable);
+        Value result = VarValue.visitExp(stmtAssign.getExp(), symbolTable);
         storeLVal(result, stmtAssign.getlVal(), symbolTable);
     }
 
     private static void visitStmtGetInt(StmtGetInt stmtGetInt, SymbolTable symbolTable) {
-        RetValue result = new RetValue(Register.allocReg(), 1);
+        Value result = new Value(Register.allocReg(), "i32");
         irBlock.addInstrCall(result, "i32", "getint", "");
         storeLVal(result, stmtGetInt.getlVal(), symbolTable);
     }
 
     private static void visitStmtGetChar(StmtGetChar stmtGetChar, SymbolTable symbolTable) {
-        RetValue result = new RetValue(Register.allocReg(), 1);
+        Value result = new Value(Register.allocReg(), "i32");
         irBlock.addInstrCall(result, "i32", "getchar", "");
         storeLVal(result, stmtGetChar.getlVal(), symbolTable);
     }
@@ -153,7 +154,7 @@ public class Stmt {
         int expCount = 0;
         for (int i = 0; i < parts.size(); i++) {
             if (parts.get(i).equals("%d") || parts.get(i).equals("%c")) {
-                RetValue result = VarValue.visitExp(exps.get(expCount), symbolTable);
+                Value result = VarValue.visitExp(exps.get(expCount), symbolTable);
                 if (parts.get(i).equals("%d")) {
                     irBlock.addInstrCall(null, "void", "putint", "i32 " + result.irOut());
                 } else {
@@ -266,7 +267,7 @@ public class Stmt {
     }
 
     private static void visitForStmt(ForStmt forStmt, SymbolTable symbolTable) {
-        RetValue result = VarValue.visitExp(forStmt.getExp(), symbolTable);
+        Value result = VarValue.visitExp(forStmt.getExp(), symbolTable);
         storeLVal(result, forStmt.getlVal(), symbolTable);
     }
 

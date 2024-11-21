@@ -1,6 +1,8 @@
 package midend.llvm;
 
 import frontend.lexer.Token;
+import midend.llvm.instr.IrInstr;
+import midend.llvm.instr.IrZext;
 
 import java.util.ArrayList;
 
@@ -83,5 +85,14 @@ public class Support {
             parts.add(part.toString() + "\\00");
         }
         return parts;
+    }
+
+    public static boolean spareZext(IrInstr instr) {
+        if (instr instanceof IrZext) {
+            if (((IrZext) instr).getTy1().equals("i8") && ((IrZext) instr).getTy2().equals("i32")) {
+                return true;
+            }
+        }
+        return false;
     }
 }

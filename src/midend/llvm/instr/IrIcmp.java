@@ -1,15 +1,16 @@
 package midend.llvm.instr;
 
-import midend.llvm.RetValue;
+import midend.llvm.Value;
 
 public class IrIcmp extends IrInstr {
     /* <result> = icmp <cond> <ty> <op1>, <op2> */
-    private RetValue result;
+    private Value result;
     private String cond;
-    private RetValue op1;
-    private RetValue op2;
+    private Value op1;
+    private Value op2;
 
-    public IrIcmp(RetValue result, String cond, RetValue op1, RetValue op2) {
+    public IrIcmp(Value result, String cond, Value op1, Value op2) {
+        super(result.irOut(), "i1");
         this.result = result;
         this.cond = cond;
         this.op1 = op1;

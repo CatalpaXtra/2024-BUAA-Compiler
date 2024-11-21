@@ -1,13 +1,14 @@
 package midend.llvm.instr;
 
-import midend.llvm.RetValue;
+import midend.llvm.Value;
 
 public class IrRet extends IrInstr {
     /* ret <type> <value> , ret void */
     private String retType;
-    private RetValue value;
+    private Value value;
 
-    public IrRet(String retType, RetValue value) {
+    public IrRet(String retType, Value value) {
+        super(null, null);
         this.retType = retType;
         this.value = value;
     }

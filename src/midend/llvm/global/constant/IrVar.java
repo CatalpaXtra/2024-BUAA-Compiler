@@ -7,6 +7,10 @@ public class IrVar extends IrConstant {
         this.value = value;
     }
 
+    public int getValue() {
+        return value;
+    }
+
     public String irOut() {
         return value + "";
     }

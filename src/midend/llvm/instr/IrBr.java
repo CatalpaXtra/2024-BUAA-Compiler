@@ -1,23 +1,25 @@
 package midend.llvm.instr;
 
-import midend.llvm.RetValue;
+import midend.llvm.Value;
 
 public class IrBr extends IrInstr {
     /* br label <dest> */
     /* br i1 <cond>, label <iftrue>, label <iffalse> */
     private String dest;
-    private RetValue result;
+    private Value cond;
     private String ifTrue;
     private String ifFalse;
     private boolean mode;
 
     public IrBr(String dest) {
+        super(null, null);
         this.dest = dest;
         mode = true;
     }
 
-    public IrBr(RetValue result, String ifTrue, String ifFalse) {
-        this.result = result;
+    public IrBr(Value cond, String ifTrue, String ifFalse) {
+        super(null, null);
+        this.cond = cond;
         this.ifTrue = ifTrue;
         this.ifFalse = ifFalse;
         mode = false;
@@ -37,7 +39,7 @@ public class IrBr extends IrInstr {
         if (mode) {
             instr = "br label " + dest;
         } else {
-            instr = "br i1 " + result.irOut() + ", label " + ifTrue + ", label " + ifFalse;
+            instr = "br i1 " + cond.irOut() + ", label " + ifTrue + ", label " + ifFalse;
         }
         return instr;
     }

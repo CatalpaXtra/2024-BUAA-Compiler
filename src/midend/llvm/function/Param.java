@@ -1,10 +1,12 @@
 package midend.llvm.function;
 
+import midend.llvm.Value;
+
 public class Param {
     private final String irType;
-    private final String memory;
+    private final Value memory;
 
-    public Param(String irType, String memory) {
+    public Param(String irType, Value memory) {
         this.irType = irType;
         this.memory = memory;
     }
@@ -14,6 +16,6 @@ public class Param {
     }
 
     public String irOut() {
-        return irType + " " + memory;
+        return irType + " " + memory.irOut();
     }
 }

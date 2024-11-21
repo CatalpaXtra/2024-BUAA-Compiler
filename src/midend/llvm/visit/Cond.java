@@ -26,9 +26,9 @@ public class Cond {
     private static void visitSingleLOrExp(LAndExp lAndExp, SymbolTable symbolTable) {
         irBlock.addInstrLabel(Stmt.nextLabel);
         int left = irBlock.getLoc() + 1;
-        RetValue result = visitLAndExp(lAndExp, symbolTable, true);
-        if (result.isDigit()) {
-            if (result.getValue() != 0) {
+        Value result = visitLAndExp(lAndExp, symbolTable, true);
+        if (result instanceof Constant) {
+            if (((Constant) result).getValue() != 0) {
                 /* Cond is true, Jump to Stmt1 */
                 irBlock.delLastInstr();
                 return;
@@ -38,11 +38,11 @@ public class Cond {
                 irBlock.addInstrNull();
                 Stmt.nextLabel = Register.allocReg();
             }
-        } else if (result.isReg() || result.isMany()) {
-            if (result.isReg()) {
-                RetValue value = result;
-                result = new RetValue(Register.allocReg(), 1);
-                RetValue zero = new RetValue(0, 0);
+        } else if (result.isValue() || result.isCondValue()) {
+            if (result.isValue()) {
+                Value value = result;
+                result = new Value(Register.allocReg(), "i32");
+                Constant zero = new Constant(0);
                 irBlock.addInstrIcmp(result, "ne", value, zero);
             }
             Stmt.nextLabel = Register.allocReg();
@@ -62,32 +62,30 @@ public class Cond {
         int left = irBlock.getLoc() + 1;
         for (int i = 0; i < lAndExps.size(); i++) {
             irBlock.addInstrLabel(Stmt.nextLabel);
-            RetValue result = visitLAndExp(lAndExps.get(i), symbolTable, i == lAndExps.size() - 1);
-            if (result.isDigit()) {
-                if (result.getValue() != 0) {
+            Value result = visitLAndExp(lAndExps.get(i), symbolTable, i == lAndExps.size() - 1);
+            if (result instanceof Constant) {
+                if (((Constant) result).getValue() != 0) {
                     /* Cond is true, end */
-                    Stmt.nextLabel = Register.allocReg();
                     irBlock.addInstrBr("<BLOCK1>");
                     irBlock.addInstrNull();
-                    irBlock.replaceInterval(left, irBlock.getLoc(), "%" + Stmt.nextLabel, "<BLOCK1>");
-                    return;
+                    Stmt.nextLabel = Register.allocReg();
+                    break;
                 } else {
                     /* Cond may be true, continue */
                     if (i == lAndExps.size() - 1) {
-                        Stmt.nextLabel = Register.allocReg();
                         irBlock.addInstrBr("<BLOCK2 OR STMT>");
                         irBlock.addInstrNull();
-                        irBlock.replaceInterval(left, irBlock.getLoc(), "%" + Stmt.nextLabel, "<BLOCK1>");
-                        return;
+                        Stmt.nextLabel = Register.allocReg();
+                    } else {
+                        irBlock.delLastInstr();
                     }
-                    irBlock.delLastInstr();
                 }
-            } else if (result.isReg() || result.isMany()) {
+            } else if (result.isValue() || result.isCondValue()) {
                 /* Return Value In Register */
-                if (result.isReg()) {
-                    RetValue temp = result;
-                    result = new RetValue(Register.allocReg(), 1);
-                    RetValue zero = new RetValue(0, 0);
+                if (result.isValue()) {
+                    Value temp = result;
+                    result = new Value(Register.allocReg(), "i32");
+                    Constant zero = new Constant(0);
                     irBlock.addInstrIcmp(result, "ne", temp, zero);
                 }
                 Stmt.nextLabel = Register.allocReg();
@@ -102,7 +100,7 @@ public class Cond {
         irBlock.replaceInterval(left, irBlock.getLoc(), "%" + Stmt.nextLabel, "<BLOCK1>");
     }
 
-    private static RetValue visitLAndExp(LAndExp lAndExp, SymbolTable symbolTable, boolean isLast) {
+    private static Value visitLAndExp(LAndExp lAndExp, SymbolTable symbolTable, boolean isLast) {
         ArrayList<EqExp> eqExps = lAndExp.getLowerExps();
         if (eqExps.size() == 1) {
             return visitEqExp(eqExps.get(0), symbolTable);
@@ -113,50 +111,32 @@ public class Cond {
         int left = irBlock.getLoc() + 1;
         for (int i = 0; i < eqExps.size(); i++) {
             irBlock.addInstrLabel(Stmt.nextLabel);
-            RetValue result = visitEqExp(eqExps.get(i), symbolTable);
-            if (result.isDigit()) {
-                if (result.getValue() == 0) {
+            Value result = visitEqExp(eqExps.get(i), symbolTable);
+            if (result instanceof Constant) {
+                if (((Constant) result).getValue() == 0) {
                     /* Cond is false, end */
                     irBlock.addInstrBr("<NEXT LOREXP>");
                     irBlock.addInstrNull();
-
                     Stmt.nextLabel = Register.allocReg();
-                    if (isLast) {
-                        irBlock.replaceInterval(left, irBlock.getLoc(), "<BLOCK2 OR STMT>", "<NEXT LOREXP>");
-                    } else {
-                        irBlock.replaceInterval(left, irBlock.getLoc(), "%" + Stmt.nextLabel, "<NEXT LOREXP>");
-                    }
-                    return new RetValue(Stmt.nextLabel, 2);
+                    break;
                 } else {
                     /* Cond may be false, continue */
                     if (i == eqExps.size() - 1) {
                         irBlock.addInstrBr("<BLOCK1>");
                         irBlock.addInstrNull();
                         Stmt.nextLabel = Register.allocReg();
-                        if (isLast) {
-                            irBlock.replaceInterval(left, irBlock.getLoc(), "<BLOCK2 OR STMT>", "<NEXT LOREXP>");
-                        } else {
-                            irBlock.replaceInterval(left, irBlock.getLoc(), "%" + Stmt.nextLabel, "<NEXT LOREXP>");
-                        }
-                        return new RetValue(Stmt.nextLabel, 2);
                     } else {
                         irBlock.delLastInstr();
                     }
                 }
-            } else if (result.isReg()) {
-                /* Return Value In Register */
-                RetValue temp = new RetValue(Register.allocReg(), 1);
-                RetValue zero = new RetValue(0, 0);
-                irBlock.addInstrIcmp(temp, "ne", result, zero);
-
-                Stmt.nextLabel = Register.allocReg();
-                if (i == eqExps.size() - 1) {
-                    irBlock.addInstrBrCond(temp, "<BLOCK1>", "<NEXT LOREXP>");
-                } else {
-                    irBlock.addInstrBrCond(temp, "%" + Stmt.nextLabel, "<NEXT LOREXP>");
-                }
-                irBlock.addInstrNull();
             } else {
+                /* Return Value In Register */
+                if (result.isValue()) {
+                    Value temp = result;
+                    result = new Value(Register.allocReg(), "i32");
+                    Constant zero = new Constant(0);
+                    irBlock.addInstrIcmp(result, "ne", temp, zero);
+                }
                 Stmt.nextLabel = Register.allocReg();
                 if (i == eqExps.size() - 1) {
                     irBlock.addInstrBrCond(result, "<BLOCK1>", "<NEXT LOREXP>");
@@ -171,68 +151,68 @@ public class Cond {
         } else {
             irBlock.replaceInterval(left, irBlock.getLoc(), "%" + Stmt.nextLabel, "<NEXT LOREXP>");
         }
-        return new RetValue(Stmt.nextLabel, 2);
+        return new Value(Stmt.nextLabel, "");
     }
 
-    private static RetValue visitEqExp(EqExp eqExp, SymbolTable symbolTable) {
+    private static Value visitEqExp(EqExp eqExp, SymbolTable symbolTable) {
         ArrayList<RelExp> relExps = eqExp.getLowerExps();
         if (relExps.size() == 1) {
             return visitRelExp(relExps.get(0), symbolTable);
         }
 
         ArrayList<Token> operators = eqExp.getOperators();
-        RetValue result = visitRelExp(relExps.get(0), symbolTable);
-        if (result.isMany()) {
+        Value result = visitRelExp(relExps.get(0), symbolTable);
+        if (result.isCondValue()) {
             /* Value Transfer */
-            RetValue value = result;
-            result = new RetValue(Register.allocReg(), 1);
+            Value value = result;
+            result = new Value(Register.allocReg(), "i32");
             irBlock.addInstrZext(result, "i1", value, "i32");
         }
         for (int i = 1; i < relExps.size(); i++) {
             String cond = Support.condTransfer(operators.get(i-1).getType());
-            RetValue left = result;
-            RetValue right = visitRelExp(relExps.get(i), symbolTable);
-            if (right.isMany()) {
+            Value left = result;
+            Value right = visitRelExp(relExps.get(i), symbolTable);
+            if (right.isCondValue()) {
                 /* Value Transfer */
-                RetValue value = right;
-                right = new RetValue(Register.allocReg(), 1);
+                Value value = right;
+                right = new Value(Register.allocReg(), "i32");
                 irBlock.addInstrZext(right, "i1", value, "i32");
             }
-            result = new RetValue(Register.allocReg(), 1);
+            result = new Value(Register.allocReg(), "i32");
             irBlock.addInstrIcmp(result, cond, left, right);
 
             /* Value Transfer */
-            RetValue value = result;
-            result = new RetValue(Register.allocReg(), 1);
+            Value value = result;
+            result = new Value(Register.allocReg(), "i32");
             irBlock.addInstrZext(result, "i1", value, "i32");
         }
         Register.cancelAlloc();
         irBlock.delLastInstr();
-        return new RetValue(Register.getRegNum() - 1, 3);
+        return new Value(Register.getRegNum() - 1, "i1");
     }
 
-    private static RetValue visitRelExp(RelExp relExp, SymbolTable symbolTable) {
+    private static Value visitRelExp(RelExp relExp, SymbolTable symbolTable) {
         ArrayList<AddExp> addExps = relExp.getLowerExps();
         if (addExps.size() == 1) {
             return VarValue.visitAddExp(addExps.get(0), symbolTable);
         }
 
         ArrayList<Token> operators = relExp.getOperators();
-        RetValue result = VarValue.visitAddExp(addExps.get(0), symbolTable);
+        Value result = VarValue.visitAddExp(addExps.get(0), symbolTable);
         for (int i = 1; i < addExps.size(); i++) {
             String cond = Support.condTransfer(operators.get(i-1).getType());
-            RetValue left = result;
-            RetValue right = VarValue.visitAddExp(addExps.get(i), symbolTable);
-            result = new RetValue(Register.allocReg(), 1);
+            Value left = result;
+            Value right = VarValue.visitAddExp(addExps.get(i), symbolTable);
+            result = new Value(Register.allocReg(), "i32");
             irBlock.addInstrIcmp(result, cond, left, right);
 
             /* Value Transfer */
-            RetValue value = result;
-            result = new RetValue(Register.allocReg(), 1);
+            Value value = result;
+            result = new Value(Register.allocReg(), "i32");
             irBlock.addInstrZext(result, "i1", value, "i32");
         }
         Register.cancelAlloc();
         irBlock.delLastInstr();
-        return new RetValue(Register.getRegNum() - 1, 3);
+        return new Value(Register.getRegNum() - 1, "i1");
     }
 }

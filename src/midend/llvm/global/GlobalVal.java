@@ -1,6 +1,7 @@
 package midend.llvm.global;
 
 import midend.llvm.Support;
+import midend.llvm.Value;
 import midend.llvm.global.constant.IrArray;
 import midend.llvm.global.constant.IrConstant;
 import midend.llvm.global.constant.IrVar;
@@ -12,8 +13,8 @@ public class GlobalVal extends Symbol {
     private final IrConstant value;
     private final int size;
 
-    public GlobalVal(String name, String symbolType, IrConstant value, int size) {
-        super(symbolType, name, "@"+name, size);
+    public GlobalVal(String name, String symbolType, Value memory, IrConstant value, int size) {
+        super(symbolType, name, memory, size);
         this.name = name;
         this.irType = Support.varTransfer(symbolType);
         this.value = value;

@@ -1,45 +1,37 @@
 package midend.llvm.symbol;
 
-import java.util.ArrayList;
+import midend.llvm.Value;
+import midend.llvm.global.constant.IrArray;
+import midend.llvm.global.constant.IrConstant;
+import midend.llvm.global.constant.IrString;
+import midend.llvm.global.constant.IrVar;
 
 public class SymbolCon extends Symbol {
-    private int value;
-    private ArrayList<Integer> intInitVal;
-    private String charInitVal;
+    private final IrConstant irConstant;
+    private final int arraySize;
 
-    public SymbolCon(String symbolType, String name, String memory, int value) {
-        super(symbolType, name, memory, -1);
-        this.value = value;
-    }
-
-    public SymbolCon(String symbolType, String name, String memory, ArrayList<Integer> intInitVal, int arraySize) {
+    public SymbolCon(String symbolType, String name, Value memory, IrConstant irConstant, int arraySize) {
         super(symbolType, name, memory, arraySize);
-        this.intInitVal = intInitVal;
-        this.charInitVal = null;
-    }
-
-    public SymbolCon(String symbolType, String name, String memory, String charInitVal, int arraySize) {
-        super(symbolType, name, memory, arraySize);
-        this.intInitVal = null;
-        this.charInitVal = charInitVal;
+        this.irConstant = irConstant;
+        this.arraySize = arraySize;
     }
 
     public int getValue() {
-        return value;
+        return ((IrVar) irConstant).getValue();
     }
 
     public int getValueAtLoc(int loc) {
-        if (intInitVal != null) {
-            if (loc > intInitVal.size() - 1) {
+        if (irConstant instanceof IrArray) {
+            if (loc > arraySize - 1) {
                 return 0;
             } else {
-                return intInitVal.get(loc);
+                return ((IrArray) irConstant).getNumAt(loc);
             }
         } else {
-            if (loc > charInitVal.length() - 1) {
+            if (loc > arraySize - 1) {
                 return 0;
             } else {
-                return charInitVal.charAt(loc);
+                return ((IrString) irConstant).getCharAt(loc);
             }
         }
     }

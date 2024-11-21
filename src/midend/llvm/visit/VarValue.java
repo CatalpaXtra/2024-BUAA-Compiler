@@ -11,10 +11,10 @@ import frontend.parser.expression.primary.LVal;
 import frontend.parser.expression.primary.PrimaryEle;
 import frontend.parser.expression.primary.PrimaryExp;
 import frontend.parser.expression.unary.*;
-import frontend.parser.function.params.FuncFParam;
 import frontend.parser.terminal.Ident;
+import midend.llvm.Constant;
 import midend.llvm.Register;
-import midend.llvm.RetValue;
+import midend.llvm.Value;
 import midend.llvm.Support;
 import midend.llvm.function.Function;
 import midend.llvm.function.IrBlock;
@@ -36,28 +36,28 @@ public class VarValue {
         VarValue.irBlock = irBlock;
     }
 
-    public static ArrayList<RetValue> visitExpSet(ExpSet expSet, SymbolTable symbolTable) {
+    public static ArrayList<Value> visitExpSet(ExpSet expSet, SymbolTable symbolTable) {
         ArrayList<Exp> exps = expSet.getExps();
-        ArrayList<RetValue> results = new ArrayList<>();
+        ArrayList<Value> results = new ArrayList<>();
         for (Exp exp : exps) {
-            RetValue result = visitExp(exp, symbolTable);
+            Value result = visitExp(exp, symbolTable);
             results.add(result);
         }
         return results;
     }
 
-    public static RetValue visitExp(Exp exp, SymbolTable symbolTable) {
+    public static Value visitExp(Exp exp, SymbolTable symbolTable) {
         return visitAddExp(exp.getAddExp(), symbolTable);
     }
 
-    public static RetValue visitAddExp(AddExp addExp, SymbolTable symbolTable) {
+    public static Value visitAddExp(AddExp addExp, SymbolTable symbolTable) {
         ArrayList<MulExp> mulExps = addExp.getLowerExps();
-        RetValue result = visitMulExp(mulExps.get(0), symbolTable);
+        Value result = visitMulExp(mulExps.get(0), symbolTable);
         ArrayList<Token> operators = addExp.getOperators();
         for (int i = 1; i < mulExps.size(); i++) {
-            RetValue left = result;
-            RetValue right = visitMulExp(mulExps.get(i), symbolTable);
-            result = new RetValue(Register.allocReg(), 1);
+            Value left = result;
+            Value right = visitMulExp(mulExps.get(i), symbolTable);
+            result = new Value(Register.allocReg(), "i32");
             Token op = operators.get(i - 1);
             if (op.getType().equals(Token.Type.PLUS)) {
                 irBlock.addInstrBinary(result, left, right, "add");
@@ -68,14 +68,14 @@ public class VarValue {
         return result;
     }
 
-    private static RetValue visitMulExp(MulExp mulExp, SymbolTable symbolTable) {
+    private static Value visitMulExp(MulExp mulExp, SymbolTable symbolTable) {
         ArrayList<UnaryExp> unaryExps = mulExp.getLowerExps();
-        RetValue result = visitUnaryExp(unaryExps.get(0), symbolTable);
+        Value result = visitUnaryExp(unaryExps.get(0), symbolTable);
         ArrayList<Token> operators = mulExp.getOperators();
         for (int i = 1; i < unaryExps.size(); i++) {
-            RetValue left = result;
-            RetValue right = visitUnaryExp(unaryExps.get(i), symbolTable);
-            result = new RetValue(Register.allocReg(), 1);
+            Value left = result;
+            Value right = visitUnaryExp(unaryExps.get(i), symbolTable);
+            result = new Value(Register.allocReg(), "i32");
             Token op = operators.get(i - 1);
             if (op.getType().equals(Token.Type.MULT)) {
                 irBlock.addInstrBinary(result, left, right, "mul");
@@ -88,7 +88,7 @@ public class VarValue {
         return result;
     }
 
-    private static RetValue visitUnaryExp(UnaryExp unaryExp, SymbolTable symbolTable) {
+    private static Value visitUnaryExp(UnaryExp unaryExp, SymbolTable symbolTable) {
         UnaryEle unaryEle = unaryExp.getUnaryEle();
         if (unaryEle instanceof UnaryFunc) {
             return visitUnaryFunc((UnaryFunc) unaryEle, symbolTable);
@@ -97,10 +97,10 @@ public class VarValue {
         } else if (unaryEle instanceof PrimaryExp) {
             return visitPrimaryExp((PrimaryExp) unaryEle, symbolTable);
         }
-        return new RetValue(0, 0);
+        return new Constant(0);
     }
 
-    private static RetValue visitUnaryFunc(UnaryFunc unaryFunc, SymbolTable symbolTable) {
+    private static Value visitUnaryFunc(UnaryFunc unaryFunc, SymbolTable symbolTable) {
         String funcName = unaryFunc.getIdent().getIdenfr();
         Function function = (Function) globalSymbolTable.getSymbol(funcName);
         FuncRParams funcRParams = unaryFunc.getFuncRParams();
@@ -110,12 +110,19 @@ public class VarValue {
             ArrayList<Param> params = function.getParams();
             int len = funcExps.size();
             for (int i = 0; i < len; i++) {
-                RetValue result = visitExp(funcExps.get(i), symbolTable);
+                Value result = visitExp(funcExps.get(i), symbolTable);
                 String irType = params.get(i).getIrType();
                 if (irType.equals("i8")) {
-                    RetValue value = result;
-                    result = new RetValue(Register.allocReg(), 1);
-                    irBlock.addInstrTrunc(result, "i32", value, "i8");
+                    if (Support.spareZext(irBlock.getLastInstr())) {
+                        Register.cancelAlloc();
+                        Register.cancelAlloc();
+                        result = new Value(Register.allocReg(), "i8");
+                        irBlock.delLastInstr();
+                    } else {
+                        Value value = result;
+                        result = new Value(Register.allocReg(), "i32");
+                        irBlock.addInstrTrunc(result, "i32", value, "i8");
+                    }
                 }
                 passRParam += irType + " " + result.irOut() + ", ";
             }
@@ -126,91 +133,92 @@ public class VarValue {
             irBlock.addInstrCall(null, "void", funcName, passRParam);
             return null;
         } else {
-            RetValue result = new RetValue(Register.allocReg(), 1);
+            Value result = new Value(Register.allocReg(), "i32");
             String irType = function.getIrType();
             irBlock.addInstrCall(result, irType, funcName, passRParam);
             if (function.isChar()) {
-                RetValue value = result;
-                result = new RetValue(Register.allocReg(), 1);
+                Value value = result;
+                result = new Value(Register.allocReg(), "i32");
                 irBlock.addInstrZext(result, "i8", value, "i32");
             }
             return result;
         }
     }
 
-    private static RetValue visitUnaryOpExp(UnaryOpExp unaryOpExp, SymbolTable symbolTable) {
+    private static Value visitUnaryOpExp(UnaryOpExp unaryOpExp, SymbolTable symbolTable) {
         Token op = unaryOpExp.getUnaryOp().getToken();
-        RetValue retValue = visitUnaryExp(unaryOpExp.getUnaryExp(), symbolTable);
+        Value retValue = visitUnaryExp(unaryOpExp.getUnaryExp(), symbolTable);
         if (op.getType().equals(Token.Type.PLUS)) {
             return retValue;
         } else if (op.getType().equals(Token.Type.MINU)) {
-            if (retValue.isDigit()) {
-                return new RetValue(-retValue.getValue(), 0);
+            if (retValue instanceof Constant) {
+                Constant value = new Constant(-((Constant) retValue).getValue());
+                return value;
             } else {
-                RetValue result = new RetValue(Register.allocReg(), 1);
-                RetValue zero = new RetValue(0, 0);
+                Value result = new Value(Register.allocReg(), "i32");
+                Constant zero = new Constant(0);
                 irBlock.addInstrBinary(result, zero, retValue, "sub");
                 return result;
             }
         } else {
             /* Only Exist In Cond */
-            if (retValue.isDigit()) {
+            if (retValue instanceof Constant) {
                 if (retValue.irOut().equals("0")) {
-                    return new RetValue(1, 0);
+                    return new Constant(1);
                 } else {
-                    return new RetValue(0, 0);
+                    return new Constant(0);
                 }
             } else {
-                RetValue result = new RetValue(Register.allocReg(), 1);
-                RetValue zero = new RetValue(0, 0);
+                Value result = new Value(Register.allocReg(), "i32");
+                Constant zero = new Constant(0);
                 irBlock.addInstrIcmp(result, "eq", retValue, zero);
-                RetValue value = result;
-                result = new RetValue(Register.allocReg(), 1);
+                Value value = result;
+                result = new Value(Register.allocReg(), "i32");
                 irBlock.addInstrZext(result, "i1", value, "i32");
                 return result;
             }
         }
     }
 
-    private static RetValue visitPrimaryExp(PrimaryExp primaryExp, SymbolTable symbolTable) {
+    private static Value visitPrimaryExp(PrimaryExp primaryExp, SymbolTable symbolTable) {
         PrimaryEle primaryEle = primaryExp.getPrimaryEle();
         if (primaryEle instanceof ExpInParent) {
             return visitExp(((ExpInParent) primaryEle).getExp(), symbolTable);
         } else if (primaryEle instanceof LVal) {
             return visitLVal((LVal) primaryEle, symbolTable);
         } else if (primaryEle instanceof frontend.parser.expression.primary.Number) {
-            return new RetValue(((frontend.parser.expression.primary.Number) primaryEle).getIntConst().getVal(), 0);
+            return new Constant(((frontend.parser.expression.primary.Number) primaryEle).getIntConst().getVal());
         } else if (primaryEle instanceof frontend.parser.expression.primary.Character) {
-            return new RetValue(((Character) primaryEle).getCharConst().getVal(), 0);
+            return new Constant(((Character) primaryEle).getCharConst().getVal());
         }
-        return new RetValue(0, 0);
+        return new Constant(0);
     }
 
-    private static RetValue visitLVal(LVal lVal, SymbolTable symbolTable) {
+    private static Value visitLVal(LVal lVal, SymbolTable symbolTable) {
         Ident ident = lVal.getIdent();
         Symbol symbol = symbolTable.getSymbol(ident.getIdenfr());
-        String memory = symbol.getMemory();
+        Value memory = symbol.getMemory();
         String irType = Support.varTransfer(symbol.getSymbolType());
         if (lVal.isArray()) {
-            RetValue loc = visitExp(lVal.getExp(), symbolTable);
-            RetValue result;
+            Value loc = visitExp(lVal.getExp(), symbolTable);
+            Value result;
             if (symbol.isPointer()) {
-                RetValue temp1 = new RetValue(Register.allocReg(), 1);
+                Value temp1 = new Value(Register.allocReg(), "i32");
                 irBlock.addInstrLoad(temp1, irType + "*", memory);
-                RetValue temp2 = new RetValue(Register.allocReg(), 1);
-                irBlock.addInstrGetelementptr(temp2, -1, irType, temp1.irOut(), loc.irOut());
-                result = new RetValue(Register.allocReg(), 1);
-                irBlock.addInstrLoad(result, irType, temp2.irOut());
+                Value temp2 = new Value(Register.allocReg(), "i32");
+                irBlock.addInstrGetelementptr(temp2, -1, irType, temp1, loc);
+                result = new Value(Register.allocReg(), "i32");
+                irBlock.addInstrLoad(result, irType, temp2);
             } else {
-                RetValue temp1 = new RetValue(Register.allocReg(), 1);
-                irBlock.addInstrGetelementptr(temp1, symbol.getArraySize(), irType, memory, loc.irOut());
-                result = new RetValue(Register.allocReg(), 1);
-                irBlock.addInstrLoad(result, irType, temp1.irOut());
+                Value temp1 = new Value(Register.allocReg(), "i32");
+                irBlock.addInstrGetelementptr(temp1, symbol.getArraySize(), irType, memory, loc);
+                result = new Value(Register.allocReg(), "i32");
+                irBlock.addInstrLoad(result, irType, temp1);
             }
 
             if (symbol.isChar()) {
-                RetValue value = result;
-                result = new RetValue(Register.allocReg(), 1);
+                Value value = result;
+                result = new Value(Register.allocReg(), "i32");
                 irBlock.addInstrZext(result, "i8", value, "i32");
             }
             return result;
@@ -219,20 +227,20 @@ public class VarValue {
                 /* Exist In Call Func While Pass Param */
                 /* int c[10]; a = func(c); */
                 int size = symbol.getArraySize();
-                RetValue result = new RetValue(Register.allocReg(), 1);
-                irBlock.addInstrGetelementptr(result, size, irType, memory, "0");
+                Value result = new Value(Register.allocReg(), "i32");
+                irBlock.addInstrGetelementptr(result, size, irType, memory, new Constant(0));
                 return result;
             } else if (symbol.isPointer()) {
                 /* Exist In Call Func While Pass Param */
-                RetValue result = new RetValue(Register.allocReg(), 1);
+                Value result = new Value(Register.allocReg(), "i32");
                 irBlock.addInstrLoad(result, irType+"*", memory);
                 return result;
             } else {
-                RetValue result = new RetValue(Register.allocReg(), 1);
+                Value result = new Value(Register.allocReg(), "i32");
                 irBlock.addInstrLoad(result, irType, memory);
                 if (symbol.isChar()) {
-                    RetValue value = result;
-                    result = new RetValue(Register.allocReg(), 1);
+                    Value value = result;
+                    result = new Value(Register.allocReg(), "i32");
                     irBlock.addInstrZext(result, "i8", value, "i32");
                 }
                 return result;

@@ -9,6 +9,10 @@ public class IrString extends IrConstant {
         this.size = size;
     }
 
+    public int getCharAt(int loc) {
+        return stringConst.charAt(loc);
+    }
+
     public String irOut() {
         String initVal = stringConst.substring(1, stringConst.length() - 1);
         String arrayFormat = "\"";

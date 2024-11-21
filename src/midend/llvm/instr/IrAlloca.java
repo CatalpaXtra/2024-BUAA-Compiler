@@ -1,13 +1,14 @@
 package midend.llvm.instr;
 
-import midend.llvm.RetValue;
+import midend.llvm.Value;
 
 public class IrAlloca extends IrInstr {
-    private RetValue result;
+    private Value result;
     private String irType;
     private int size;
 
-    public IrAlloca(RetValue result, String irType, int size) {
+    public IrAlloca(Value result, String irType, int size) {
+        super(result.irOut(), irType);
         this.result = result;
         this.irType = irType;
         this.size = size;
