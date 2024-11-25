@@ -21,7 +21,7 @@ public class GlobalVal extends Symbol {
         this.size = size;
     }
 
-    public String irOut() {
+    public String toString() {
         if (value == null) {
             return "@" + name + " = dso_local global [" + size + " x " + irType + "] zeroinitializer";
         }

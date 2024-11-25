@@ -34,12 +34,12 @@ public class IrBr extends IrInstr {
         }
     }
 
-    public String irOut() {
+    public String toString() {
         String instr;
         if (mode) {
             instr = "br label " + dest;
         } else {
-            instr = "br i1 " + cond.irOut() + ", label " + ifTrue + ", label " + ifFalse;
+            instr = "br i1 " + cond.getName() + ", label " + ifTrue + ", label " + ifFalse;
         }
         return instr;
     }

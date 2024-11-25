@@ -4,19 +4,15 @@ import midend.llvm.Value;
 
 public class IrLoad extends IrInstr {
     /* <result> = load <ty>, ptr <pointer> */
-    private Value result;
-    private String irType;
     private Value pointer;
 
-    public IrLoad(Value result, String irType, Value pointer) {
-        super(result.irOut(), irType);
-        this.result = result;
-        this.irType = irType;
+    public IrLoad(String name, String irType, Value pointer) {
+        super(name, irType);
         this.pointer = pointer;
     }
 
-    public String irOut() {
-        String instr = result.irOut() + " = load " + irType + ", " + irType + "* " + pointer.irOut();
+    public String toString() {
+        String instr = name + " = load " + irType + ", " + irType + "* " + pointer.getName();
         return instr;
     }
 }

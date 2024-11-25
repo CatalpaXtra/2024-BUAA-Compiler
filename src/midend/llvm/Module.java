@@ -34,15 +34,15 @@ public class Module {
             
             """);
         for (GlobalVal globalVal : globalVals) {
-            sb.append(globalVal.irOut()).append('\n');
+            sb.append(globalVal.toString()).append('\n');
         }
         sb.append('\n');
         for (GlobalStr globalStr : globalStrs) {
-            sb.append(globalStr.irOut()).append('\n');
+            sb.append(globalStr.toString()).append('\n');
         }
         sb.append('\n');
         for (Function function : functions) {
-            sb.append(function.irOut()).append('\n');
+            sb.append(function.toString()).append('\n');
         }
         return sb.toString();
     }

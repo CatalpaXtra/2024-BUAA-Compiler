@@ -17,7 +17,7 @@ public class IrInstr extends User {
 
     public boolean hasLVal(){
         return this instanceof IrAlloca ||
-                (this instanceof IrCall && !this.getLlvmType().equals("void")) ||
+                (this instanceof IrCall && !this.getIrType().equals("void")) ||
                 this instanceof IrGetelementptr ||
                 this instanceof IrLoad ||
                 this instanceof IrIcmp ||
@@ -33,7 +33,7 @@ public class IrInstr extends User {
         this.parentBlock = parentBlock;
     }
 
-    public String irOut() {
+    public String toString() {
         return "";
     }
 }

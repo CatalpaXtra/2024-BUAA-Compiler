@@ -13,12 +13,12 @@ public class IrRet extends IrInstr {
         this.value = value;
     }
 
-    public String irOut() {
+    public String toString() {
         String instr;
         if (retType.equals("void")) {
             instr = "ret void";
         } else {
-            instr = "ret " + retType + " " + value.irOut();
+            instr = "ret " + retType + " " + value.getName();
         }
         return instr;
     }

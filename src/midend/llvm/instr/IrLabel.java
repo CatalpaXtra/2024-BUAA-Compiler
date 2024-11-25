@@ -8,7 +8,7 @@ public class IrLabel extends IrInstr {
         this.label = label;
     }
 
-    public String irOut() {
+    public String toString() {
         return label + ":";
     }
 }

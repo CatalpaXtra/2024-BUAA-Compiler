@@ -3,23 +3,19 @@ package midend.llvm.instr;
 import midend.llvm.Value;
 
 public class IrAlloca extends IrInstr {
-    private Value result;
-    private String irType;
     private int size;
 
-    public IrAlloca(Value result, String irType, int size) {
-        super(result.irOut(), irType);
-        this.result = result;
-        this.irType = irType;
+    public IrAlloca(String name, String irType, int size) {
+        super(name, irType);
         this.size = size;
     }
 
-    public String irOut() {
+    public String toString() {
         String instr;
         if (size == -1) {
-            instr = result.irOut() + " = alloca " + irType;
+            instr = name + " = alloca " + irType;
         } else {
-            instr = result.irOut() + " = alloca [" + size + " x " + irType + "]";
+            instr = name + " = alloca [" + size + " x " + irType + "]";
         }
         return instr;
     }

@@ -30,7 +30,7 @@ public class Function extends Symbol {
         return irType;
     }
 
-    public String irOut() {
+    public String toString() {
         StringBuilder sb = new StringBuilder();
         StringBuilder declParam = new StringBuilder();
         for (Param param : params) {
@@ -40,7 +40,7 @@ public class Function extends Symbol {
             declParam.delete(declParam.length() - 2, declParam.length());
         }
         sb.append("define dso_local " + irType + " @" + name + "(" + declParam.toString() + ") {\n");
-        sb.append(irBlock.irOut());
+        sb.append(irBlock.toString());
         sb.append("}\n");
         return sb.toString();
     }

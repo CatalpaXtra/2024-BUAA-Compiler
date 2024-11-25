@@ -16,29 +16,34 @@ public class IrBlock {
         instructions.add(instr);
     }
 
-    public void addInstrBinary(Value result, Value op1, Value op2, String operand) {
-        IrBinary irBinary = new IrBinary(result, op1, op2, operand);
+    public IrInstr addInstrBinary(String name, Value op1, Value op2, String operand) {
+        IrBinary irBinary = new IrBinary(name, op1, op2, operand);
         addInstr(irBinary);
+        return irBinary;
     }
 
-    public void addInstrIcmp(Value result, String cond, Value op1, Value op2) {
-        IrIcmp irIcmp = new IrIcmp(result, cond, op1, op2);
+    public IrInstr addInstrIcmp(String name, String cond, Value op1, Value op2) {
+        IrIcmp irIcmp = new IrIcmp(name, cond, op1, op2);
         addInstr(irIcmp);
+        return irIcmp;
     }
 
-    public void addInstrCall(Value result, String funcType, String funcName, String rParams) {
-        IrCall irCall = new IrCall(result, funcType, funcName, rParams);
+    public IrInstr addInstrCall(String name, String funcType, String funcName, String rParams) {
+        IrCall irCall = new IrCall(name, funcType, funcName, rParams);
         addInstr(irCall);
+        return irCall;
     }
 
-    public void addInstrAlloca(Value result, String llvmType, int size) {
-        IrAlloca irAlloca = new IrAlloca(result, llvmType, size);
+    public IrInstr addInstrAlloca(String name, String llvmType, int size) {
+        IrAlloca irAlloca = new IrAlloca(name, llvmType, size);
         addInstr(irAlloca);
+        return irAlloca;
     }
 
-    public void addInstrLoad(Value result, String llvmType, Value pointer) {
-        IrLoad irLoad = new IrLoad(result, llvmType, pointer);
+    public IrInstr addInstrLoad(String name, String llvmType, Value pointer) {
+        IrLoad irLoad = new IrLoad(name, llvmType, pointer);
         addInstr(irLoad);
+        return irLoad;
     }
 
     public void addInstrStore(String llvmType, Value value, Value pointer) {
@@ -46,9 +51,10 @@ public class IrBlock {
         addInstr(irStore);
     }
 
-    public void addInstrGetelementptr(Value result, int size, String llvmType, Value pointer, Value offset) {
-        IrGetelementptr irGetelementptr = new IrGetelementptr(result, llvmType, pointer, offset, size);
+    public IrInstr addInstrGetelementptr(String name, int size, String llvmType, Value pointer, Value offset) {
+        IrGetelementptr irGetelementptr = new IrGetelementptr(name, llvmType, pointer, offset, size);
         addInstr(irGetelementptr);
+        return irGetelementptr;
     }
 
     public void addInstrBr(String dest) {
@@ -66,14 +72,16 @@ public class IrBlock {
         addInstr(irRet);
     }
 
-    public void addInstrZext(Value result, String ty1, Value value, String ty2) {
-        IrZext irZext = new IrZext(result, ty1, value, ty2);
+    public IrInstr addInstrZext(String name, String ty1, Value value, String ty2) {
+        IrZext irZext = new IrZext(name, ty1, value, ty2);
         addInstr(irZext);
+        return irZext;
     }
 
-    public void addInstrTrunc(Value result, String ty1, Value value, String ty2) {
-        IrTrunc irTrunc = new IrTrunc(result, ty1, value, ty2);
+    public IrInstr addInstrTrunc(String name, String ty1, Value value, String ty2) {
+        IrTrunc irTrunc = new IrTrunc(name, ty1, value, ty2);
         addInstr(irTrunc);
+        return irTrunc;
     }
 
     public void addRetIfNotExist() {
@@ -123,10 +131,10 @@ public class IrBlock {
         }
     }
 
-    public String irOut() {
+    public String toString() {
         StringBuilder sb = new StringBuilder();
         for (IrInstr instr : instructions) {
-            sb.append(instr.irOut()).append('\n');
+            sb.append(instr.toString()).append('\n');
         }
         return sb.toString();
     }

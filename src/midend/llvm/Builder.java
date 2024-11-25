@@ -33,7 +33,7 @@ public class Builder {
             GlobalBuilder.visitGlobalDecl(decl, globalSymbolTable);
         }
 
-        VarValue.setVarValue(globalSymbolTable);
+        LocalDecl.setLocalDecl(globalSymbolTable);
         for (FuncDef funcDef : funcDefs) {
             Register.resetReg();
             visitFuncDef(funcDef);
@@ -64,8 +64,7 @@ public class Builder {
             if (funcFParam.isArray()) {
                 irType += "*";
             }
-            Value reg = new Value(Register.allocReg(), irType);
-            Param param = new Param(irType, reg);
+            Param param = new Param(irType, "%"+Register.allocReg());
             params.add(param);
         }
 
@@ -79,8 +78,7 @@ public class Builder {
                 symbolType += "Pointer";
             }
             int regNum = Register.allocReg();
-            Value memory = new Value(regNum, irType);
-            irBlock.addInstrAlloca(memory, irType, -1);
+            Value memory = irBlock.addInstrAlloca("%"+regNum, irType, -1);
             Value value = new Value(regNum - funcFParamList.size() - 1, irType);
             irBlock.addInstrStore(irType, value, memory);
 
@@ -91,8 +89,6 @@ public class Builder {
 
         /* visit Block */
         Stmt.setStmt(irBlock, funcType);
-        VarValue.setVarValueIrBlock(irBlock);
-        Cond.setCondIrBlock(irBlock);
         LocalDecl.setLocalDeclIrBlock(irBlock);
         Stmt.visitBlock(funcDef.getBlock(), childSymbolTable, funcDef.getFuncType().getToken().getType(), false);
         irBlock.addRetIfNotExist();
@@ -102,8 +98,6 @@ public class Builder {
         SymbolTable childSymbolTable = new SymbolTable(globalSymbolTable);
         IrBlock irBlock = new IrBlock();
         Stmt.setStmt(irBlock, "IntFunc");
-        VarValue.setVarValueIrBlock(irBlock);
-        Cond.setCondIrBlock(irBlock);
         LocalDecl.setLocalDeclIrBlock(irBlock);
         Stmt.visitBlock(mainFuncDef.getBlock(), childSymbolTable, Token.Type.INTTK, false);
 

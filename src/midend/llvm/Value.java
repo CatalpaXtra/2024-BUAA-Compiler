@@ -3,38 +3,42 @@ package midend.llvm;
 import java.util.ArrayList;
 
 public class Value {
-    private int regNum;
-    private final String name;
-    private final String type;
-    private ArrayList<User> users;
+    protected int regNum;
+    protected final String name;
+    protected String irType;
+    protected ArrayList<User> users;
 
     public Value(int regNum, String type) {
         this.regNum = regNum;
         this.name = "%" + regNum;
-        this.type = type;
+        this.irType = type;
         this.users = new ArrayList<>();
     }
 
     public Value(String name, String type) {
         this.name = name;
-        this.type = type;
+        this.irType = type;
         this.users = new ArrayList<>();
     }
 
     public boolean isValue() {
-        return type.equals("i32");
+        return irType.equals("i32");
     }
 
     public boolean isCondValue() {
-        return type.equals("i1");
+        return irType.equals("i1");
     }
 
-    public String irOut() {
+    public String getName() {
         return name;
     }
 
-    public String getLlvmType() {
-        return type;
+    public String getIrType() {
+        return irType;
+    }
+
+    public void setIrType(String irType) {
+        this.irType = irType;
     }
 
     public void addUser(User user){

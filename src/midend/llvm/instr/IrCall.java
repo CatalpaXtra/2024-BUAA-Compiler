@@ -4,25 +4,21 @@ import midend.llvm.Value;
 
 public class IrCall extends IrInstr {
     /* <result> = call [ret attrs] <ty> <name>(<...args>) */
-    private final Value result;
-    private final String funcType;
     private final String funcName;
     private final String rParams;
 
-    public IrCall(Value result, String funcType, String funcName, String rParams) {
-        super(funcType.equals("void") ? null : result.irOut(), funcType);
-        this.result = result;
-        this.funcType = funcType;
+    public IrCall(String name, String funcType, String funcName, String rParams) {
+        super(name, funcType);
         this.funcName = funcName;
         this.rParams = rParams;
     }
 
-    public String irOut() {
+    public String toString() {
         String instr;
-        if (funcType.equals("void")) {
+        if (irType.equals("void")) {
             instr = "call void @" + funcName + "(" + rParams + ")";
         } else {
-            instr = result.irOut() + " = call " + funcType + " @" + funcName + "(" + rParams + ")";
+            instr = name + " = call " + irType + " @" + funcName + "(" + rParams + ")";
         }
         return instr;
     }

@@ -8,7 +8,7 @@ public class Constant extends Value {
         this.value = value;
     }
 
-    public String irOut() {
+    public String getName() {
         return value + "";
     }
 
