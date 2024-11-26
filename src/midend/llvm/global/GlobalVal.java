@@ -1,24 +1,14 @@
 package midend.llvm.global;
 
-import midend.llvm.Support;
 import midend.llvm.Value;
 import midend.llvm.global.constant.IrArray;
-import midend.llvm.global.constant.IrConstant;
+import midend.llvm.global.constant.IrCon;
 import midend.llvm.global.constant.IrVar;
 import midend.llvm.symbol.Symbol;
 
 public class GlobalVal extends Symbol {
-    private final String name;
-    private final String irType;
-    private final IrConstant value;
-    private final int size;
-
-    public GlobalVal(String name, String symbolType, Value memory, IrConstant value, int size) {
-        super(symbolType, name, memory, size);
-        this.name = name;
-        this.irType = Support.varTransfer(symbolType);
-        this.value = value;
-        this.size = size;
+    public GlobalVal(String name, String irType, IrCon value, int size) {
+        super(name, irType, new Value("@"+name, irType), size, value);
     }
 
     public String toString() {
@@ -26,11 +16,11 @@ public class GlobalVal extends Symbol {
             return "@" + name + " = dso_local global [" + size + " x " + irType + "] zeroinitializer";
         }
         if (value instanceof IrVar) {
-            return "@" + name + " = dso_local global " + irType + " " + value.irOut();
+            return "@" + name + " = dso_local global " + irType + " " + value.toString();
         }
         if (value instanceof IrArray) {
-            return "@" + name + " = dso_local global [" + size + " x " + irType + "] " + value.irOut();
+            return "@" + name + " = dso_local global [" + size + " x " + irType + "] " + value.toString();
         }
-        return "@" + name + " = dso_local global [" + size + " x i8] c" + value.irOut();
+        return "@" + name + " = dso_local global [" + size + " x i8] c" + value.toString();
     }
 }

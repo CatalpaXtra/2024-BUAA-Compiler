@@ -1,7 +1,7 @@
 package midend.llvm.global.constant;
 
-public class IrConstant {
-    public String irOut() {
+public class IrCon {
+    public String toString() {
         return "";
     }
 }

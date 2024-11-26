@@ -1,6 +1,6 @@
 package midend.llvm.global.constant;
 
-public class IrVar extends IrConstant {
+public class IrVar extends IrCon {
     private final int value;
 
     public IrVar(int value) {
@@ -11,7 +11,7 @@ public class IrVar extends IrConstant {
         return value;
     }
 
-    public String irOut() {
+    public String toString() {
         return value + "";
     }
 }

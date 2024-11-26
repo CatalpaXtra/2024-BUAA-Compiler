@@ -29,7 +29,7 @@ import midend.llvm.Module;
 import midend.llvm.Support;
 import midend.llvm.Value;
 import midend.llvm.global.constant.IrArray;
-import midend.llvm.global.constant.IrConstant;
+import midend.llvm.global.constant.IrCon;
 import midend.llvm.global.constant.IrString;
 import midend.llvm.global.constant.IrVar;
 import midend.llvm.symbol.*;
@@ -63,13 +63,11 @@ public class GlobalBuilder {
     }
 
     private static void visitGlobalConstDef(ConstDef constDef, String type, SymbolTable symbolTable) {
-        String symbolType = "Const" + type;
         String irType = Support.varTransfer(type);
         String name = constDef.getIdent().getIdenfr();
-        IrConstant constant = null;
+        IrCon constant = null;
         int size = -1;
         if (constDef.isArray()) {
-            symbolType += "Array";
             size = visitConstExp(constDef.getConstExp(), symbolTable);
 
             ConstInitValEle constInitValEle = constDef.getConstInitVal().getConstInitValEle();
@@ -84,19 +82,17 @@ public class GlobalBuilder {
             int initVal = visitConstExp((ConstExp) constDef.getConstInitVal().getConstInitValEle(), symbolTable);
             constant = new IrVar(initVal);
         }
-        GlobalVal globalVal = new GlobalVal(name, symbolType, new Value("@"+name, irType), constant, size);
+        GlobalVal globalVal = new GlobalVal(name, irType, constant, size);
         Module.addGlobalVal(globalVal);
         symbolTable.addSymbol(globalVal);
     }
 
     private static void visitGlobalVarDef(VarDef varDef, String type, SymbolTable symbolTable) {
-        String symbolType = type;
         String irType = Support.varTransfer(type);
         String name = varDef.getIdent().getIdenfr();
-        IrConstant constant = null;
+        IrCon constant = null;
         int size = -1;
         if (varDef.isArray()) {
-            symbolType += "Array";
             size = visitConstExp(varDef.getConstExp(), symbolTable);
             if (varDef.hasInitValue()) {
                 InitValEle initValEle = varDef.getInitVal().getInitValEle();
@@ -115,7 +111,7 @@ public class GlobalBuilder {
             }
             constant = new IrVar(initVal);
         }
-        GlobalVal globalVal = new GlobalVal(name, symbolType, new Value("@"+name, irType), constant, size);
+        GlobalVal globalVal = new GlobalVal(name, irType, constant, size);
         Module.addGlobalVal(globalVal);
         symbolTable.addSymbol(globalVal);
     }
@@ -215,17 +211,13 @@ public class GlobalBuilder {
     }
 
     private static int visitLVal(LVal lVal, SymbolTable symbolTable) {
-        int value = 0;
+        int value;
         Symbol symbol = symbolTable.getSymbol(lVal.getIdent().getIdenfr());
         if (lVal.isArray()) {
             int loc = visitExp(lVal.getExp(), symbolTable);
-            if (symbol instanceof SymbolCon) {
-                value = ((SymbolCon) symbol).getValueAtLoc(loc);
-            }
+            value = symbol.getValueAtLoc(loc);
         } else {
-            if (symbol instanceof SymbolCon) {
-                value = ((SymbolCon) symbol).getValue();
-            }
+            value = symbol.getValue();
         }
         return value;
     }

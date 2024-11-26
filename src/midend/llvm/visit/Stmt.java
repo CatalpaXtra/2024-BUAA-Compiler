@@ -101,16 +101,16 @@ public class Stmt {
     private static void storeLVal(Value result, LVal lVal, SymbolTable symbolTable) {
         /* LVal Must Be Var */
         Symbol symbol = symbolTable.getSymbol(lVal.getIdent().getIdenfr());
-        Value memory = symbol.getMemory();
-        String irType = Support.varTransfer(symbol.getSymbolType());
+        Value irAlloca = symbol.getIrAlloca();
+        String irType = symbol.getIrType();
         if (lVal.isArray()) {
             Value loc = LocalDecl.visitExp(lVal.getExp(), symbolTable);
             Value temp;
             if (symbol.isPointer()) {
-                temp = irBlock.addInstrLoad("%"+Register.allocReg(), irType + "*", memory);
+                temp = irBlock.addInstrLoad("%"+Register.allocReg(), irType + "*", irAlloca);
                 temp = irBlock.addInstrGetelementptr("%"+Register.allocReg(), -1, irType, temp, loc);
             } else {
-                temp = irBlock.addInstrGetelementptr("%"+Register.allocReg(), symbol.getArraySize(), irType, memory, loc);
+                temp = irBlock.addInstrGetelementptr("%"+Register.allocReg(), symbol.getArraySize(), irType, irAlloca, loc);
             }
             if (symbol.isChar()) {
                 result = irBlock.addInstrTrunc("%"+Register.allocReg(), "i32", result, "i8");
@@ -120,7 +120,7 @@ public class Stmt {
             if (symbol.isChar()) {
                 result = irBlock.addInstrTrunc("%"+Register.allocReg(), "i32", result, "i8");
             }
-            irBlock.addInstrStore(irType, result, memory);
+            irBlock.addInstrStore(irType, result, irAlloca);
         }
     }
 

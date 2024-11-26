@@ -8,16 +8,16 @@ public class Value {
     protected String irType;
     protected ArrayList<User> users;
 
-    public Value(int regNum, String type) {
+    public Value(int regNum, String irType) {
         this.regNum = regNum;
         this.name = "%" + regNum;
-        this.irType = type;
+        this.irType = irType;
         this.users = new ArrayList<>();
     }
 
-    public Value(String name, String type) {
+    public Value(String name, String irType) {
         this.name = name;
-        this.irType = type;
+        this.irType = irType;
         this.users = new ArrayList<>();
     }
 
@@ -35,10 +35,6 @@ public class Value {
 
     public String getIrType() {
         return irType;
-    }
-
-    public void setIrType(String irType) {
-        this.irType = irType;
     }
 
     public void addUser(User user){

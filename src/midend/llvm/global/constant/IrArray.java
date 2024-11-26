@@ -2,7 +2,7 @@ package midend.llvm.global.constant;
 
 import java.util.ArrayList;
 
-public class IrArray extends IrConstant {
+public class IrArray extends IrCon {
     private final String irType;
     private final ArrayList<Integer> constExpSet;
     private final int size;
@@ -17,7 +17,7 @@ public class IrArray extends IrConstant {
         return constExpSet.get(loc);
     }
 
-    public String irOut() {
+    public String toString() {
         boolean zeroinitializer = true;
         String arrayFormat = "[";
         for (Integer val : constExpSet) {

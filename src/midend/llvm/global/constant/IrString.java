@@ -1,6 +1,6 @@
 package midend.llvm.global.constant;
 
-public class IrString extends IrConstant {
+public class IrString extends IrCon {
     private final String stringConst;
     private final int size;
 
@@ -13,7 +13,7 @@ public class IrString extends IrConstant {
         return stringConst.charAt(loc);
     }
 
-    public String irOut() {
+    public String toString() {
         String initVal = stringConst.substring(1, stringConst.length() - 1);
         String arrayFormat = "\"";
         int len = 0;

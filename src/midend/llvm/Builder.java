@@ -10,6 +10,7 @@ import midend.llvm.function.Function;
 import midend.llvm.function.IrBlock;
 import midend.llvm.function.Param;
 import midend.llvm.global.GlobalBuilder;
+import midend.llvm.instr.IrInstr;
 import midend.llvm.visit.*;
 import midend.llvm.symbol.*;
 
@@ -50,7 +51,7 @@ public class Builder {
         String funcName = funcDef.getIdent().getIdenfr();
         ArrayList<Param> params = new ArrayList<>();
         IrBlock irBlock = new IrBlock();
-        Function function = new Function(funcName, funcType, params, irBlock);
+        Function function = new Function(funcName, Support.varTransfer(funcType), params, irBlock);
         Module.addFunc(function);
 
         /* extend symbolTable */
@@ -72,18 +73,16 @@ public class Builder {
         Register.allocReg();
         for (FuncFParam funcFParam : funcFParamList) {
             String irType = Support.tokenTypeTransfer(funcFParam.getBType().getToken().getType());
-            String symbolType = funcFParam.getBType().identifyType();
             if (funcFParam.isArray()) {
                 irType += "*";
-                symbolType += "Pointer";
             }
             int regNum = Register.allocReg();
-            Value memory = irBlock.addInstrAlloca("%"+regNum, irType, -1);
+            IrInstr irAlloca = irBlock.addInstrAlloca("%"+regNum, irType, -1);
             Value value = new Value(regNum - funcFParamList.size() - 1, irType);
-            irBlock.addInstrStore(irType, value, memory);
+            irBlock.addInstrStore(irType, value, irAlloca);
 
             String name = funcFParam.getIdent().getIdenfr();
-            SymbolVar symbolVar = new SymbolVar(symbolType, name, memory);
+            SymbolVar symbolVar = new SymbolVar(name, irType, irAlloca, -1, null);
             childSymbolTable.addSymbol(symbolVar);
         }
 
@@ -101,7 +100,7 @@ public class Builder {
         LocalDecl.setLocalDeclIrBlock(irBlock);
         Stmt.visitBlock(mainFuncDef.getBlock(), childSymbolTable, Token.Type.INTTK, false);
 
-        Function function = new Function("main", "IntFunc", new ArrayList<>(), irBlock);
+        Function function = new Function("main", "i32", new ArrayList<>(), irBlock);
         Module.addFunc(function);
     }
 }

@@ -5,8 +5,8 @@ import java.util.ArrayList;
 public class User extends Value {
     private ArrayList<Value> operands;
 
-    public User(String name, String type) {
-        super(name, type);
+    public User(String name, String irType) {
+        super(name, irType);
         this.operands = new ArrayList<>();
     }
 
