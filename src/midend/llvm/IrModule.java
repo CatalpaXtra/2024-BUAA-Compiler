@@ -53,4 +53,16 @@ public class IrModule {
         }
         return sb.toString();
     }
+
+    public static ArrayList<GlobalVal> getGlobalVals() {
+        return globalVals;
+    }
+
+    public static ArrayList<GlobalStr> getGlobalStrs() {
+        return globalStrs;
+    }
+
+    public static ArrayList<Function> getFunctions() {
+        return functions;
+    }
 }

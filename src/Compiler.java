@@ -1,3 +1,5 @@
+import backend.Builder;
+import backend.Module;
 import frontend.lexer.Lexer;
 import frontend.lexer.LexerErrors;
 import frontend.parser.CompUnit;
@@ -38,6 +40,12 @@ public class Compiler {
         irBuilder.build();
         try (PrintWriter writer = new PrintWriter("llvm_ir.txt")) {
             writer.println(IrModule.irOut());
+        } catch (FileNotFoundException ignored) {}
+
+        Builder builder = new Builder();
+        builder.build();
+        try (PrintWriter writer = new PrintWriter("mips.txt")) {
+            writer.println(Module.mipsOut());
         } catch (FileNotFoundException ignored) {}
     }
 }

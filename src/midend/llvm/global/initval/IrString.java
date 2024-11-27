@@ -1,39 +1,54 @@
 package midend.llvm.global.initval;
 
 public class IrString extends InitVal {
-    private final String stringConst;
+    private final String string;
     private final int size;
 
-    public IrString(String stringConst, int size) {
-        this.stringConst = stringConst;
+    public IrString(String string, int size) {
+        this.string = string.substring(1, string.length() - 1);
         this.size = size;
     }
 
     public int getCharAt(int loc) {
-        return stringConst.charAt(loc);
+        int len = 0;
+        for (int i = 0; i < string.length(); i++, len++) {
+            if (len == loc) {
+                if (string.charAt(i) == '\\' && i + 1 < string.length()) {
+                    return '\n';
+                } else {
+                    return string.charAt(i);
+                }
+            }
+            if (string.charAt(i) == '\\') {
+                i++;
+            }
+        }
+        System.out.println("Out Of Bounds");
+        return string.charAt(loc);
+    }
+
+    public String getStringConst() {
+        return string;
     }
 
     public String toString() {
-        String initVal = stringConst.substring(1, stringConst.length() - 1);
-        String arrayFormat = "\"";
+        StringBuilder sb = new StringBuilder("\"");
         int len = 0;
-        for (int i = 0; i < initVal.length(); i++) {
-            if (initVal.charAt(i) == '\\' && i + 1 < initVal.length()) {
-                char next = initVal.charAt(i + 1);
+        for (int i = 0; i < string.length(); i++) {
+            if (string.charAt(i) == '\\' && i + 1 < string.length()) {
+                char next = string.charAt(i + 1);
                 if (next == '0') {
-                    arrayFormat += "\\00";
+                    sb.append("\\00");
                 } else if (next == 'n') {
-                    arrayFormat += "\\0A";
+                    sb.append("\\0A");
                 }
                 i++;
             } else {
-                arrayFormat += initVal.charAt(i);
+                sb.append(string.charAt(i));
             }
             len++;
         }
-        for (int i = len; i < size; i++) {
-            arrayFormat += "\\00";
-        }
-        return arrayFormat + "\"";
+        sb.append("\\00".repeat(Math.max(0, size - len))).append("\"");
+        return sb.toString();
     }
 }

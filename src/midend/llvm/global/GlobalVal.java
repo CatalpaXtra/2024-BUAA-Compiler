@@ -11,6 +11,10 @@ public class GlobalVal extends Symbol {
         super(name, irType, new Value("@"+name, irType), size, value);
     }
 
+    public InitVal getInitVal() {
+        return value;
+    }
+
     public String toString() {
         if (value == null) {
             return "@" + name + " = dso_local global [" + size + " x " + irType + "] zeroinitializer";

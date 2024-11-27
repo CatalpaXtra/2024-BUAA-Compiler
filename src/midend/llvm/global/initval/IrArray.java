@@ -17,6 +17,10 @@ public class IrArray extends InitVal {
         return constExpSet.get(loc);
     }
 
+    public ArrayList<Integer> getConstExpSet() {
+        return constExpSet;
+    }
+
     public String toString() {
         boolean zeroinitializer = true;
         String arrayFormat = "[";
