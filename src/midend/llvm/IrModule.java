@@ -6,17 +6,24 @@ import midend.llvm.global.GlobalVal;
 
 import java.util.ArrayList;
 
-public class Module {
-    private static ArrayList<GlobalVal> globalVals = new ArrayList<>();
-    private static ArrayList<GlobalStr> globalStrs = new ArrayList<>();
-    private static ArrayList<Function> functions = new ArrayList<>();
+public class IrModule {
+    private static final ArrayList<GlobalVal> globalVals = new ArrayList<>();
+    private static final ArrayList<GlobalStr> globalStrs = new ArrayList<>();
+    private static final ArrayList<Function> functions = new ArrayList<>();
 
     public static void addGlobalVal(GlobalVal globalVal) {
         globalVals.add(globalVal);
     }
 
-    public static void addGlobalStr(GlobalStr globalStr) {
+    public static GlobalStr addGlobalStr(String string, int strLen) {
+        for (GlobalStr globalStr : globalStrs) {
+            if (globalStr.getString().equals(string)) {
+                return globalStr;
+            }
+        }
+        GlobalStr globalStr = new GlobalStr(string, strLen);
         globalStrs.add(globalStr);
+        return globalStr;
     }
 
     public static void addFunc(Function function) {

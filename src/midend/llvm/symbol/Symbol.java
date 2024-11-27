@@ -2,17 +2,17 @@ package midend.llvm.symbol;
 
 import midend.llvm.User;
 import midend.llvm.Value;
-import midend.llvm.global.constant.IrArray;
-import midend.llvm.global.constant.IrCon;
-import midend.llvm.global.constant.IrString;
-import midend.llvm.global.constant.IrVar;
+import midend.llvm.global.initval.IrArray;
+import midend.llvm.global.initval.InitVal;
+import midend.llvm.global.initval.IrString;
+import midend.llvm.global.initval.IrVar;
 
 public class Symbol extends User {
     protected final int size;
-    protected IrCon value;
+    protected InitVal value;
     protected final Value irAlloca;
 
-    public Symbol(String name, String irType, Value irAlloca, int size, IrCon value) {
+    public Symbol(String name, String irType, Value irAlloca, int size, InitVal value) {
         super(name, irType);
         this.irAlloca = irAlloca;
         this.size = size;

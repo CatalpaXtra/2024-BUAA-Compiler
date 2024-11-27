@@ -25,13 +25,12 @@ import frontend.parser.expression.unary.UnaryExp;
 import frontend.parser.expression.unary.UnaryOp;
 import frontend.parser.expression.unary.UnaryOpExp;
 import frontend.parser.terminal.StringConst;
-import midend.llvm.Module;
+import midend.llvm.IrModule;
 import midend.llvm.Support;
-import midend.llvm.Value;
-import midend.llvm.global.constant.IrArray;
-import midend.llvm.global.constant.IrCon;
-import midend.llvm.global.constant.IrString;
-import midend.llvm.global.constant.IrVar;
+import midend.llvm.global.initval.IrArray;
+import midend.llvm.global.initval.InitVal;
+import midend.llvm.global.initval.IrString;
+import midend.llvm.global.initval.IrVar;
 import midend.llvm.symbol.*;
 
 import java.util.ArrayList;
@@ -65,7 +64,7 @@ public class GlobalBuilder {
     private static void visitGlobalConstDef(ConstDef constDef, String type, SymbolTable symbolTable) {
         String irType = Support.varTransfer(type);
         String name = constDef.getIdent().getIdenfr();
-        IrCon constant = null;
+        InitVal constant = null;
         int size = -1;
         if (constDef.isArray()) {
             size = visitConstExp(constDef.getConstExp(), symbolTable);
@@ -83,14 +82,14 @@ public class GlobalBuilder {
             constant = new IrVar(initVal);
         }
         GlobalVal globalVal = new GlobalVal(name, irType, constant, size);
-        Module.addGlobalVal(globalVal);
+        IrModule.addGlobalVal(globalVal);
         symbolTable.addSymbol(globalVal);
     }
 
     private static void visitGlobalVarDef(VarDef varDef, String type, SymbolTable symbolTable) {
         String irType = Support.varTransfer(type);
         String name = varDef.getIdent().getIdenfr();
-        IrCon constant = null;
+        InitVal constant = null;
         int size = -1;
         if (varDef.isArray()) {
             size = visitConstExp(varDef.getConstExp(), symbolTable);
@@ -112,7 +111,7 @@ public class GlobalBuilder {
             constant = new IrVar(initVal);
         }
         GlobalVal globalVal = new GlobalVal(name, irType, constant, size);
-        Module.addGlobalVal(globalVal);
+        IrModule.addGlobalVal(globalVal);
         symbolTable.addSymbol(globalVal);
     }
 

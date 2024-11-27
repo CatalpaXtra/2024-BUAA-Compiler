@@ -1,8 +1,8 @@
-package midend.llvm.global.constant;
+package midend.llvm.global.initval;
 
 import java.util.ArrayList;
 
-public class IrArray extends IrCon {
+public class IrArray extends InitVal {
     private final String irType;
     private final ArrayList<Integer> constExpSet;
     private final int size;

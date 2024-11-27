@@ -31,10 +31,10 @@ import midend.llvm.function.Function;
 import midend.llvm.function.IrBlock;
 import midend.llvm.function.Param;
 import midend.llvm.global.GlobalBuilder;
-import midend.llvm.global.constant.IrArray;
-import midend.llvm.global.constant.IrCon;
-import midend.llvm.global.constant.IrString;
-import midend.llvm.global.constant.IrVar;
+import midend.llvm.global.initval.IrArray;
+import midend.llvm.global.initval.InitVal;
+import midend.llvm.global.initval.IrString;
+import midend.llvm.global.initval.IrVar;
 import midend.llvm.instr.IrInstr;
 import midend.llvm.symbol.*;
 
@@ -131,7 +131,7 @@ public class LocalDecl {
     private static void visitConstDef(ConstDef constDef, String type, SymbolTable symbolTable) {
         String irType = Support.varTransfer(type);
         String name = constDef.getIdent().getIdenfr();
-        IrCon constant = null;
+        InitVal constant = null;
         int size = -1;
         IrInstr irAlloca;
         if (constDef.isArray()) {
@@ -187,7 +187,7 @@ public class LocalDecl {
     private static void visitVarDef(VarDef varDef, String type, SymbolTable symbolTable) {
         String irType = Support.varTransfer(type);
         String name = varDef.getIdent().getIdenfr();
-        IrCon constant = null;
+        InitVal constant = null;
         int size = -1;
         IrInstr irAlloca;
         if (varDef.isArray()) {

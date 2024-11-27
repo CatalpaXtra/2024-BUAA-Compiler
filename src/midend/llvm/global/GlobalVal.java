@@ -1,13 +1,13 @@
 package midend.llvm.global;
 
 import midend.llvm.Value;
-import midend.llvm.global.constant.IrArray;
-import midend.llvm.global.constant.IrCon;
-import midend.llvm.global.constant.IrVar;
+import midend.llvm.global.initval.IrArray;
+import midend.llvm.global.initval.InitVal;
+import midend.llvm.global.initval.IrVar;
 import midend.llvm.symbol.Symbol;
 
 public class GlobalVal extends Symbol {
-    public GlobalVal(String name, String irType, IrCon value, int size) {
+    public GlobalVal(String name, String irType, InitVal value, int size) {
         super(name, irType, new Value("@"+name, irType), size, value);
     }
 

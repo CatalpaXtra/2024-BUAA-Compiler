@@ -1,6 +1,6 @@
-package midend.llvm.global.constant;
+package midend.llvm.global.initval;
 
-public class IrCon {
+public class InitVal {
     public String toString() {
         return "";
     }

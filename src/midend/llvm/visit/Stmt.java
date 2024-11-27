@@ -15,7 +15,7 @@ import frontend.parser.expression.cond.LOrExp;
 import frontend.parser.expression.cond.RelExp;
 import frontend.parser.expression.primary.LVal;
 import midend.llvm.*;
-import midend.llvm.Module;
+import midend.llvm.IrModule;
 import midend.llvm.function.IrBlock;
 import midend.llvm.global.GlobalStr;
 import midend.llvm.symbol.*;
@@ -160,8 +160,7 @@ public class Stmt {
                         strLen -= 2;
                     }
                 }
-                GlobalStr globalStr = new GlobalStr(parts.get(i), strLen);
-                Module.addGlobalStr(globalStr);
+                GlobalStr globalStr = IrModule.addGlobalStr(parts.get(i), strLen);
                 String rParams = "i8* getelementptr inbounds ([" + strLen + " x i8], [" + strLen + " x i8]* " + globalStr.getName() + ", i64 0, i64 0)";
                 irBlock.addInstrCall(null, "void", "putstr", rParams);
             }

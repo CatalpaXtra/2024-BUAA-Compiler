@@ -1,6 +1,6 @@
-package midend.llvm.global.constant;
+package midend.llvm.global.initval;
 
-public class IrString extends IrCon {
+public class IrString extends InitVal {
     private final String stringConst;
     private final int size;
 

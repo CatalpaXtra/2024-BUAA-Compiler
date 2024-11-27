@@ -21,6 +21,10 @@ public class GlobalStr {
         return name;
     }
 
+    public String getString() {
+        return string;
+    }
+
     public String toString() {
         return name + " = private unnamed_addr constant [" + strLen + " x i8] c\"" + string + "\", align 1";
     }

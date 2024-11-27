@@ -16,13 +16,13 @@ import midend.llvm.symbol.*;
 
 import java.util.ArrayList;
 
-public class Builder {
+public class IrBuilder {
     private final ArrayList<Decl> decls;
     private final ArrayList<FuncDef> funcDefs;
     private final MainFuncDef mainFuncDef;
     private final SymbolTable globalSymbolTable;
 
-    public Builder(CompUnit compUnit) {
+    public IrBuilder(CompUnit compUnit) {
         this.decls = compUnit.getDecls();
         this.funcDefs = compUnit.getFuncDefs();
         this.mainFuncDef = compUnit.getMainFuncDef();
@@ -52,7 +52,7 @@ public class Builder {
         ArrayList<Param> params = new ArrayList<>();
         IrBlock irBlock = new IrBlock();
         Function function = new Function(funcName, Support.varTransfer(funcType), params, irBlock);
-        Module.addFunc(function);
+        IrModule.addFunc(function);
 
         /* extend symbolTable */
         SymbolTable childSymbolTable = new SymbolTable(globalSymbolTable);
@@ -101,6 +101,6 @@ public class Builder {
         Stmt.visitBlock(mainFuncDef.getBlock(), childSymbolTable, Token.Type.INTTK, false);
 
         Function function = new Function("main", "i32", new ArrayList<>(), irBlock);
-        Module.addFunc(function);
+        IrModule.addFunc(function);
     }
 }

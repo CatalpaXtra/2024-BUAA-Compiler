@@ -1,8 +1,5 @@
 package midend.llvm.function;
 
-import frontend.parser.function.params.FuncFParam;
-import midend.llvm.Module;
-import midend.llvm.Support;
 import midend.llvm.Value;
 import midend.llvm.symbol.Symbol;
 

@@ -5,8 +5,8 @@ import frontend.parser.Parser;
 import frontend.parser.ParserErrors;
 import midend.semantic.Semantic;
 import midend.semantic.SemanticErrors;
-import midend.llvm.Builder;
-import midend.llvm.Module;
+import midend.llvm.IrBuilder;
+import midend.llvm.IrModule;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -34,10 +34,10 @@ public class Compiler {
             return;
         }
 
-        Builder builder = new Builder(compUnit);
-        builder.build();
+        IrBuilder irBuilder = new IrBuilder(compUnit);
+        irBuilder.build();
         try (PrintWriter writer = new PrintWriter("llvm_ir.txt")) {
-            writer.println(Module.irOut());
+            writer.println(IrModule.irOut());
         } catch (FileNotFoundException ignored) {}
     }
 }

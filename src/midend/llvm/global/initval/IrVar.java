@@ -1,6 +1,6 @@
-package midend.llvm.global.constant;
+package midend.llvm.global.initval;
 
-public class IrVar extends IrCon {
+public class IrVar extends InitVal {
     private final int value;
 
     public IrVar(int value) {
