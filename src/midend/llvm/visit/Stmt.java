@@ -18,6 +18,7 @@ import midend.llvm.*;
 import midend.llvm.IrModule;
 import midend.llvm.function.IrBlock;
 import midend.llvm.global.GlobalStr;
+import midend.llvm.instr.IrPutStr;
 import midend.llvm.symbol.*;
 
 import java.util.ArrayList;
@@ -161,8 +162,7 @@ public class Stmt {
                     }
                 }
                 GlobalStr globalStr = IrModule.addGlobalStr(parts.get(i), strLen);
-                String rParams = "i8* getelementptr inbounds ([" + strLen + " x i8], [" + strLen + " x i8]* " + globalStr.getName() + ", i64 0, i64 0)";
-                irBlock.addInstrCall(null, "void", "putstr", rParams);
+                irBlock.addInstrPutStr(globalStr.getName(), strLen);
             }
         }
     }

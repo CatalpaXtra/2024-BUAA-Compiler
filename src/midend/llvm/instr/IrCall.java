@@ -13,6 +13,10 @@ public class IrCall extends IrInstr {
         this.rParams = rParams;
     }
 
+    public String getFuncName() {
+        return funcName;
+    }
+
     public String toString() {
         String instr;
         if (irType.equals("void")) {

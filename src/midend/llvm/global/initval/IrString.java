@@ -23,8 +23,7 @@ public class IrString extends InitVal {
                 i++;
             }
         }
-        System.out.println("Out Of Bounds");
-        return string.charAt(loc);
+        return '\0';
     }
 
     public String getStringConst() {

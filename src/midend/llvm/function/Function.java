@@ -19,6 +19,10 @@ public class Function extends Symbol {
         return params;
     }
 
+    public IrBlock getIrBlock() {
+        return irBlock;
+    }
+
     public String toString() {
         StringBuilder sb = new StringBuilder();
         StringBuilder declParam = new StringBuilder();

@@ -31,6 +31,7 @@ import midend.llvm.function.Function;
 import midend.llvm.function.IrBlock;
 import midend.llvm.function.Param;
 import midend.llvm.global.GlobalBuilder;
+import midend.llvm.global.GlobalVal;
 import midend.llvm.global.initval.IrArray;
 import midend.llvm.global.initval.InitVal;
 import midend.llvm.global.initval.IrString;
@@ -250,10 +251,18 @@ public class LocalDecl {
             Value left = result;
             Value right = visitMulExp(mulExps.get(i), symbolTable);
             Token op = operators.get(i - 1);
-            if (op.getType().equals(Token.Type.PLUS)) {
-                result = irBlock.addInstrBinary("%"+Register.allocReg(), left, right, "add");
-            } else if (op.getType().equals(Token.Type.MINU)) {
-                result = irBlock.addInstrBinary("%"+Register.allocReg(), left, right, "sub");
+            if (left instanceof Constant && right instanceof Constant) {
+                if (op.getType().equals(Token.Type.PLUS)) {
+                    result = new Constant(((Constant) left).getValue() + ((Constant) right).getValue());
+                } else if (op.getType().equals(Token.Type.MINU)) {
+                    result = new Constant(((Constant) left).getValue() - ((Constant) right).getValue());
+                }
+            } else {
+                if (op.getType().equals(Token.Type.PLUS)) {
+                    result = irBlock.addInstrBinary("%"+Register.allocReg(), left, right, "add");
+                } else if (op.getType().equals(Token.Type.MINU)) {
+                    result = irBlock.addInstrBinary("%"+Register.allocReg(), left, right, "sub");
+                }
             }
         }
         return result;
@@ -267,12 +276,22 @@ public class LocalDecl {
             Value left = result;
             Value right = visitUnaryExp(unaryExps.get(i), symbolTable);
             Token op = operators.get(i - 1);
-            if (op.getType().equals(Token.Type.MULT)) {
-                result = irBlock.addInstrBinary("%"+Register.allocReg(), left, right, "mul");
-            } else if (op.getType().equals(Token.Type.DIV)) {
-                result = irBlock.addInstrBinary("%"+Register.allocReg(), left, right, "sdiv");
-            } else if (op.getType().equals(Token.Type.MOD)) {
-                result = irBlock.addInstrBinary("%"+Register.allocReg(), left, right, "srem");
+            if (left instanceof Constant && right instanceof Constant) {
+                if (op.getType().equals(Token.Type.MULT)) {
+                    result = new Constant(((Constant) left).getValue() * ((Constant) right).getValue());
+                } else if (op.getType().equals(Token.Type.DIV)) {
+                    result = new Constant(((Constant) left).getValue() / ((Constant) right).getValue());
+                } else if (op.getType().equals(Token.Type.MOD)) {
+                    result = new Constant(((Constant) left).getValue() % ((Constant) right).getValue());
+                }
+            } else {
+                if (op.getType().equals(Token.Type.MULT)) {
+                    result = irBlock.addInstrBinary("%"+Register.allocReg(), left, right, "mul");
+                } else if (op.getType().equals(Token.Type.DIV)) {
+                    result = irBlock.addInstrBinary("%"+Register.allocReg(), left, right, "sdiv");
+                } else if (op.getType().equals(Token.Type.MOD)) {
+                    result = irBlock.addInstrBinary("%"+Register.allocReg(), left, right, "srem");
+                }
             }
         }
         return result;
@@ -380,6 +399,9 @@ public class LocalDecl {
         Value result;
         if (lVal.isArray()) {
             Value loc = visitExp(lVal.getExp(), symbolTable);
+            if (loc instanceof Constant && (symbol instanceof SymbolCon || (symbol instanceof GlobalVal && ((GlobalVal) symbol).isConst()))) {
+                return new Constant(symbol.getValueAtLoc(((Constant) loc).getValue()));
+            }
             if (symbol.isPointer()) {
                 Value temp1 = irBlock.addInstrLoad("%"+Register.allocReg(), irType + "*", irAlloca);
                 Value temp2 = irBlock.addInstrGetelementptr("%"+Register.allocReg(), -1, irType, temp1, loc);
@@ -402,6 +424,9 @@ public class LocalDecl {
                 /* Exist In Call Func While Pass Param */
                 result = irBlock.addInstrLoad("%"+Register.allocReg(), irType+"*", irAlloca);
             } else {
+                if (symbol instanceof SymbolCon || (symbol instanceof GlobalVal && ((GlobalVal) symbol).isConst())) {
+                    return new Constant(symbol.getValue());
+                }
                 result = irBlock.addInstrLoad("%"+Register.allocReg(), irType, irAlloca);
                 if (symbol.isChar()) {
                     result = irBlock.addInstrZext("%"+Register.allocReg(), "i8", result, "i32");

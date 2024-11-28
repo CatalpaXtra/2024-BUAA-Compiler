@@ -7,12 +7,19 @@ import midend.llvm.global.initval.IrVar;
 import midend.llvm.symbol.Symbol;
 
 public class GlobalVal extends Symbol {
-    public GlobalVal(String name, String irType, InitVal value, int size) {
+    private final boolean isConst;
+
+    public GlobalVal(String name, String irType, InitVal value, int size, boolean isConst) {
         super(name, irType, new Value("@"+name, irType), size, value);
+        this.isConst = isConst;
     }
 
     public InitVal getInitVal() {
         return value;
+    }
+
+    public boolean isConst() {
+        return isConst;
     }
 
     public String toString() {

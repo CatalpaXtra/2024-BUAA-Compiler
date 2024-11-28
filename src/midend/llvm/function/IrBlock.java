@@ -16,6 +16,10 @@ public class IrBlock {
         instructions.add(instr);
     }
 
+    public ArrayList<IrInstr> getInstructions() {
+        return instructions;
+    }
+
     public IrInstr addInstrBinary(String name, Value op1, Value op2, String operand) {
         IrBinary irBinary = new IrBinary(name, op1, op2, operand);
         addInstr(irBinary);
@@ -32,6 +36,11 @@ public class IrBlock {
         IrCall irCall = new IrCall(name, funcType, funcName, rParams);
         addInstr(irCall);
         return irCall;
+    }
+
+    public void addInstrPutStr(String strName, int len) {
+        IrPutStr irPutStr = new IrPutStr(strName, len);
+        addInstr(irPutStr);
     }
 
     public IrInstr addInstrAlloca(String name, String llvmType, int size) {

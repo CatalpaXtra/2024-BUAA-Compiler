@@ -25,6 +25,9 @@ public class AsmByte extends AsmGlobal {
                     sb.append(", ").append(initVal.get(i));
                 }
             }
+            for (int i = initVal.size(); i < size; i++) {
+                sb.append(", ").append(0);
+            }
         }
         return sb.toString();
     }

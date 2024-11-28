@@ -81,7 +81,7 @@ public class GlobalBuilder {
             int initVal = visitConstExp((ConstExp) constDef.getConstInitVal().getConstInitValEle(), symbolTable);
             constant = new IrVar(initVal);
         }
-        GlobalVal globalVal = new GlobalVal(name, irType, constant, size);
+        GlobalVal globalVal = new GlobalVal(name, irType, constant, size, true);
         IrModule.addGlobalVal(globalVal);
         symbolTable.addSymbol(globalVal);
     }
@@ -110,7 +110,7 @@ public class GlobalBuilder {
             }
             constant = new IrVar(initVal);
         }
-        GlobalVal globalVal = new GlobalVal(name, irType, constant, size);
+        GlobalVal globalVal = new GlobalVal(name, irType, constant, size, false);
         IrModule.addGlobalVal(globalVal);
         symbolTable.addSymbol(globalVal);
     }
