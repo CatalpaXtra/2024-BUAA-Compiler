@@ -17,8 +17,8 @@ import frontend.parser.expression.primary.LVal;
 import midend.llvm.*;
 import midend.llvm.IrModule;
 import midend.llvm.function.IrBlock;
+import midend.llvm.function.Param;
 import midend.llvm.global.GlobalStr;
-import midend.llvm.instr.IrPutStr;
 import midend.llvm.symbol.*;
 
 import java.util.ArrayList;
@@ -131,12 +131,12 @@ public class Stmt {
     }
 
     private static void visitStmtGetInt(StmtGetInt stmtGetInt, SymbolTable symbolTable) {
-        Value result = irBlock.addInstrCall("%"+Register.allocReg(), "i32", "getint", "");
+        Value result = irBlock.addInstrCall("%"+Register.allocReg(), "i32", "getint", new ArrayList<>(), new ArrayList<>());
         storeLVal(result, stmtGetInt.getlVal(), symbolTable);
     }
 
     private static void visitStmtGetChar(StmtGetChar stmtGetChar, SymbolTable symbolTable) {
-        Value result = irBlock.addInstrCall("%"+Register.allocReg(), "i32", "getchar", "");
+        Value result = irBlock.addInstrCall("%"+Register.allocReg(), "i32", "getchar", new ArrayList<>(), new ArrayList<>());
         storeLVal(result, stmtGetChar.getlVal(), symbolTable);
     }
 
@@ -148,10 +148,14 @@ public class Stmt {
         for (int i = 0; i < parts.size(); i++) {
             if (parts.get(i).equals("%d") || parts.get(i).equals("%c")) {
                 Value result = LocalDecl.visitExp(exps.get(expCount), symbolTable);
+                ArrayList<Value> values = new ArrayList<>();
+                ArrayList<Param> params = new ArrayList<>();
+                values.add(result);
+                params.add(new Param("i32", null));
                 if (parts.get(i).equals("%d")) {
-                    irBlock.addInstrCall(null, "void", "putint", "i32 " + result.getName());
+                    irBlock.addInstrCall(null, "void", "putint", params, values);
                 } else {
-                    irBlock.addInstrCall(null, "void", "putch", "i32 " + result.getName());
+                    irBlock.addInstrCall(null, "void", "putch", params, values);
                 }
                 expCount++;
             } else {

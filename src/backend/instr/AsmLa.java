@@ -11,6 +11,7 @@ public class AsmLa extends AsmInstr {
         this.name = name;
     }
 
+    @Override
     public String toString(){
         return "la " + reg + ", " + name;
     }

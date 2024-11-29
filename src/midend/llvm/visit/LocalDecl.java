@@ -313,10 +313,11 @@ public class LocalDecl {
         String funcName = unaryFunc.getIdent().getIdenfr();
         Function function = (Function) globalSymbolTable.getSymbol(funcName);
         FuncRParams funcRParams = unaryFunc.getFuncRParams();
-        String passRParam = "";
+        ArrayList<Param> params = new ArrayList<>();
+        ArrayList<Value> values = new ArrayList<>();
         if (funcRParams != null) {
             ArrayList<Exp> funcExps = funcRParams.getExps();
-            ArrayList<Param> params = function.getParams();
+            params.addAll(function.getParams());
             int len = funcExps.size();
             for (int i = 0; i < len; i++) {
                 Value result = visitExp(funcExps.get(i), symbolTable);
@@ -330,17 +331,16 @@ public class LocalDecl {
                         result = irBlock.addInstrTrunc("%"+Register.allocReg(), "i32", result, "i8");
                     }
                 }
-                passRParam += irType + " " + result.getName() + ", ";
+                values.add(result);
             }
         }
-        passRParam = passRParam.length() > 2 ? passRParam.substring(0, passRParam.length() - 2) : passRParam;
 
         if (function.getIrType().contains("void")) {
-            irBlock.addInstrCall(null, "void", funcName, passRParam);
+            irBlock.addInstrCall(null, "void", funcName, params, values);
             return null;
         } else {
             String irType = function.getIrType();
-            Value result = irBlock.addInstrCall("%"+Register.allocReg(), irType, funcName, passRParam);
+            Value result = irBlock.addInstrCall("%"+Register.allocReg(), irType, funcName, params, values);
             if (function.isChar()) {
                 result = irBlock.addInstrZext("%"+Register.allocReg(), "i8", result, "i32");
             }
@@ -422,6 +422,7 @@ public class LocalDecl {
                 result = irBlock.addInstrGetelementptr("%"+Register.allocReg(), size, irType, irAlloca, new Constant(0));
             } else if (symbol.isPointer()) {
                 /* Exist In Call Func While Pass Param */
+                /* func(int a[]); func(a); */
                 result = irBlock.addInstrLoad("%"+Register.allocReg(), irType+"*", irAlloca);
             } else {
                 if (symbol instanceof SymbolCon || (symbol instanceof GlobalVal && ((GlobalVal) symbol).isConst())) {

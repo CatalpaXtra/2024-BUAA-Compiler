@@ -14,6 +14,8 @@ public class IrGetelementptr extends IrInstr {
         this.pointer = pointer;
         this.offset = offset;
         this.size = size;
+        addOperand(pointer);
+        addOperand(offset);
     }
 
     public String toString() {

@@ -9,6 +9,20 @@ public enum Register {
     gp, sp, fp,
     ra, at;
 
+    public static int curReg = 0;
+
+    public static Register allocReg(){
+        return getByOffset(Register.t0, curReg++);
+    }
+
+    public static void resetCurReg(){
+        curReg = 0;
+    }
+
+    public static Register getByOffset(Register register, int offset){
+        return Register.values()[register.ordinal() + offset];
+    }
+
     @Override
     public String toString(){
         return "$" + this.name();

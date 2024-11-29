@@ -10,6 +10,10 @@ public class User extends Value {
         this.operands = new ArrayList<>();
     }
 
+    public ArrayList<Value> getOperands() {
+        return operands;
+    }
+
     public void addOperand(Value value){
         operands.add(value);
         if (value != null) {
@@ -38,9 +42,5 @@ public class User extends Value {
 
     public void setOperands(Value value,int pos) {
         this.operands.set(pos,value);
-    }
-
-    public ArrayList<Value> getOperands() {
-        return operands;
     }
 }

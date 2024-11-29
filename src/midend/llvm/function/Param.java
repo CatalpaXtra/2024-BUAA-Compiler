@@ -1,19 +1,14 @@
 package midend.llvm.function;
 
-public class Param {
-    private final String irType;
-    private final String memory;
+import midend.llvm.Value;
 
-    public Param(String irType, String memory) {
-        this.irType = irType;
-        this.memory = memory;
+public class Param extends Value {
+    public Param(String irType, String name) {
+        super(name, irType);
     }
 
-    public String getIrType() {
-        return irType;
-    }
-
-    public String irOut() {
-        return irType + " " + memory;
+    @Override
+    public String toString() {
+        return irType + " " + name;
     }
 }

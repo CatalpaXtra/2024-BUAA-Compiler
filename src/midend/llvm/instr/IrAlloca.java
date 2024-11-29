@@ -1,7 +1,5 @@
 package midend.llvm.instr;
 
-import midend.llvm.Value;
-
 public class IrAlloca extends IrInstr {
     private int size;
 

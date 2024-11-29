@@ -27,7 +27,7 @@ public class Function extends Symbol {
         StringBuilder sb = new StringBuilder();
         StringBuilder declParam = new StringBuilder();
         for (Param param : params) {
-            declParam.append(param.irOut() + ", ");
+            declParam.append(param.toString() + ", ");
         }
         if (!declParam.isEmpty()) {
             declParam.delete(declParam.length() - 2, declParam.length());

@@ -20,8 +20,8 @@ public class IrBlock {
         return instructions;
     }
 
-    public IrInstr addInstrBinary(String name, Value op1, Value op2, String operand) {
-        IrBinary irBinary = new IrBinary(name, op1, op2, operand);
+    public IrInstr addInstrBinary(String name, Value op1, Value op2, String operator) {
+        IrBinary irBinary = new IrBinary(name, op1, op2, operator);
         addInstr(irBinary);
         return irBinary;
     }
@@ -32,8 +32,8 @@ public class IrBlock {
         return irIcmp;
     }
 
-    public IrInstr addInstrCall(String name, String funcType, String funcName, String rParams) {
-        IrCall irCall = new IrCall(name, funcType, funcName, rParams);
+    public IrInstr addInstrCall(String name, String funcType, String funcName, ArrayList<Param> params, ArrayList<Value> values) {
+        IrCall irCall = new IrCall(name, funcType, funcName, params, values);
         addInstr(irCall);
         return irCall;
     }

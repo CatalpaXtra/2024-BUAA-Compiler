@@ -13,6 +13,26 @@ public class Module {
         data.add(asmGlobal);
     }
 
+    public static void addAsmNull() {
+        AsmInstr asmInstr = new AsmInstr();
+        text.add(asmInstr);
+    }
+
+    public static void addAsmAlu(AsmAlu.OP op, Register to, Register operand1, Register operand2, int num) {
+        AsmAlu asmAlu = new AsmAlu(op, to, operand1, operand2, num);
+        text.add(asmAlu);
+    }
+
+    public static void addAsmMove(Register to, Register from) {
+        AsmMove asmMove = new AsmMove(to, from);
+        text.add(asmMove);
+    }
+
+    public static void addAsmMem(AsmMem.Type type, Register value, int offset, Register base) {
+        AsmMem asmMem = new AsmMem(type, value, offset, base);
+        text.add(asmMem);
+    }
+
     public static void addAsmLabel(String name) {
         AsmLabel asmLabel = new AsmLabel(name);
         text.add(asmLabel);

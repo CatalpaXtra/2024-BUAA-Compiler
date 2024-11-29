@@ -11,6 +11,8 @@ public class IrStore extends IrInstr {
         super(null, irType);
         this.value = value;
         this.pointer = pointer;
+        addOperand(value);
+        addOperand(pointer);
     }
 
     public String toString() {
