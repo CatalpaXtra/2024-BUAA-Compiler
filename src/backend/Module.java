@@ -13,13 +13,18 @@ public class Module {
         data.add(asmGlobal);
     }
 
-    public static void addAsmNull() {
-        AsmInstr asmInstr = new AsmInstr();
+    public static void addAsmNull(String comment) {
+        AsmInstr asmInstr = new AsmInstr("#" + comment);
         text.add(asmInstr);
     }
 
     public static void addAsmAlu(AsmAlu.OP op, Register to, Register operand1, Register operand2, int num) {
         AsmAlu asmAlu = new AsmAlu(op, to, operand1, operand2, num);
+        text.add(asmAlu);
+    }
+
+    public static void addAsmAlu(AsmAlu.OP op, Register operand1, Register operand2) {
+        AsmAlu asmAlu = new AsmAlu(op, operand1, operand2);
         text.add(asmAlu);
     }
 

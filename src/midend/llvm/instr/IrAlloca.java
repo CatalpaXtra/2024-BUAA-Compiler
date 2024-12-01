@@ -8,6 +8,10 @@ public class IrAlloca extends IrInstr {
         this.size = size;
     }
 
+    public int getSize() {
+        return size;
+    }
+
     public String toString() {
         String instr;
         if (size == -1) {
