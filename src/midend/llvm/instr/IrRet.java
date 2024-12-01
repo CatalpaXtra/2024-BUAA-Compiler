@@ -11,6 +11,7 @@ public class IrRet extends IrInstr {
         super(null, null);
         this.retType = retType;
         this.value = value;
+        addOperand(value);
     }
 
     public String toString() {

@@ -71,15 +71,16 @@ public class IrBuilder {
 
         /* load FuncFParams */
         Register.allocReg();
-        for (FuncFParam funcFParam : funcFParamList) {
+        for (int i = 0; i < funcFParamList.size(); i++) {
+            FuncFParam funcFParam = funcFParamList.get(i);
             String irType = Support.tokenTypeTransfer(funcFParam.getBType().getToken().getType());
             if (funcFParam.isArray()) {
                 irType += "*";
             }
             int regNum = Register.allocReg();
             IrInstr irAlloca = irBlock.addInstrAlloca("%"+regNum, irType, -1);
-            Value value = new Value(regNum - funcFParamList.size() - 1, irType);
-            irBlock.addInstrStore(irType, value, irAlloca);
+            Param param = params.get(i);
+            irBlock.addInstrStore(irType, param, irAlloca);
 
             String name = funcFParam.getIdent().getIdenfr();
             SymbolVar symbolVar = new SymbolVar(name, irType, irAlloca, -1, null);

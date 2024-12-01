@@ -21,14 +21,6 @@ public class Value {
         this.users = new ArrayList<>();
     }
 
-    public boolean isI32Type() {
-        return irType.equals("i32");
-    }
-
-    public boolean isI1Type() {
-        return irType.equals("i1");
-    }
-
     public String getName() {
         return name;
     }

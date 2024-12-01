@@ -19,7 +19,9 @@ import midend.llvm.IrModule;
 import midend.llvm.function.IrBlock;
 import midend.llvm.function.Param;
 import midend.llvm.global.GlobalStr;
+import midend.llvm.instr.IrIcmp;
 import midend.llvm.instr.IrLabel;
+import midend.llvm.instr.IrZext;
 import midend.llvm.symbol.*;
 
 import java.util.ArrayList;
@@ -91,7 +93,7 @@ public class Stmt {
     private static void visitStmtReturn(StmtReturn stmtReturn, SymbolTable symbolTable) {
         if (stmtReturn.existReturnValue()) {
             Value result = LocalDecl.visitExp(stmtReturn.getExp(), symbolTable);
-            if (funcType.contains("Char")) {
+            if (!(result instanceof Constant) && funcType.contains("Char")) {
                 result = irBlock.addInstrTrunc("%"+Register.allocReg(), "i32", result, "i8");
             }
             irBlock.addInstrRet(Support.varTransfer(funcType), result);
@@ -114,12 +116,12 @@ public class Stmt {
             } else {
                 temp = irBlock.addInstrGetelementptr("%"+Register.allocReg(), symbol.getArraySize(), irType, irAlloca, loc);
             }
-            if (symbol.isChar()) {
+            if (!(result instanceof Constant) && symbol.isChar()) {
                 result = irBlock.addInstrTrunc("%"+Register.allocReg(), "i32", result, "i8");
             }
             irBlock.addInstrStore(irType, result, temp);
         } else {
-            if (symbol.isChar()) {
+            if (!(result instanceof Constant) && symbol.isChar()) {
                 result = irBlock.addInstrTrunc("%"+Register.allocReg(), "i32", result, "i8");
             }
             irBlock.addInstrStore(irType, result, irAlloca);
@@ -300,7 +302,7 @@ public class Stmt {
             }
         } else if (!(result instanceof IrLabel)) {
             /* Result Is Value */
-            if (result.isI32Type()) {
+            if (!(result instanceof IrIcmp)) {
                 Constant zero = new Constant(0);
                 result = irBlock.addInstrIcmp("%"+Register.allocReg(), "ne", result, zero);
             }
@@ -341,7 +343,7 @@ public class Stmt {
                 }
             } else if (!(result instanceof IrLabel)) {
                 /* Return Value */
-                if (result.isI32Type()) {
+                if (!(result instanceof IrIcmp)) {
                     Constant zero = new Constant(0);
                     result = irBlock.addInstrIcmp("%"+Register.allocReg(), "ne", result, zero);
                 }
@@ -388,7 +390,7 @@ public class Stmt {
                 }
             } else if (!(result instanceof IrLabel)) {
                 /* Result is Value */
-                if (result.isI32Type()) {
+                if (!(result instanceof IrIcmp)) {
                     Constant zero = new Constant(0);
                     result = irBlock.addInstrIcmp("%"+Register.allocReg(), "ne", result, zero);
                 }
@@ -417,7 +419,7 @@ public class Stmt {
 
         ArrayList<Token> operators = eqExp.getOperators();
         Value result = visitRelExp(relExps.get(0), symbolTable);
-        if (result.isI1Type()) {
+        if (result instanceof IrIcmp) {
             /* Value Transfer */
             result = irBlock.addInstrZext("%"+Register.allocReg(), "i1", result, "i32");
         }
@@ -425,18 +427,32 @@ public class Stmt {
             String cond = Support.condTransfer(operators.get(i-1).getType());
             Value left = result;
             Value right = visitRelExp(relExps.get(i), symbolTable);
-            if (right.isI1Type()) {
-                /* Value Transfer */
-                right = irBlock.addInstrZext("%"+Register.allocReg(), "i1", right, "i32");
-            }
-            result = irBlock.addInstrIcmp("%"+Register.allocReg(), cond, left, right);
+            if (left instanceof Constant && right instanceof Constant) {
+                switch (operators.get(i-1).getType()) {
+                    case EQL:
+                        result = new Constant(((Constant) left).getValue() == ((Constant) right).getValue() ? 1 : 0);
+                        break;
+                    case NEQ:
+                        result = new Constant(((Constant) left).getValue() != ((Constant) right).getValue() ? 1 : 0);
+                        break;
+                }
+            } else {
+                if (right instanceof IrIcmp) {
+                    /* Value Transfer */
+                    right = irBlock.addInstrZext("%"+Register.allocReg(), "i1", right, "i32");
+                }
+                result = irBlock.addInstrIcmp("%"+Register.allocReg(), cond, left, right);
 
-            /* Value Transfer */
-            result = irBlock.addInstrZext("%"+Register.allocReg(), "i1", result, "i32");
+                /* Value Transfer */
+                result = irBlock.addInstrZext("%"+Register.allocReg(), "i1", result, "i32");
+            }
         }
-        Register.cancelAlloc();
-        irBlock.delLastInstr();
-        return irBlock.getLastInstr();
+        if (irBlock.getLastInstr() instanceof IrZext) {
+            Register.cancelAlloc();
+            irBlock.delLastInstr();
+            result = irBlock.getLastInstr();
+        }
+        return result;
     }
 
     private static Value visitRelExp(RelExp relExp, SymbolTable symbolTable) {
@@ -451,14 +467,34 @@ public class Stmt {
             String cond = Support.condTransfer(operators.get(i-1).getType());
             Value left = result;
             Value right = LocalDecl.visitAddExp(addExps.get(i), symbolTable);
-            result =irBlock.addInstrIcmp("%"+Register.allocReg(), cond, left, right);
+            if (left instanceof Constant && right instanceof Constant) {
+                switch (operators.get(i-1).getType()) {
+                    case GRE:
+                        result = new Constant(((Constant) left).getValue() > ((Constant) right).getValue() ? 1 : 0);
+                        break;
+                    case GEQ:
+                        result = new Constant(((Constant) left).getValue() >= ((Constant) right).getValue() ? 1 : 0);
+                        break;
+                    case LSS:
+                        result = new Constant(((Constant) left).getValue() < ((Constant) right).getValue() ? 1 : 0);
+                        break;
+                    case LEQ:
+                        result = new Constant(((Constant) left).getValue() <= ((Constant) right).getValue() ? 1 : 0);
+                        break;
+                }
+            } else {
+                result = irBlock.addInstrIcmp("%"+Register.allocReg(), cond, left, right);
 
-            /* Value Transfer */
-            result = irBlock.addInstrZext("%"+Register.allocReg(), "i1", result, "i32");
+                /* Value Transfer */
+                result = irBlock.addInstrZext("%"+Register.allocReg(), "i1", result, "i32");
+            }
         }
-        Register.cancelAlloc();
-        irBlock.delLastInstr();
-        return irBlock.getLastInstr();
+        if (irBlock.getLastInstr() instanceof IrZext) {
+            Register.cancelAlloc();
+            irBlock.delLastInstr();
+            result = irBlock.getLastInstr();
+        }
+        return result;
     }
 
 }

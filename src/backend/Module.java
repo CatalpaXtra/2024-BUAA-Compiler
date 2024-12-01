@@ -23,8 +23,8 @@ public class Module {
         text.add(asmAlu);
     }
 
-    public static void addAsmCmp(AsmCmp.OP op, Register to, Register operand1, Register operand2, int num) {
-        AsmCmp asmCmp = new AsmCmp(op, to, operand1, operand2, num);
+    public static void addAsmCmp(AsmCmp.OP op, Register to, Register operand1, Register operand2) {
+        AsmCmp asmCmp = new AsmCmp(op, to, operand1, operand2);
         text.add(asmCmp);
     }
 
