@@ -11,7 +11,7 @@ public class AsmLi extends AsmInstr {
         this.value = value;
     }
 
-    public String toString(){
+    public String toString() {
         return "li " + reg + ", " + value;
     }
 }

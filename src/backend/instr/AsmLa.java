@@ -12,7 +12,7 @@ public class AsmLa extends AsmInstr {
     }
 
     @Override
-    public String toString(){
+    public String toString() {
         return "la " + reg + ", " + name;
     }
 }

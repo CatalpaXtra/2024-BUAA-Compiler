@@ -3,7 +3,7 @@ package backend.instr;
 import backend.Register;
 
 public class AsmAlu extends AsmInstr {
-    public enum OP{
+    public enum OP {
         addu, addiu, subu,
         mul, div,
         srl, sra, sll,
@@ -23,15 +23,8 @@ public class AsmAlu extends AsmInstr {
         this.num = num;
     }
 
-    public AsmAlu(OP op, Register operand1, Register operand2) {
-        this.op = op;
-        this.operand1 = operand1;
-        this.operand2 = operand2;
-    }
-
-    public String toString(){
-        StringBuilder sb = new StringBuilder();
-        sb.append(op).append(" ");
+    public String toString() {
+        StringBuilder sb = new StringBuilder(op + " ");
         if (op == OP.div) {
             sb.append(operand1).append(", ").append(operand2);
         } else {

@@ -19,6 +19,7 @@ import midend.llvm.IrModule;
 import midend.llvm.function.IrBlock;
 import midend.llvm.function.Param;
 import midend.llvm.global.GlobalStr;
+import midend.llvm.instr.IrLabel;
 import midend.llvm.symbol.*;
 
 import java.util.ArrayList;
@@ -26,7 +27,7 @@ import java.util.ArrayList;
 public class Stmt {
     private static IrBlock irBlock;
     private static String funcType;
-    public static int nextLabel;
+    private static int nextLabel;
 
     public static void setStmt(IrBlock irBlock, String funcType) {
         Stmt.irBlock = irBlock;
@@ -297,8 +298,9 @@ public class Stmt {
                 irBlock.addInstrNull();
                 Stmt.nextLabel = Register.allocReg();
             }
-        } else if (result.isValue() || result.isCondValue()) {
-            if (result.isValue()) {
+        } else if (!(result instanceof IrLabel)) {
+            /* Result Is Value */
+            if (result.isI32Type()) {
                 Constant zero = new Constant(0);
                 result = irBlock.addInstrIcmp("%"+Register.allocReg(), "ne", result, zero);
             }
@@ -337,9 +339,9 @@ public class Stmt {
                         irBlock.delLastInstr();
                     }
                 }
-            } else if (result.isValue() || result.isCondValue()) {
-                /* Return Value In Register */
-                if (result.isValue()) {
+            } else if (!(result instanceof IrLabel)) {
+                /* Return Value */
+                if (result.isI32Type()) {
                     Constant zero = new Constant(0);
                     result = irBlock.addInstrIcmp("%"+Register.allocReg(), "ne", result, zero);
                 }
@@ -384,12 +386,11 @@ public class Stmt {
                         irBlock.delLastInstr();
                     }
                 }
-            } else {
-                /* Return Value In Register */
-                if (result.isValue()) {
-                    Value temp = result;
+            } else if (!(result instanceof IrLabel)) {
+                /* Result is Value */
+                if (result.isI32Type()) {
                     Constant zero = new Constant(0);
-                    result = irBlock.addInstrIcmp("%"+Register.allocReg(), "ne", temp, zero);
+                    result = irBlock.addInstrIcmp("%"+Register.allocReg(), "ne", result, zero);
                 }
                 Stmt.nextLabel = Register.allocReg();
                 if (i == eqExps.size() - 1) {
@@ -405,7 +406,7 @@ public class Stmt {
         } else {
             irBlock.replaceInterval(left, irBlock.getLoc(), "%" + Stmt.nextLabel, "<NEXT LOREXP>");
         }
-        return new Value(Stmt.nextLabel, "");
+        return new IrLabel(Stmt.nextLabel);
     }
 
     private static Value visitEqExp(EqExp eqExp, SymbolTable symbolTable) {
@@ -416,7 +417,7 @@ public class Stmt {
 
         ArrayList<Token> operators = eqExp.getOperators();
         Value result = visitRelExp(relExps.get(0), symbolTable);
-        if (result.isCondValue()) {
+        if (result.isI1Type()) {
             /* Value Transfer */
             result = irBlock.addInstrZext("%"+Register.allocReg(), "i1", result, "i32");
         }
@@ -424,7 +425,7 @@ public class Stmt {
             String cond = Support.condTransfer(operators.get(i-1).getType());
             Value left = result;
             Value right = visitRelExp(relExps.get(i), symbolTable);
-            if (right.isCondValue()) {
+            if (right.isI1Type()) {
                 /* Value Transfer */
                 right = irBlock.addInstrZext("%"+Register.allocReg(), "i1", right, "i32");
             }
@@ -435,7 +436,7 @@ public class Stmt {
         }
         Register.cancelAlloc();
         irBlock.delLastInstr();
-        return new Value(Register.getRegNum() - 1, "i1");
+        return irBlock.getLastInstr();
     }
 
     private static Value visitRelExp(RelExp relExp, SymbolTable symbolTable) {
@@ -457,7 +458,7 @@ public class Stmt {
         }
         Register.cancelAlloc();
         irBlock.delLastInstr();
-        return new Value(Register.getRegNum() - 1, "i1");
+        return irBlock.getLastInstr();
     }
 
 }

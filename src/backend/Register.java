@@ -9,22 +9,22 @@ public enum Register {
     gp, sp, fp, ra,
     hi, lo;
 
-    public static int curReg = 0;
+    private static int curReg = 0;
 
-    public static Register allocReg(){
+    public static Register allocReg() {
         return getByOffset(Register.t0, curReg++);
     }
 
-    public static void resetCurReg(){
+    public static void resetCurReg() {
         curReg = 0;
     }
 
-    public static Register getByOffset(Register register, int offset){
+    public static Register getByOffset(Register register, int offset) {
         return Register.values()[register.ordinal() + offset];
     }
 
     @Override
-    public String toString(){
+    public String toString() {
         return "$" + this.name();
     }
 }

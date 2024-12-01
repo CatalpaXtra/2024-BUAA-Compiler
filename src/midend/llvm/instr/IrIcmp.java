@@ -13,6 +13,12 @@ public class IrIcmp extends IrInstr {
         this.cond = cond;
         this.op1 = op1;
         this.op2 = op2;
+        addOperand(op1);
+        addOperand(op2);
+    }
+
+    public String getCond() {
+        return cond;
     }
 
     public String toString() {

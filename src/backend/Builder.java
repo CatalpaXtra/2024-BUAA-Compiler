@@ -3,8 +3,7 @@ package backend;
 import backend.global.AsmAsciiz;
 import backend.global.AsmByte;
 import backend.global.AsmWord;
-import backend.instr.AsmAlu;
-import backend.instr.AsmMem;
+import backend.instr.*;
 import midend.llvm.Constant;
 import midend.llvm.IrModule;
 import midend.llvm.Value;
@@ -156,9 +155,15 @@ public class Builder {
         }
     }
 
+    private String labelEncrypt(String label) {
+        if (label.charAt(0) == '%') {
+            return curFunc.getName() + "_" + label.substring(1);
+        }
+        return curFunc.getName() + "_" + label;
+    }
+
     private void buildLabel(IrLabel irLabel) {
-        String label = curFunc.getName() + "_" + irLabel.getLabel();
-        Module.addAsmLabel(label);
+        Module.addAsmLabel(labelEncrypt(irLabel.getLabel()));
     }
 
     private void buildRet(IrRet irRet) {
@@ -266,7 +271,7 @@ public class Builder {
                 int offset2 = offsetMap.get(operand2);
                 Module.addAsmMem(AsmMem.Type.lw, tmpReg2, offset2, Register.sp);
             }
-            Module.addAsmAlu(op, tmpReg, tmpReg2);
+            Module.addAsmAlu(op, null, tmpReg, tmpReg2, 0);
 
             if (operator.equals("sdiv")) {
                 Module.addAsmMove(resReg, Register.lo);
@@ -290,7 +295,6 @@ public class Builder {
                 Module.addAsmAlu(op, resReg, tmpReg, tmpReg2, 0);
             }
         }
-
         Module.addAsmMem(AsmMem.Type.sw, resReg, offsetMap.get(irBinary), Register.sp);
     }
 
@@ -323,11 +327,65 @@ public class Builder {
     }
 
     private void buildIcmp(IrIcmp irIcmp) {
+        Value operand1 = irIcmp.getOperands().get(0);
+        Value operand2 = irIcmp.getOperands().get(1);
+        String cond = irIcmp.getCond();
+        AsmCmp.OP op = null;
+        switch (cond) {
+            case "sgt":
+                op = AsmCmp.OP.sgt;
+                break;
+            case "sge":
+                op = AsmCmp.OP.sge;
+                break;
+            case "slt":
+                op = AsmCmp.OP.slt;
+                break;
+            case "sle":
+                op = AsmCmp.OP.sle;
+                break;
+            case "ne":
+                op = AsmCmp.OP.sne;
+                break;
+            case "eq":
+                op = AsmCmp.OP.seq;
+                break;
+            default:
+                break;
+        }
 
+        Register resReg = Register.t1;
+        Register tmpReg = Register.t1;
+        Register tmpReg2 = Register.t2;
+        if (operand1 instanceof Constant) {
+            Module.addAsmLi(tmpReg, ((Constant) operand1).getValue());
+            int offset = offsetMap.get(operand2);
+            Module.addAsmMem(AsmMem.Type.lw, tmpReg2, offset, Register.sp);
+            Module.addAsmCmp(op, resReg, tmpReg, tmpReg2, 0);
+        } else if (operand2 instanceof Constant) {
+            int offset = offsetMap.get(operand1);
+            Module.addAsmMem(AsmMem.Type.lw, tmpReg, offset, Register.sp);
+            Module.addAsmCmp(op, resReg, tmpReg, null, ((Constant) operand2).getValue());
+        } else {
+            int offset1 = offsetMap.get(operand1);
+            Module.addAsmMem(AsmMem.Type.lw, tmpReg, offset1, Register.sp);
+            int offset2 = offsetMap.get(operand2);
+            Module.addAsmMem(AsmMem.Type.lw, tmpReg2, offset2, Register.sp);
+            Module.addAsmCmp(op, resReg, tmpReg, tmpReg2, 0);
+        }
+        Module.addAsmMem(AsmMem.Type.sw, resReg, offsetMap.get(irIcmp), Register.sp);
     }
 
     private void buildBr(IrBr irBr) {
-
+        Value cond = irBr.getCond();
+        Register resReg = Register.t1;
+        if (cond == null) {
+            Module.addAsmJump(AsmJump.OP.j, null, labelEncrypt(irBr.getLabel()));
+        } else {
+            Module.addAsmMem(AsmMem.Type.lw, resReg, offsetMap.get(cond), Register.sp);
+            Module.addAsmBranch(AsmBranch.OP.bne, resReg, null, labelEncrypt(irBr.getLabel1()), 0);
+            Module.addAsmJump(AsmJump.OP.j, null, labelEncrypt(irBr.getLabel2()));
+        }
     }
 
     private void buildCall(IrCall irCall) {
@@ -405,10 +463,12 @@ public class Builder {
     }
 
     private void buildZext(IrZext irZext) {
-
+        Value operand = irZext.getOperands().get(0);
+        offsetMap.put(irZext, offsetMap.get(operand));
     }
 
     private void buildTrunc(IrTrunc irTrunc) {
-
+        Value operand = irTrunc.getOperands().get(0);
+        offsetMap.put(irTrunc, offsetMap.get(operand));
     }
 }

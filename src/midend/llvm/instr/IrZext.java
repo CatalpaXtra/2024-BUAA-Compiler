@@ -13,6 +13,7 @@ public class IrZext extends IrInstr{
         this.ty1 = ty1;
         this.value = value;
         this.ty2 = ty2;
+        addOperand(value);
     }
 
     public String getTy1() {

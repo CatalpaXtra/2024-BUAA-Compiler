@@ -21,11 +21,11 @@ public class Value {
         this.users = new ArrayList<>();
     }
 
-    public boolean isValue() {
+    public boolean isI32Type() {
         return irType.equals("i32");
     }
 
-    public boolean isCondValue() {
+    public boolean isI1Type() {
         return irType.equals("i1");
     }
 
@@ -37,24 +37,24 @@ public class Value {
         return irType;
     }
 
-    public void addUser(User user){
-        if(!users.contains(user)){
+    public void addUser(User user) {
+        if (!users.contains(user)) {
             users.add(user);
         }
     }
 
-    public ArrayList<User> getUsers(){
+    public ArrayList<User> getUsers() {
         return users;
     }
 
-    public void modifyValueForUsers(Value newValue){
-        for(User user:users){
+    public void modifyValueForUsers(Value newValue) {
+        for (User user:users) {
             user.modifyValue(this, newValue);
         }
         users = new ArrayList<>();
     }
 
-    public void deleteUser(User user){
+    public void deleteUser(User user) {
         users.remove(user);
     }
 }

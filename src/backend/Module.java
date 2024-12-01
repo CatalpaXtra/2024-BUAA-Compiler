@@ -23,9 +23,19 @@ public class Module {
         text.add(asmAlu);
     }
 
-    public static void addAsmAlu(AsmAlu.OP op, Register operand1, Register operand2) {
-        AsmAlu asmAlu = new AsmAlu(op, operand1, operand2);
-        text.add(asmAlu);
+    public static void addAsmCmp(AsmCmp.OP op, Register to, Register operand1, Register operand2, int num) {
+        AsmCmp asmCmp = new AsmCmp(op, to, operand1, operand2, num);
+        text.add(asmCmp);
+    }
+
+    public static void addAsmJump(AsmJump.OP op, Register to, String label) {
+        AsmJump asmJump = new AsmJump(op, to, label);
+        text.add(asmJump);
+    }
+
+    public static void addAsmBranch(AsmBranch.OP op, Register reg1, Register reg2, String label, int num) {
+        AsmBranch asmBranch = new AsmBranch(op, reg1, reg2, label, num);
+        text.add(asmBranch);
     }
 
     public static void addAsmMove(Register to, Register from) {

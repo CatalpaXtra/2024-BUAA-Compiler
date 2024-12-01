@@ -11,7 +11,7 @@ public class AsmMove extends AsmInstr {
         this.from = from;
     }
 
-    public String toString(){
+    public String toString() {
         if (from.equals(Register.lo) || from.equals(Register.hi)) {
             return "mf" + from.toString().substring(1) + " " + to;
         }

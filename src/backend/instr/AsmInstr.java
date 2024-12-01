@@ -12,7 +12,7 @@ public class AsmInstr {
     }
 
     @Override
-    public String toString(){
+    public String toString() {
         return comment;
     }
 }

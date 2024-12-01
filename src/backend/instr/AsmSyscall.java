@@ -5,7 +5,7 @@ public class AsmSyscall extends AsmInstr {
     }
 
     @Override
-    public String toString(){
+    public String toString() {
         return "syscall";
     }
 }

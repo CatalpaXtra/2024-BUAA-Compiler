@@ -8,7 +8,7 @@ public class AsmLabel extends AsmInstr {
     }
 
     @Override
-    public String toString(){
+    public String toString() {
         return name + ":";
     }
 }

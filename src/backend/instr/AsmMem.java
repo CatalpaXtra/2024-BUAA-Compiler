@@ -3,9 +3,10 @@ package backend.instr;
 import backend.Register;
 
 public class AsmMem extends AsmInstr {
-    public enum Type{
+    public enum Type {
         sw, lw
     }
+
     private final Type type;
     private final Register value;
     private final int offset;
@@ -18,7 +19,7 @@ public class AsmMem extends AsmInstr {
         this.base = base;
     }
 
-    public String toString(){
+    public String toString() {
         return type + " " + value + ", " + offset + "(" + base + ")";
     }
 }
