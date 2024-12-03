@@ -223,6 +223,8 @@ public class LocalDecl {
                 if (result instanceof Constant) {
                     constant = new IrVar(((Constant) result).getValue());
                 }
+            } else {
+                constant = new IrVar(0);
             }
         }
         SymbolVar symbolVar = new SymbolVar(name, irType, irAlloca, size, constant);

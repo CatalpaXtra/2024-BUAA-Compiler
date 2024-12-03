@@ -163,13 +163,27 @@ public class Stmt {
                 expCount++;
             } else {
                 int strLen = parts.get(i).length();
-                for (int j = 0; j < parts.get(i).length(); j++) {
-                    if (parts.get(i).charAt(j) == '\\') {
-                        strLen -= 2;
+                if (strLen == 4) {
+                    ArrayList<Value> values = new ArrayList<>();
+                    ArrayList<Param> params = new ArrayList<>();
+                    values.add(new Constant(parts.get(i).charAt(0)));
+                    params.add(new Param("i32", null));
+                    irBlock.addInstrCall(null, "void", "putch", params, values);
+                } else if (strLen == 6 && parts.get(i).charAt(0) == '\\') {
+                    ArrayList<Value> values = new ArrayList<>();
+                    ArrayList<Param> params = new ArrayList<>();
+                    values.add(new Constant(10));
+                    params.add(new Param("i32", null));
+                    irBlock.addInstrCall(null, "void", "putch", params, values);
+                } else {
+                    for (int j = 0; j < parts.get(i).length(); j++) {
+                        if (parts.get(i).charAt(j) == '\\') {
+                            strLen -= 2;
+                        }
                     }
+                    GlobalStr globalStr = IrModule.addGlobalStr(parts.get(i), strLen);
+                    irBlock.addInstrPutStr(globalStr.getName(), strLen);
                 }
-                GlobalStr globalStr = IrModule.addGlobalStr(parts.get(i), strLen);
-                irBlock.addInstrPutStr(globalStr.getName(), strLen);
             }
         }
     }

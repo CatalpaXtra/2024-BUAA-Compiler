@@ -126,9 +126,9 @@ public class Builder {
         } else if (instr instanceof IrCall) {
             String funcName = ((IrCall) instr).getFuncName();
             if (funcName.equals("getint")) {
-                buildGetInt();
+                buildGetInt((IrCall) instr);
             } else if (funcName.equals("getchar")) {
-                buildGetChar();
+                buildGetChar((IrCall) instr);
             } else if (funcName.equals("putint")) {
                 buildPutInt((IrCall) instr);
             } else if (funcName.equals("putch")) {
@@ -183,6 +183,7 @@ public class Builder {
                     Module.addAsmMove(Register.v0, regMap.get(value));
                 } else {
                     Module.addAsmMem(AsmMem.Type.lw, Register.v0, offsetMap.get(value), Register.sp);
+//                    Module.addAsmMove(Register.v0, );
                 }
             }
             Module.addAsmJump(AsmJump.OP.jr, Register.ra, null);
@@ -208,7 +209,6 @@ public class Builder {
             if (regMap.containsKey(pointer)) {
                 Module.addAsmMove(regMap.get(pointer), resReg);
             } else {
-//                Module.addAsmMem(AsmMem.Type.lw, resReg, offsetMap.get(pointer), Register.sp);
                 offsetMap.put(irLoad, offsetMap.get(pointer));
             }
         } else if (pointer instanceof IrGetelementptr) {
@@ -489,7 +489,7 @@ public class Builder {
         }
 
         /* Store Func Return Value */
-        if (!curFunc.getIrType().equals("void")) {
+        if (!irCall.getIrType().equals("void")) {
             if (regMap.containsKey(irCall)) {
                 Module.addAsmAlu(AsmAlu.OP.addiu, Register.v0, regMap.get(irCall), null, 0);
             } else {
@@ -498,25 +498,13 @@ public class Builder {
         }
     }
 
-    private void buildGetInt() {
+    private void buildGetInt(IrCall irCall) {
         Module.addAsmLi(Register.v0, 5);
         Module.addAsmSyscall();
-
-        /* Read Next Store Instr And Assign */
-        IrInstr instr = instrs.get(curInstr + 1);
-        if (instr instanceof IrStore) {
-            Value pointer = instr.getOperands().get(1);
-            if (pointer instanceof IrAlloca) {
-                if (regMap.containsKey(pointer)) {
-                    Module.addAsmMove(regMap.get(pointer), Register.v0);
-                } else {
-                    Module.addAsmMem(AsmMem.Type.sw, Register.v0, offsetMap.get(pointer), Register.sp);
-                }
-            } else {
-                Module.addAsmLa(Register.v1, pointer.getName().substring(1));
-                Module.addAsmMem(AsmMem.Type.sw, Register.v0, 0, Register.v1);
-            }
-            curInstr++;
+        if (regMap.containsKey(irCall)) {
+            Module.addAsmMove(regMap.get(irCall), Register.v0);
+        } else {
+            Module.addAsmMem(AsmMem.Type.sw, Register.v0, offsetMap.get(irCall), Register.sp);
         }
     }
 
@@ -535,21 +523,13 @@ public class Builder {
         Module.addAsmSyscall();
     }
 
-    private void buildGetChar() {
+    private void buildGetChar(IrCall irCall) {
         Module.addAsmLi(Register.v0, 12);
         Module.addAsmSyscall();
-
-        /* Read Next Store Instr And Assign */
-        IrInstr instr1 = instrs.get(curInstr + 1);
-        IrInstr instr2 = instrs.get(curInstr + 2);
-        if (instr1 instanceof IrTrunc && instr2 instanceof IrStore) {
-            Value pointer = instr2.getOperands().get(1);
-            if (regMap.containsKey(pointer)) {
-                Module.addAsmMove(regMap.get(pointer), Register.v0);
-            } else {
-                Module.addAsmMem(AsmMem.Type.sw, Register.v0, offsetMap.get(pointer), Register.sp);
-            }
-            curInstr += 2;
+        if (regMap.containsKey(irCall)) {
+            Module.addAsmMove(regMap.get(irCall), Register.v0);
+        } else {
+            Module.addAsmMem(AsmMem.Type.sw, Register.v0, offsetMap.get(irCall), Register.sp);
         }
     }
 
