@@ -9,16 +9,6 @@ public enum Register {
     gp, sp, fp, ra,
     hi, lo;
 
-    private static int curReg = 0;
-
-    public static Register allocReg() {
-        return getByOffset(Register.t0, curReg++);
-    }
-
-    public static void resetCurReg() {
-        curReg = 0;
-    }
-
     public static Register getByOffset(Register register, int offset) {
         return Register.values()[register.ordinal() + offset];
     }
