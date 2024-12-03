@@ -695,18 +695,41 @@ TODO:
 ## 后端部分
 ### Mips目标代码生成
 #### .data段
-- 声明的全局变量
-- `printf`语句的字符串常量
+- 声明的全局变量，均采用 `.word` 形式存储
+- `printf`语句的字符串常量，均采用 `.asciiz` 形式存储
 
-例如：
+例如有以下代码：
 ```c
+int a;
+int b[10];
+int c[10] = {1, 2};
+char d;
+char e[10] = {'a', 'b'};
+char f[10] = "hello";
+
+int main()
+{
+    printf("Hello");
+    return 0;
+}
 ```
 
 其mips的data段为：
 ```mips
+.data
+    a: .word 0
+    b: .word 0:10
+    c: .word 1, 2, 0, 0, 0, 0, 0, 0, 0, 0
+    d: .word 0
+    e: .word 97, 98, 0, 0, 0, 0, 0, 0, 0, 0
+    f: .word 104, 101, 108, 108, 111, 0, 0, 0, 0, 0
+    .str: .asciiz "Hello"
 ```
 
-
 #### .text段
+存放函数指令
 
+
+#### debug与重构
+- 全局变量声明，若并未全部对齐，即未全部采用 `.word` ，可能导致取址错误、无法访问对象
 

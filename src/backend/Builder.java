@@ -1,7 +1,6 @@
 package backend;
 
 import backend.global.AsmAsciiz;
-import backend.global.AsmByte;
 import backend.global.AsmWord;
 import backend.instr.*;
 import midend.llvm.Constant;
@@ -60,33 +59,21 @@ public class Builder {
             asmInitVal.add(((IrVar) irInitVal).getValue());
         } else if (irInitVal instanceof IrArray) {
             asmInitVal.addAll(((IrArray) irInitVal).getConstExpSet());
-        }
-
-        if (globalVal.getIrType().equals("i32")) {
-            AsmWord asmWord = new AsmWord(name, size, asmInitVal);
-            Module.addAsmGlobal(asmWord);
-        } else {
-            if (irInitVal instanceof IrString) {
-                String string = ((IrString) irInitVal).getStringConst();
-                for (int i = 0; i < string.length(); i++){
-                    if (string.charAt(i) == '\\') {
-                        asmInitVal.add(10);
-                        i++;
-                    } else {
-                        asmInitVal.add((int) string.charAt(i));
-                    }
+        } else if (irInitVal instanceof IrString) {
+            String string = ((IrString) irInitVal).getStringConst();
+            for (int i = 0; i < string.length(); i++){
+                if (string.charAt(i) == '\\') {
+                    asmInitVal.add(10);
+                    i++;
+                } else {
+                    asmInitVal.add((int) string.charAt(i));
                 }
-                AsmWord asmWord = new AsmWord(name, size, asmInitVal);
-                Module.addAsmGlobal(asmWord);
-//                AsmAsciiz asmAsciiz = new AsmAsciiz(name, string);
-//                Module.addAsmGlobal(asmAsciiz);
-            } else {
-                AsmWord asmWord = new AsmWord(name, size, asmInitVal);
-                Module.addAsmGlobal(asmWord);
-//                AsmByte asmByte = new AsmByte(name, size, asmInitVal);
-//                Module.addAsmGlobal(asmByte);
             }
         }
+
+        /* All Store By Word */
+        AsmWord asmWord = new AsmWord(name, size, asmInitVal);
+        Module.addAsmGlobal(asmWord);
     }
 
     private void buildGlobalStr(GlobalStr globalStr) {
