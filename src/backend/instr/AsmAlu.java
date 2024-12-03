@@ -6,6 +6,7 @@ public class AsmAlu extends AsmInstr {
     public enum OP {
         addu, addiu, subu,
         mul, div,
+        andi,
         srl, sra, sll,
     }
 

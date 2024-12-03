@@ -14,7 +14,10 @@ public class Module {
     }
 
     public static void addAsmNull(String comment) {
-        AsmInstr asmInstr = new AsmInstr("#" + comment);
+        AsmInstr asmInstr = new AsmInstr(comment);
+        if (!comment.isEmpty()) {
+            asmInstr = new AsmInstr("#" + comment);
+        }
         text.add(asmInstr);
     }
 
