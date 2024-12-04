@@ -17,10 +17,10 @@ public class IrInstr extends User {
 
     public boolean hasLVal(){
         return this instanceof IrAlloca ||
-                (this instanceof IrCall && !this.getIrType().equals("void")) ||
+                this instanceof IrBinary ||
                 this instanceof IrGetelementptr ||
-                this instanceof IrLoad ||
                 this instanceof IrIcmp ||
+                this instanceof IrLoad ||
                 this instanceof IrTrunc ||
                 this instanceof IrZext;
     }

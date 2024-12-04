@@ -60,15 +60,7 @@ public class Builder {
         } else if (irInitVal instanceof IrArray) {
             asmInitVal.addAll(((IrArray) irInitVal).getConstExpSet());
         } else if (irInitVal instanceof IrString) {
-            String string = ((IrString) irInitVal).getStringConst();
-            for (int i = 0; i < string.length(); i++){
-                if (string.charAt(i) == '\\') {
-                    asmInitVal.add(10);
-                    i++;
-                } else {
-                    asmInitVal.add((int) string.charAt(i));
-                }
-            }
+            asmInitVal.addAll(((IrString) irInitVal).getArray());
         }
 
         /* All Store By Word */
@@ -183,7 +175,6 @@ public class Builder {
                     Module.addAsmMove(Register.v0, regMap.get(value));
                 } else {
                     Module.addAsmMem(AsmMem.Type.lw, Register.v0, offsetMap.get(value), Register.sp);
-//                    Module.addAsmMove(Register.v0, );
                 }
             }
             Module.addAsmJump(AsmJump.OP.jr, Register.ra, null);
@@ -354,7 +345,7 @@ public class Builder {
             } else {
                 Module.addAsmMem(AsmMem.Type.lw, offsetReg, offsetMap.get(offset), Register.sp);
             }
-            Module.addAsmAlu(AsmAlu.OP.mul, offsetReg, offsetReg, null, 4);
+            Module.addAsmAlu(AsmAlu.OP.sll, offsetReg, offsetReg, null, 2);
             /* Address + Offset, Find Value */
             Module.addAsmAlu(AsmAlu.OP.addu, resReg, pointReg, offsetReg, 0);
         }

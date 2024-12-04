@@ -1,5 +1,7 @@
 package midend.llvm.global.initval;
 
+import java.util.ArrayList;
+
 public class IrString extends InitVal {
     private final String string;
     private final int size;
@@ -7,6 +9,19 @@ public class IrString extends InitVal {
     public IrString(String string, int size) {
         this.string = string.substring(1, string.length() - 1);
         this.size = size;
+    }
+
+    public ArrayList<Integer> getArray() {
+        ArrayList<Integer> array = new ArrayList<>();
+        for (int i = 0; i < string.length(); i++){
+            if (string.charAt(i) == '\\') {
+                array.add(10);
+                i++;
+            } else {
+                array.add((int) string.charAt(i));
+            }
+        }
+        return array;
     }
 
     public int getCharAt(int loc) {
