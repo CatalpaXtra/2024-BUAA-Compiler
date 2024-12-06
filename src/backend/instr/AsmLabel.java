@@ -7,6 +7,10 @@ public class AsmLabel extends AsmInstr {
         this.name = name;
     }
 
+    public String getLabel() {
+        return name;
+    }
+
     @Override
     public String toString() {
         return name + ":";

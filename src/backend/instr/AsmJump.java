@@ -17,6 +17,14 @@ public class AsmJump extends AsmInstr {
         this.label = label;
     }
 
+    public OP getOp() {
+        return op;
+    }
+
+    public String getLabel() {
+        return label;
+    }
+
     public String toString() {
         if (op == OP.jr) {
             return op + " " + to;

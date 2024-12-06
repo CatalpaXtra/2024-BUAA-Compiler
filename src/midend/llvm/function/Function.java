@@ -1,18 +1,22 @@
 package midend.llvm.function;
 
+import backend.Register;
 import midend.llvm.Value;
 import midend.llvm.symbol.Symbol;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class Function extends Symbol {
     private final ArrayList<Param> params;
     private final IrBlock irBlock;
+    private HashMap<Value, Register> var2reg;
 
     public Function(String name, String irType, ArrayList<Param> params, IrBlock irBlock) {
         super(name, irType, new Value(null, null), -1, null);
         this.params = params;
         this.irBlock = irBlock;
+        this.var2reg = new HashMap<>();
     }
 
     public ArrayList<Param> getParams() {
@@ -36,5 +40,13 @@ public class Function extends Symbol {
         sb.append(irBlock.toString());
         sb.append("}\n");
         return sb.toString();
+    }
+
+    public void setVar2reg(HashMap<Value, Register> var2reg) {
+        this.var2reg = var2reg;
+    }
+
+    public HashMap<Value, Register> getVar2reg() {
+        return var2reg;
     }
 }

@@ -6,6 +6,7 @@ import frontend.parser.CompUnit;
 import frontend.parser.Parser;
 import frontend.parser.ParserErrors;
 import midend.optimizer.Optimizer;
+import midend.optimizer.PeepHole;
 import midend.semantic.Semantic;
 import midend.semantic.SemanticErrors;
 import midend.llvm.IrBuilder;
@@ -46,6 +47,7 @@ public class Compiler {
 
         Builder builder = new Builder();
         builder.build();
+        PeepHole.optimize();
         try (PrintWriter writer = new PrintWriter("mips.txt")) {
             writer.println(Module.mipsOut());
         } catch (FileNotFoundException ignored) {}

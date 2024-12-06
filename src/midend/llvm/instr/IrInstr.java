@@ -22,7 +22,8 @@ public class IrInstr extends User {
                 this instanceof IrIcmp ||
                 this instanceof IrLoad ||
                 this instanceof IrTrunc ||
-                this instanceof IrZext;
+                this instanceof IrZext ||
+                (this instanceof IrCall && !this.getIrType().equals("void"));
     }
 
     public IrBlock getParentBlock() {

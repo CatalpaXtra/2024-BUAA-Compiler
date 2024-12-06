@@ -28,8 +28,6 @@ public class Builder {
     private HashMap<Value, Register> regMap;
     private HashMap<Value, Integer> offsetMap;
     private int curOffset;
-    private int curInstr;
-    private ArrayList<IrInstr> instrs;
 
     public Builder() {
         this.globalVals = IrModule.getGlobalVals();
@@ -77,7 +75,7 @@ public class Builder {
 
     private void buildFunction(Function function) {
         curFunc = function;
-        regMap = new HashMap<>();
+        regMap = function.getVar2reg();
         offsetMap = new HashMap<>();
         curOffset = 0;
         Module.addAsmLabel(curFunc.getName());
@@ -97,13 +95,13 @@ public class Builder {
     }
 
     private void buildIrBlock(IrBlock irBlock) {
-        instrs = irBlock.getInstructions();
+        ArrayList<IrInstr> instrs = irBlock.getInstructions();
         for (IrInstr instr : instrs) {
             curOffset -= 4;
             offsetMap.put(instr, curOffset);
         }
-        for (curInstr = 0; curInstr < instrs.size(); curInstr++) {
-            buildIrInstr(instrs.get(curInstr));
+        for (IrInstr instr : instrs) {
+            buildIrInstr(instr);
         }
     }
 
@@ -183,46 +181,67 @@ public class Builder {
 
     private void buildAlloca(IrAlloca irAlloca) {
         int size = irAlloca.getSize();
+        Register resReg = Register.k0;
         if (size != -1) {
             /* Alloc Space For Array */
             curOffset -= 4 * size;
-            Module.addAsmAlu(AsmAlu.OP.addu, Register.t0, Register.sp, null, curOffset);
+            Module.addAsmAlu(AsmAlu.OP.addu, resReg, Register.sp, null, curOffset);
 
             /* Store Loc Of First Element */
-            Module.addAsmMem(AsmMem.Type.sw, Register.t0, offsetMap.get(irAlloca), Register.sp);
+            if (regMap.containsKey(irAlloca)) {
+                Module.addAsmMove(regMap.get(irAlloca), resReg);
+            } else {
+                Module.addAsmMem(AsmMem.Type.sw, resReg, offsetMap.get(irAlloca), Register.sp);
+            }
         }
     }
 
     private void buildLoad(IrLoad irLoad) {
         Value pointer = irLoad.getOperands().get(0);
-        Register resReg = Register.t0;
+        Register resReg = Register.k0;
         if (pointer instanceof IrAlloca) {
             if (regMap.containsKey(pointer)) {
-                Module.addAsmMove(regMap.get(pointer), resReg);
+                if (regMap.containsKey(irLoad)) {
+                    Module.addAsmMove(regMap.get(irLoad), regMap.get(pointer));
+                } else {
+                    Module.addAsmMem(AsmMem.Type.sw, regMap.get(pointer), offsetMap.get(irLoad), Register.sp);
+                }
             } else {
-                offsetMap.put(irLoad, offsetMap.get(pointer));
+                if (regMap.containsKey(irLoad)) {
+                    Module.addAsmMem(AsmMem.Type.lw, regMap.get(irLoad), offsetMap.get(pointer), Register.sp);
+                } else {
+                    offsetMap.put(irLoad, offsetMap.get(pointer));
+                }
             }
         } else if (pointer instanceof IrGetelementptr) {
             if (regMap.containsKey(pointer)) {
-                Module.addAsmMove(regMap.get(pointer), resReg);
+                Module.addAsmMem(AsmMem.Type.lw, resReg, 0, regMap.get(pointer));
             } else {
                 Module.addAsmMem(AsmMem.Type.lw, resReg, offsetMap.get(pointer), Register.sp);
                 Module.addAsmMem(AsmMem.Type.lw, resReg, 0, resReg);
+            }
+            if (regMap.containsKey(irLoad)) {
+                Module.addAsmMove(regMap.get(irLoad), resReg);
+            } else {
                 Module.addAsmMem(AsmMem.Type.sw, resReg, offsetMap.get(irLoad), Register.sp);
             }
         } else {
             /* Load Global Val */
             Module.addAsmLa(resReg, pointer.getName().substring(1));
             Module.addAsmMem(AsmMem.Type.lw, resReg, 0, resReg);
-            Module.addAsmMem(AsmMem.Type.sw, resReg, offsetMap.get(irLoad), Register.sp);
+            if (regMap.containsKey(irLoad)) {
+                Module.addAsmMove(regMap.get(irLoad), resReg);
+            } else {
+                Module.addAsmMem(AsmMem.Type.sw, resReg, offsetMap.get(irLoad), Register.sp);
+            }
         }
     }
 
     private void buildStore(IrStore irStore) {
         Value value = irStore.getOperands().get(0);
         Value pointer = irStore.getOperands().get(1);
-        Register resReg = Register.t0;
-        Register ptrReg = Register.t1;
+        Register resReg = Register.k0;
+        Register ptrReg = Register.k1;
         if (value instanceof Constant) {
             Module.addAsmLi(resReg, ((Constant) value).getValue());
         } else {
@@ -244,7 +263,11 @@ public class Builder {
                 Module.addAsmMem(AsmMem.Type.sw, resReg, offsetMap.get(pointer), Register.sp);
             }
         } else if (pointer instanceof IrGetelementptr) {
-            Module.addAsmMem(AsmMem.Type.lw, ptrReg, offsetMap.get(pointer), Register.sp);
+            if (regMap.containsKey(pointer)) {
+                Module.addAsmMove(ptrReg, regMap.get(pointer));
+            } else {
+                Module.addAsmMem(AsmMem.Type.lw, ptrReg, offsetMap.get(pointer), Register.sp);
+            }
             Module.addAsmMem(AsmMem.Type.sw, resReg, 0, ptrReg);
         } else {
             /* Store Global Val */
@@ -275,23 +298,35 @@ public class Builder {
                 break;
         }
 
-        Register resReg = Register.t1;
-        Register tmpReg = Register.t1;
-        Register tmpReg2 = Register.t2;
+        Register resReg = Register.k0;
+        Register tmpReg = Register.k0;
+        Register tmpReg2 = Register.k1;
         if (op == AsmAlu.OP.div) {
             if (operand1 instanceof Constant) {
                 Module.addAsmLi(tmpReg, ((Constant) operand1).getValue());
-                int offset2 = offsetMap.get(operand2);
-                Module.addAsmMem(AsmMem.Type.lw, tmpReg2, offset2, Register.sp);
+                if (regMap.containsKey(operand2)) {
+                    Module.addAsmMove(tmpReg2, regMap.get(operand2));
+                } else {
+                    Module.addAsmMem(AsmMem.Type.lw, tmpReg2, offsetMap.get(operand2), Register.sp);
+                }
             } else if (operand2 instanceof Constant) {
-                int offset1 = offsetMap.get(operand1);
-                Module.addAsmMem(AsmMem.Type.lw, tmpReg, offset1, Register.sp);
+                if (regMap.containsKey(operand1)) {
+                    Module.addAsmMove(tmpReg, regMap.get(operand1));
+                } else {
+                    Module.addAsmMem(AsmMem.Type.lw, tmpReg, offsetMap.get(operand1), Register.sp);
+                }
                 Module.addAsmLi(tmpReg2, ((Constant) operand2).getValue());
             } else {
-                int offset1 = offsetMap.get(operand1);
-                Module.addAsmMem(AsmMem.Type.lw, tmpReg, offset1, Register.sp);
-                int offset2 = offsetMap.get(operand2);
-                Module.addAsmMem(AsmMem.Type.lw, tmpReg2, offset2, Register.sp);
+                if (regMap.containsKey(operand1)) {
+                    Module.addAsmMove(tmpReg, regMap.get(operand1));
+                } else {
+                    Module.addAsmMem(AsmMem.Type.lw, tmpReg, offsetMap.get(operand1), Register.sp);
+                }
+                if (regMap.containsKey(operand2)) {
+                    Module.addAsmMove(tmpReg2, regMap.get(operand2));
+                } else {
+                    Module.addAsmMem(AsmMem.Type.lw, tmpReg2, offsetMap.get(operand2), Register.sp);
+                }
             }
             Module.addAsmAlu(op, null, tmpReg, tmpReg2, 0);
 
@@ -302,8 +337,11 @@ public class Builder {
             }
         } else {
             if (operand1 instanceof Constant) {
-                int offset = offsetMap.get(operand2);
-                Module.addAsmMem(AsmMem.Type.lw, tmpReg, offset, Register.sp);
+                if (regMap.containsKey(operand2)) {
+                    Module.addAsmMove(tmpReg, regMap.get(operand2));
+                } else {
+                    Module.addAsmMem(AsmMem.Type.lw, tmpReg, offsetMap.get(operand2), Register.sp);
+                }
                 if (op == AsmAlu.OP.subu) {
                     Module.addAsmLi(tmpReg2, ((Constant) operand1).getValue());
                     Module.addAsmAlu(op, resReg, tmpReg2, tmpReg, 0);
@@ -311,34 +349,53 @@ public class Builder {
                     Module.addAsmAlu(op, resReg, tmpReg, null, ((Constant) operand1).getValue());
                 }
             } else if (operand2 instanceof Constant) {
-                int offset = offsetMap.get(operand1);
-                Module.addAsmMem(AsmMem.Type.lw, tmpReg, offset, Register.sp);
+                if (regMap.containsKey(operand1)) {
+                    Module.addAsmMove(tmpReg, regMap.get(operand1));
+                } else {
+                    Module.addAsmMem(AsmMem.Type.lw, tmpReg, offsetMap.get(operand1), Register.sp);
+                }
                 Module.addAsmAlu(op, resReg, tmpReg, null, ((Constant) operand2).getValue());
             } else {
-                int offset1 = offsetMap.get(operand1);
-                Module.addAsmMem(AsmMem.Type.lw, tmpReg, offset1, Register.sp);
-                int offset2 = offsetMap.get(operand2);
-                Module.addAsmMem(AsmMem.Type.lw, tmpReg2, offset2, Register.sp);
+                if (regMap.containsKey(operand1)) {
+                    Module.addAsmMove(tmpReg, regMap.get(operand1));
+                } else {
+                    Module.addAsmMem(AsmMem.Type.lw, tmpReg, offsetMap.get(operand1), Register.sp);
+                }
+                if (regMap.containsKey(operand2)) {
+                    Module.addAsmMove(tmpReg2, regMap.get(operand2));
+                } else {
+                    Module.addAsmMem(AsmMem.Type.lw, tmpReg2, offsetMap.get(operand2), Register.sp);
+                }
                 Module.addAsmAlu(op, resReg, tmpReg, tmpReg2, 0);
             }
         }
-        Module.addAsmMem(AsmMem.Type.sw, resReg, offsetMap.get(irBinary), Register.sp);
+        if (regMap.containsKey(irBinary)) {
+            Module.addAsmMove(regMap.get(irBinary), resReg);
+        } else {
+            Module.addAsmMem(AsmMem.Type.sw, resReg, offsetMap.get(irBinary), Register.sp);
+        }
     }
 
     private void buildGetelementptr(IrGetelementptr irGetelementptr) {
         Value pointer = irGetelementptr.getOperands().get(0);
         Value offset = irGetelementptr.getOperands().get(1);
+        Register resReg = Register.k0;
         Register pointReg = Register.k0;
         Register offsetReg = Register.k1;
-        Register resReg = Register.k0;
         if (pointer instanceof IrAlloca || pointer instanceof IrGetelementptr || pointer.getIrType().contains("*")) {
-            Module.addAsmMem(AsmMem.Type.lw, pointReg, offsetMap.get(pointer), Register.sp);
+            if (regMap.containsKey(pointer)) {
+                Module.addAsmMove(pointReg, regMap.get(pointer));
+            } else {
+                Module.addAsmMem(AsmMem.Type.lw, pointReg, offsetMap.get(pointer), Register.sp);
+            }
         } else {
             Module.addAsmLa(pointReg, pointer.getName().substring(1));
         }
 
         if (offset instanceof Constant) {
-            Module.addAsmAlu(AsmAlu.OP.addu, resReg, pointReg, null, ((Constant) offset).getValue() * 4);
+            if (((Constant) offset).getValue() != 0) {
+                Module.addAsmAlu(AsmAlu.OP.addu, resReg, pointReg, null, ((Constant) offset).getValue() * 4);
+            }
         } else {
             if (regMap.containsKey(offset)) {
                 offsetReg = regMap.get(offset);
@@ -350,7 +407,11 @@ public class Builder {
             Module.addAsmAlu(AsmAlu.OP.addu, resReg, pointReg, offsetReg, 0);
         }
 
-        Module.addAsmMem(AsmMem.Type.sw, resReg, offsetMap.get(irGetelementptr), Register.sp);
+        if (regMap.containsKey(irGetelementptr)) {
+            Module.addAsmMove(regMap.get(irGetelementptr), resReg);
+        } else {
+            Module.addAsmMem(AsmMem.Type.sw, resReg, offsetMap.get(irGetelementptr), Register.sp);
+        }
     }
 
     private void buildIcmp(IrIcmp irIcmp) {
@@ -381,24 +442,22 @@ public class Builder {
                 break;
         }
 
-        Register resReg = Register.t1;
-        Register tmpReg = Register.t1;
-        Register tmpReg2 = Register.t2;
+        Register resReg = Register.k0;
+        Register tmpReg = Register.k0;
+        Register tmpReg2 = Register.k1;
         if (operand1 instanceof Constant) {
             Module.addAsmLi(tmpReg, ((Constant) operand1).getValue());
             if (regMap.containsKey(operand2)) {
                 Module.addAsmMove(tmpReg2, regMap.get(operand2));
             } else {
-                int offset = offsetMap.get(operand2);
-                Module.addAsmMem(AsmMem.Type.lw, tmpReg2, offset, Register.sp);
+                Module.addAsmMem(AsmMem.Type.lw, tmpReg2, offsetMap.get(operand2), Register.sp);
             }
             Module.addAsmCmp(op, resReg, tmpReg, tmpReg2);
         } else if (operand2 instanceof Constant) {
             if (regMap.containsKey(operand1)) {
                 Module.addAsmMove(tmpReg, regMap.get(operand1));
             } else {
-                int offset = offsetMap.get(operand1);
-                Module.addAsmMem(AsmMem.Type.lw, tmpReg, offset, Register.sp);
+                Module.addAsmMem(AsmMem.Type.lw, tmpReg, offsetMap.get(operand1), Register.sp);
             }
             Module.addAsmLi(tmpReg2, ((Constant) operand2).getValue());
             Module.addAsmCmp(op, resReg, tmpReg, tmpReg2);
@@ -406,14 +465,12 @@ public class Builder {
             if (regMap.containsKey(operand1)) {
                 Module.addAsmMove(tmpReg, regMap.get(operand1));
             } else {
-                int offset = offsetMap.get(operand1);
-                Module.addAsmMem(AsmMem.Type.lw, tmpReg, offset, Register.sp);
+                Module.addAsmMem(AsmMem.Type.lw, tmpReg, offsetMap.get(operand1), Register.sp);
             }
             if (regMap.containsKey(operand2)) {
                 Module.addAsmMove(tmpReg2, regMap.get(operand2));
             } else {
-                int offset = offsetMap.get(operand2);
-                Module.addAsmMem(AsmMem.Type.lw, tmpReg2, offset, Register.sp);
+                Module.addAsmMem(AsmMem.Type.lw, tmpReg2, offsetMap.get(operand2), Register.sp);
             }
             Module.addAsmCmp(op, resReg, tmpReg, tmpReg2);
         }
@@ -422,7 +479,7 @@ public class Builder {
 
     private void buildBr(IrBr irBr) {
         Value cond = irBr.getCond();
-        Register resReg = Register.t1;
+        Register resReg = Register.k0;
         if (cond == null) {
             Module.addAsmJump(AsmJump.OP.j, null, labelEncrypt(irBr.getLabel()));
         } else {
@@ -482,7 +539,7 @@ public class Builder {
         /* Store Func Return Value */
         if (!irCall.getIrType().equals("void")) {
             if (regMap.containsKey(irCall)) {
-                Module.addAsmAlu(AsmAlu.OP.addiu, Register.v0, regMap.get(irCall), null, 0);
+                Module.addAsmMove(regMap.get(irCall), Register.v0);
             } else {
                 Module.addAsmMem(AsmMem.Type.sw, Register.v0, offsetMap.get(irCall), Register.sp);
             }
@@ -547,11 +604,19 @@ public class Builder {
 
     private void buildZext(IrZext irZext) {
         Value operand = irZext.getOperands().get(0);
-        offsetMap.put(irZext, offsetMap.get(operand));
+        if (regMap.containsKey(operand)) {
+            regMap.put(irZext, regMap.get(operand));
+        } else {
+            offsetMap.put(irZext, offsetMap.get(operand));
+        }
     }
 
     private void buildTrunc(IrTrunc irTrunc) {
         Value operand = irTrunc.getOperands().get(0);
-        offsetMap.put(irTrunc, offsetMap.get(operand));
+        if (regMap.containsKey(operand)) {
+            regMap.put(irTrunc, regMap.get(operand));
+        } else {
+            offsetMap.put(irTrunc, offsetMap.get(operand));
+        }
     }
 }

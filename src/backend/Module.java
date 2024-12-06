@@ -9,6 +9,29 @@ public class Module {
     private static final ArrayList<AsmGlobal> data = new ArrayList<>();
     private static final ArrayList<AsmInstr> text = new ArrayList<>();
 
+    public static ArrayList<AsmInstr> getText() {
+        return text;
+    }
+
+    public static boolean nearLabel(AsmJump instr) {
+        int loc = text.size();
+        for (int i = 0; i < text.size(); i++) {
+            if (text.get(i).equals(instr)) {
+                loc = i;
+                break;
+            }
+        }
+        for (int i = loc + 1; i < text.size(); i++) {
+            if (text.get(i) instanceof AsmLabel) {
+                if ((instr).getLabel().equals(((AsmLabel) text.get(i)).getLabel())) {
+                    return true;
+                }
+                return false;
+            }
+        }
+        return false;
+    }
+
     public static void addAsmGlobal(AsmGlobal asmGlobal) {
         data.add(asmGlobal);
     }
