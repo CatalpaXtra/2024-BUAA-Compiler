@@ -6,8 +6,9 @@ public class AsmAlu extends AsmInstr {
     public enum OP {
         addu, addiu, subu,
         mul, div,
+        mult,
         andi,
-        srl, sra, sll,
+        srl, sra, sll, madd,
     }
 
     private OP op;
@@ -27,6 +28,8 @@ public class AsmAlu extends AsmInstr {
     public String toString() {
         StringBuilder sb = new StringBuilder(op + " ");
         if (op == OP.div) {
+            sb.append(operand1).append(", ").append(operand2);
+        } else if (op == OP.mult) {
             sb.append(operand1).append(", ").append(operand2);
         } else {
             sb.append(to).append(", ").append(operand1).append(", ");

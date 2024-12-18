@@ -310,78 +310,156 @@ public class Builder {
         Register resReg = Register.k0;
         Register tmpReg = Register.k0;
         Register tmpReg2 = Register.k1;
-        if (op == AsmAlu.OP.div) {
-            if (operand1 instanceof Constant) {
-                Module.addAsmLi(tmpReg, ((Constant) operand1).getValue());
-                if (regMap.containsKey(operand2)) {
-                    Module.addAsmMove(tmpReg2, regMap.get(operand2));
-                } else {
-                    Module.addAsmMem(AsmMem.Type.lw, tmpReg2, offsetMap.get(operand2), Register.sp);
-                }
-            } else if (operand2 instanceof Constant) {
-                if (regMap.containsKey(operand1)) {
-                    Module.addAsmMove(tmpReg, regMap.get(operand1));
-                } else {
-                    Module.addAsmMem(AsmMem.Type.lw, tmpReg, offsetMap.get(operand1), Register.sp);
-                }
-                Module.addAsmLi(tmpReg2, ((Constant) operand2).getValue());
+        if (operand1 instanceof Constant) {
+            if (regMap.containsKey(operand2)) {
+                Module.addAsmMove(tmpReg2, regMap.get(operand2));
             } else {
-                if (regMap.containsKey(operand1)) {
-                    Module.addAsmMove(tmpReg, regMap.get(operand1));
-                } else {
-                    Module.addAsmMem(AsmMem.Type.lw, tmpReg, offsetMap.get(operand1), Register.sp);
-                }
-                if (regMap.containsKey(operand2)) {
-                    Module.addAsmMove(tmpReg2, regMap.get(operand2));
-                } else {
-                    Module.addAsmMem(AsmMem.Type.lw, tmpReg2, offsetMap.get(operand2), Register.sp);
-                }
+                Module.addAsmMem(AsmMem.Type.lw, tmpReg2, offsetMap.get(operand2), Register.sp);
             }
-            Module.addAsmAlu(op, null, tmpReg, tmpReg2, 0);
-
-            if (operator.equals("sdiv")) {
-                Module.addAsmMoveDiv(resReg, Register.lo);
+            if (op == AsmAlu.OP.div || op == AsmAlu.OP.subu) {
+                Module.addAsmLi(tmpReg, ((Constant) operand1).getValue());
+                Module.addAsmAlu(op, resReg, tmpReg, tmpReg2, 0);
             } else {
-                Module.addAsmMoveDiv(resReg, Register.hi);
+                if (op == AsmAlu.OP.mul) {
+                    if (((Constant) operand1).getValue() == -1) {
+                        Module.addAsmAlu(AsmAlu.OP.subu, resReg, Register.zero, tmpReg2, 0);
+                    } else if (((Constant) operand1).getValue() != 1) {
+                        buildMulWithCons(tmpReg2, ((Constant) operand1).getValue(), resReg);
+                    }
+                }
+                Module.addAsmAlu(op, resReg, tmpReg2, null, ((Constant) operand1).getValue());
+            }
+        } else if (operand2 instanceof Constant) {
+            if (regMap.containsKey(operand1)) {
+                Module.addAsmMove(tmpReg, regMap.get(operand1));
+            } else {
+                Module.addAsmMem(AsmMem.Type.lw, tmpReg, offsetMap.get(operand1), Register.sp);
+            }
+            if (operator.equals("sdiv")) {
+                if (((Constant) operand2).getValue() == -1) {
+                    Module.addAsmAlu(AsmAlu.OP.subu, resReg, Register.zero, tmpReg, 0);
+                } else if (((Constant) operand2).getValue() != 1) {
+                    buildDivWithCons(tmpReg, ((Constant) operand2).getValue(), resReg);
+                }
+            } else if (operator.equals("srem")) {
+                Module.addAsmLi(tmpReg2, ((Constant) operand2).getValue());
+                Module.addAsmAlu(op, resReg, tmpReg, tmpReg2, 0);
+            } else if (op == AsmAlu.OP.mul) {
+                if (((Constant) operand2).getValue() == -1) {
+                    Module.addAsmAlu(AsmAlu.OP.subu, resReg, Register.zero, tmpReg, 0);
+                } else if (((Constant) operand2).getValue() != 1) {
+                    buildMulWithCons(tmpReg, ((Constant) operand2).getValue(), resReg);
+                }
+            } else {
+                Module.addAsmAlu(op, resReg, tmpReg, null, ((Constant) operand2).getValue());
             }
         } else {
-            if (operand1 instanceof Constant) {
-                if (regMap.containsKey(operand2)) {
-                    Module.addAsmMove(tmpReg, regMap.get(operand2));
-                } else {
-                    Module.addAsmMem(AsmMem.Type.lw, tmpReg, offsetMap.get(operand2), Register.sp);
-                }
-                if (op == AsmAlu.OP.subu) {
-                    Module.addAsmLi(tmpReg2, ((Constant) operand1).getValue());
-                    Module.addAsmAlu(op, resReg, tmpReg2, tmpReg, 0);
-                } else {
-                    Module.addAsmAlu(op, resReg, tmpReg, null, ((Constant) operand1).getValue());
-                }
-            } else if (operand2 instanceof Constant) {
-                if (regMap.containsKey(operand1)) {
-                    Module.addAsmMove(tmpReg, regMap.get(operand1));
-                } else {
-                    Module.addAsmMem(AsmMem.Type.lw, tmpReg, offsetMap.get(operand1), Register.sp);
-                }
-                Module.addAsmAlu(op, resReg, tmpReg, null, ((Constant) operand2).getValue());
+            if (regMap.containsKey(operand1)) {
+                Module.addAsmMove(tmpReg, regMap.get(operand1));
             } else {
-                if (regMap.containsKey(operand1)) {
-                    Module.addAsmMove(tmpReg, regMap.get(operand1));
-                } else {
-                    Module.addAsmMem(AsmMem.Type.lw, tmpReg, offsetMap.get(operand1), Register.sp);
-                }
-                if (regMap.containsKey(operand2)) {
-                    Module.addAsmMove(tmpReg2, regMap.get(operand2));
-                } else {
-                    Module.addAsmMem(AsmMem.Type.lw, tmpReg2, offsetMap.get(operand2), Register.sp);
-                }
-                Module.addAsmAlu(op, resReg, tmpReg, tmpReg2, 0);
+                Module.addAsmMem(AsmMem.Type.lw, tmpReg, offsetMap.get(operand1), Register.sp);
             }
+            if (regMap.containsKey(operand2)) {
+                Module.addAsmMove(tmpReg2, regMap.get(operand2));
+            } else {
+                Module.addAsmMem(AsmMem.Type.lw, tmpReg2, offsetMap.get(operand2), Register.sp);
+            }
+            Module.addAsmAlu(op, resReg, tmpReg, tmpReg2, 0);
         }
+        if (operator.equals("sdiv") && !(operand2 instanceof Constant)) {
+            Module.addAsmMoveDiv(resReg, Register.lo);
+        } else if (operator.equals("srem")) {
+            Module.addAsmMoveDiv(resReg, Register.hi);
+        }
+
         if (regMap.containsKey(irBinary)) {
             Module.addAsmMove(regMap.get(irBinary), resReg);
         } else {
             Module.addAsmMem(AsmMem.Type.sw, resReg, offsetMap.get(irBinary), Register.sp);
+        }
+    }
+
+    public static void buildMulWithCons(Register src, int num, Register to) {
+        int cnt = 0;
+        int temp = num;
+        int sll1 = 0;
+        int sll2 = 0;
+        for (int i = 1; i <= 31; i++) {
+            if ((temp & 1) == 1) {
+                cnt++;
+                if (cnt == 1) sll1 = i - 1;
+                if (cnt == 2) sll2 = i - 1;
+            }
+            temp = temp >> 1;
+        }
+        if (num < 0 || cnt > 2) {
+            Module.addAsmLi(Register.v0, num);
+            Module.addAsmAlu(AsmAlu.OP.mul, to, Register.v0, src, 0);
+        } else {
+            if (cnt == 1) {
+                Module.addAsmAlu(AsmAlu.OP.sll, to, src, null, sll1);
+            } else {
+                if (sll1 == 0) {
+                    Module.addAsmAlu(AsmAlu.OP.sll, Register.v1, src, null, sll2);
+                    Module.addAsmAlu(AsmAlu.OP.addu, to, src, Register.v1, 0);
+                } else {
+                    Module.addAsmAlu(AsmAlu.OP.sll, Register.v0, src, null, sll1);
+                    Module.addAsmAlu(AsmAlu.OP.sll, Register.v1, src, null, sll2);
+                    Module.addAsmAlu(AsmAlu.OP.addu, to, Register.v0, Register.v1, 0);
+                }
+            }
+        }
+    }
+
+    public static int getSllCounts(int temp) {
+        int sllCounts = 0;
+        temp = temp >>> 1;
+        while (temp != 0) {
+            temp = temp >>> 1;
+            sllCounts++;
+        }
+        return sllCounts;
+    }
+
+    public static Register getDividend(Register oldDividend, int abs) {
+        int sllCounts = getSllCounts(abs);
+        Module.addAsmAlu(AsmAlu.OP.sra, Register.v0, oldDividend, null, 31);
+        if (sllCounts > 0) {
+            Module.addAsmAlu(AsmAlu.OP.srl, Register.v0, Register.v0, null, 32 - sllCounts);
+        }
+        Module.addAsmAlu(AsmAlu.OP.addu, Register.v1, oldDividend, Register.v0, 0);
+        return Register.v1;
+    }
+
+    public static void buildDivWithCons(Register src, int num, Register to) {
+        int abs = Math.abs(num);
+        if ((abs & (abs - 1)) == 0) {
+            int sllCounts = getSllCounts(abs);
+            Register newDividend = getDividend(src, abs);
+            Module.addAsmAlu(AsmAlu.OP.sra, to, newDividend, null, sllCounts);
+        } else {
+            long t = 32;
+            long nc = ((long) 1 << 31) - (((long) 1 << 31) % abs) - 1;
+            while (((long) 1 << t) <= nc * (abs - ((long) 1 << t) % abs)) {
+                t++;
+            }
+            long m = ((((long) 1 << t) + (long) abs - ((long) 1 << t) % abs) / (long) abs);
+            int n = (int) ((m << 32) >>> 32);
+            int shift = (int) (t - 32);
+            Module.addAsmLi(Register.v0, n);
+            if (m >= 0x80000000L) {
+                Module.addAsmMoveDiv(src, Register.hi);
+                Module.addAsmAlu(AsmAlu.OP.madd, Register.v1, src, Register.v0, 0);
+            } else {
+                Module.addAsmAlu(AsmAlu.OP.mult, null, src, Register.v0, 0);
+                Module.addAsmMoveDiv(Register.v1, Register.hi);
+            }
+            Module.addAsmAlu(AsmAlu.OP.sra, Register.v0, Register.v1, null, shift);
+            Module.addAsmAlu(AsmAlu.OP.srl, Register.a0, src, null, 31);
+            Module.addAsmAlu(AsmAlu.OP.addu, to, Register.v0, Register.a0, 0);
+        }
+        if (num < 0) {
+            Module.addAsmAlu(AsmAlu.OP.subu, to, Register.zero, to, 0);
         }
     }
 
