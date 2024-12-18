@@ -338,11 +338,11 @@ public class LocalDecl {
         }
 
         if (function.getIrType().contains("void")) {
-            irBlock.addInstrCall(null, "void", funcName, params, values);
+            irBlock.addInstrCall(null, "void", funcName, params, values, function);
             return null;
         } else {
             String irType = function.getIrType();
-            Value result = irBlock.addInstrCall("%"+Register.allocReg(), irType, funcName, params, values);
+            Value result = irBlock.addInstrCall("%"+Register.allocReg(), irType, funcName, params, values, function);
             if (function.isChar()) {
                 result = irBlock.addInstrZext("%"+Register.allocReg(), "i8", result, "i32");
             }

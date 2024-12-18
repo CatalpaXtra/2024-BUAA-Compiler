@@ -1,6 +1,7 @@
 package midend.llvm.instr;
 
 import midend.llvm.Value;
+import midend.llvm.function.Function;
 import midend.llvm.function.Param;
 
 import java.util.ArrayList;
@@ -11,17 +12,23 @@ public class IrCall extends IrInstr {
     private final ArrayList<Param> params;
     private final ArrayList<Value> values;
     private final String rParams;
+    private final Function function;
 
-    public IrCall(String name, String funcType, String funcName, ArrayList<Param> params, ArrayList<Value> values) {
+    public IrCall(String name, String funcType, String funcName, ArrayList<Param> params, ArrayList<Value> values, Function function) {
         super(name, funcType);
         this.funcName = funcName;
         this.params = params;
         this.values = values;
         this.rParams = getRParams();
+        this.function = function;
     }
 
     public String getFuncName() {
         return funcName;
+    }
+
+    public Function getFunction() {
+        return function;
     }
 
     public String getRParams() {

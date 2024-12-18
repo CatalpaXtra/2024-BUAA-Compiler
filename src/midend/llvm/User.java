@@ -33,8 +33,8 @@ public class User extends Value {
     }
 
     public void removeOperands(){
-        for(Value value:operands){
-            if(value != null){
+        for (Value value : operands) {
+            if (value != null) {
                 value.deleteUser(this);
             }
         }

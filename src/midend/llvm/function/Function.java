@@ -6,17 +6,37 @@ import midend.llvm.symbol.Symbol;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 
 public class Function extends Symbol {
     private final ArrayList<Param> params;
     private final IrBlock irBlock;
     private HashMap<Value, Register> var2reg;
+    private boolean hasSideEffects;
+    private HashSet<Function> call;
 
     public Function(String name, String irType, ArrayList<Param> params, IrBlock irBlock) {
         super(name, irType, new Value(null, null), -1, null);
         this.params = params;
         this.irBlock = irBlock;
         this.var2reg = new HashMap<>();
+        this.call = new HashSet<>();
+    }
+
+    public void setCall(HashSet<Function> call) {
+        this.call = call;
+    }
+
+    public HashSet<Function> getCall() {
+        return call;
+    }
+
+    public void setSideEffects(boolean hasSideEffects) {
+        this.hasSideEffects = hasSideEffects;
+    }
+
+    public boolean hasSideEffects() {
+        return hasSideEffects;
     }
 
     public ArrayList<Param> getParams() {

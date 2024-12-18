@@ -32,8 +32,14 @@ public class IrBlock {
         return irIcmp;
     }
 
+    public IrInstr addInstrCall(String name, String funcType, String funcName, ArrayList<Param> params, ArrayList<Value> values, Function func) {
+        IrCall irCall = new IrCall(name, funcType, funcName, params, values, func);
+        addInstr(irCall);
+        return irCall;
+    }
+
     public IrInstr addInstrCall(String name, String funcType, String funcName, ArrayList<Param> params, ArrayList<Value> values) {
-        IrCall irCall = new IrCall(name, funcType, funcName, params, values);
+        IrCall irCall = new IrCall(name, funcType, funcName, params, values, null);
         addInstr(irCall);
         return irCall;
     }
