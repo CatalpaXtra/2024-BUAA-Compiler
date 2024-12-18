@@ -19,6 +19,7 @@ import midend.llvm.instr.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 
 public class Builder {
     private final ArrayList<GlobalVal> globalVals;
@@ -242,6 +243,14 @@ public class Builder {
         Value pointer = irStore.getOperands().get(1);
         Register resReg = Register.k0;
         Register ptrReg = Register.k1;
+        if (value instanceof Param) {
+            if (regMap.containsKey(value)) {
+                regMap.put(pointer, regMap.get(value));
+            } else {
+                offsetMap.put(pointer, offsetMap.get(value));
+            }
+            return;
+        }
         if (value instanceof Constant) {
             Module.addAsmLi(resReg, ((Constant) value).getValue());
         } else {
@@ -331,9 +340,9 @@ public class Builder {
             Module.addAsmAlu(op, null, tmpReg, tmpReg2, 0);
 
             if (operator.equals("sdiv")) {
-                Module.addAsmMove(resReg, Register.lo);
+                Module.addAsmMoveDiv(resReg, Register.lo);
             } else {
-                Module.addAsmMove(resReg, Register.hi);
+                Module.addAsmMoveDiv(resReg, Register.hi);
             }
         } else {
             if (operand1 instanceof Constant) {
@@ -491,7 +500,8 @@ public class Builder {
 
     private void buildCall(IrCall irCall) {
         /* Save Allocated Registers */
-        ArrayList<Register> allocatedRegs = new ArrayList<>(regMap.values());
+        HashSet<Register> regSet = new HashSet<>(regMap.values());
+        ArrayList<Register> allocatedRegs = new ArrayList<>(regSet);
         for (int i = 0; i < allocatedRegs.size(); i++) {
             Module.addAsmMem(AsmMem.Type.sw, allocatedRegs.get(i), curOffset - (i + 1) * 4, Register.sp);
         }

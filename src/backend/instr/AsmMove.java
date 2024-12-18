@@ -4,11 +4,23 @@ import backend.Register;
 
 public class AsmMove extends AsmInstr {
     private final Register to;
-    private final Register from;
+    private Register from;
 
     public AsmMove(Register to, Register from) {
         this.to = to;
         this.from = from;
+    }
+
+    public Register getTo() {
+        return to;
+    }
+
+    public Register getFrom() {
+        return from;
+    }
+
+    public void modifyFrom(Register reg) {
+        this.from = reg;
     }
 
     public String toString() {

@@ -2,6 +2,7 @@ package backend;
 
 import backend.global.AsmGlobal;
 import backend.instr.*;
+import midend.llvm.function.Param;
 
 import java.util.ArrayList;
 
@@ -32,16 +33,34 @@ public class Module {
         return false;
     }
 
+    public static AsmInstr getNextAsm(AsmInstr instr) {
+        int loc = text.size();
+        for (int i = 0; i < text.size(); i++) {
+            if (text.get(i).equals(instr)) {
+                loc = i;
+                break;
+            }
+        }
+        for (int i = loc + 1; i < text.size(); i++) {
+            if (!(text.get(i) instanceof AsmNull)) {
+                return text.get(i);
+            }
+        }
+        return null;
+    }
+
     public static void addAsmGlobal(AsmGlobal asmGlobal) {
         data.add(asmGlobal);
     }
 
     public static void addAsmNull(String comment) {
-        AsmInstr asmInstr = new AsmInstr(comment);
-        if (!comment.isEmpty()) {
-            asmInstr = new AsmInstr("#" + comment);
+        AsmNull asmNull;
+        if (comment.isEmpty()) {
+            asmNull = new AsmNull(comment);
+        } else {
+            asmNull = new AsmNull("#" + comment);
         }
-        text.add(asmInstr);
+        text.add(asmNull);
     }
 
     public static void addAsmAlu(AsmAlu.OP op, Register to, Register operand1, Register operand2, int num) {
@@ -67,6 +86,11 @@ public class Module {
     public static void addAsmMove(Register to, Register from) {
         AsmMove asmMove = new AsmMove(to, from);
         text.add(asmMove);
+    }
+
+    public static void addAsmMoveDiv(Register to, Register from) {
+        AsmMoveDiv asmMoveDiv = new AsmMoveDiv(to, from);
+        text.add(asmMoveDiv);
     }
 
     public static void addAsmMem(AsmMem.Type type, Register value, int offset, Register base) {

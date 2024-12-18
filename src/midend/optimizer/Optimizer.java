@@ -8,7 +8,7 @@ public class Optimizer {
         SideEffectsAnalyze.analyzeSideEffects();
         if (optimize) {
             DeadCodeRm.removeDeadCode();
-            //RegAlloc.allocReg();
+//            RegAlloc.allocReg();
         }
     }
 }
