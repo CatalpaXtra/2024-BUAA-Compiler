@@ -347,6 +347,14 @@ public class Builder {
             } else if (operator.equals("srem")) {
                 Module.addAsmLi(tmpReg2, ((Constant) operand2).getValue());
                 Module.addAsmAlu(op, resReg, tmpReg, tmpReg2, 0);
+//                Module.addAsmMove(tmpReg2, tmpReg);
+//                if (((Constant) operand2).getValue() == -1) {
+//                    Module.addAsmAlu(AsmAlu.OP.subu, resReg, Register.zero, tmpReg, 0);
+//                } else if (((Constant) operand2).getValue() != 1) {
+//                    buildDivWithCons(tmpReg, ((Constant) operand2).getValue(), resReg);
+//                }
+//                Module.addAsmAlu(AsmAlu.OP.mul, resReg, resReg, null, -((Constant) operand2).getValue());
+//                Module.addAsmAlu(AsmAlu.OP.addu, resReg, tmpReg2, resReg, 0);
             } else if (op == AsmAlu.OP.mul) {
                 if (((Constant) operand2).getValue() == -1) {
                     Module.addAsmAlu(AsmAlu.OP.subu, resReg, Register.zero, tmpReg, 0);
@@ -374,6 +382,7 @@ public class Builder {
         if (operator.equals("sdiv") && !(operand2 instanceof Constant)) {
             Module.addAsmMoveDiv(resReg, Register.lo);
         } else if (operator.equals("srem")) {
+//        } else if (operator.equals("srem") && !(operand2 instanceof Constant)) {
             Module.addAsmMoveDiv(resReg, Register.hi);
         }
 
@@ -454,7 +463,8 @@ public class Builder {
             Module.addAsmLi(Register.v0, n);
             if (m >= 0x80000000L) {
                 Module.addAsmMoveDiv(src, Register.hi);
-                Module.addAsmAlu(AsmAlu.OP.madd, Register.v1, src, Register.v0, 0);
+                Module.addAsmAlu(AsmAlu.OP.madd, null, src, Register.v0, 0);
+                Module.addAsmMoveDiv(Register.v1, Register.hi);
             } else {
                 Module.addAsmAlu(AsmAlu.OP.mult, null, src, Register.v0, 0);
                 Module.addAsmMoveDiv(Register.v1, Register.hi);

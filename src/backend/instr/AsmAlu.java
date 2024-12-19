@@ -41,9 +41,7 @@ public class AsmAlu extends AsmInstr {
 
     public String toString() {
         StringBuilder sb = new StringBuilder(op + " ");
-        if (op == OP.div) {
-            sb.append(operand1).append(", ").append(operand2);
-        } else if (op == OP.mult) {
+        if (op == OP.div || op == OP.mult || op == OP.madd) {
             sb.append(operand1).append(", ").append(operand2);
         } else {
             sb.append(to).append(", ").append(operand1).append(", ");

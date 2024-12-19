@@ -24,6 +24,14 @@ public class IrBr extends IrInstr {
         addOperand(cond);
     }
 
+    public void swap() {
+        if (ifFalse != null && ifTrue != null) {
+            String tmp = ifFalse;
+            ifFalse = ifTrue;
+            ifTrue = tmp;
+        }
+    }
+
     public Value getCond() {
         return cond;
     }

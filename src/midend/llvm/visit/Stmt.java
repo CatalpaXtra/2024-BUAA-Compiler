@@ -62,7 +62,6 @@ public class Stmt {
         } else if (stmtEle instanceof StmtGetChar) {
             visitStmtGetChar((StmtGetChar) stmtEle, symbolTable);
         } else if (stmtEle instanceof StmtExp) {
-            // TODO no need?
             LocalDecl.visitExp(((StmtExp) stmtEle).getExp(), symbolTable);
         } else if (stmtEle instanceof StmtPrint) {
             visitStmtPrint((StmtPrint) stmtEle, symbolTable);
@@ -251,6 +250,7 @@ public class Stmt {
         }
 
         /* Handle Stmt */
+        int stmtLabel = Register.getRegNum() - 1;
         boolean stop = visitStmt(stmtFor.getStmt(), symbolTable, type, true);
         int right = irBlock.getLoc();
 
@@ -280,11 +280,23 @@ public class Stmt {
         visitForStmt(stmtFor.getForStmt2(), symbolTable);
 
         /* Reach Loop Bottom */
-        nextLabel = Register.allocReg();
-        /* Branch to Cond */
-        irBlock.addInstrBr("%" + condLabel);
-        irBlock.addInstrNull();
-        irBlock.addInstrLabel(nextLabel);
+        if (stmtFor.getCond() != null) {
+            /* Branch to Stmt or Exit */
+            nextLabel = Register.allocReg();
+            irBlock.addInstrBr("%" + nextLabel);
+            irBlock.addInstrNull();
+            int optLeft = irBlock.getLoc() + 1;
+            visitCond(stmtFor.getCond(), symbolTable);
+            int optRight = irBlock.getLoc();
+            irBlock.addInstrLabel(nextLabel);
+            irBlock.replaceAndSwap(optLeft, optRight, "%" + stmtLabel, "<BLOCK2 OR STMT>");
+        } else {
+            /* Directly Branch to Stmt */
+            nextLabel = Register.allocReg();
+            irBlock.addInstrBr("%" + stmtLabel);
+            irBlock.addInstrNull();
+            irBlock.addInstrLabel(nextLabel);
+        }
 
         irBlock.replaceInterval(left, right, "%" + nextLabel, "<BLOCK2 OR STMT>");
         irBlock.replaceInterval(left, right, "%" + forstmt2Label, "<FORSTMT2>");

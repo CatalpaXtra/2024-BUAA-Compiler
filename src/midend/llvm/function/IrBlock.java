@@ -146,6 +146,19 @@ public class IrBlock {
         }
     }
 
+    public void replaceAndSwap(int left, int right, String replaced, String target) {
+        if (left > right) {
+            return;
+        }
+        for (int i = left; i <= right; i++) {
+            IrInstr irInstr = instructions.get(i);
+            if (irInstr instanceof IrBr) {
+                ((IrBr) irInstr).backFill(target, replaced);
+                ((IrBr) irInstr).swap();
+            }
+        }
+    }
+
     public String toString() {
         StringBuilder sb = new StringBuilder();
         for (IrInstr instr : instructions) {
