@@ -247,7 +247,11 @@ public class Builder {
             if (regMap.containsKey(value)) {
                 regMap.put(pointer, regMap.get(value));
             } else {
-                offsetMap.put(pointer, offsetMap.get(value));
+                if (regMap.containsKey(pointer)) {
+                    Module.addAsmMem(AsmMem.Type.lw, regMap.get(pointer), offsetMap.get(value), Register.sp);
+                } else {
+                    offsetMap.put(pointer, offsetMap.get(value));
+                }
             }
             return;
         }
@@ -319,14 +323,13 @@ public class Builder {
             if (op == AsmAlu.OP.div || op == AsmAlu.OP.subu) {
                 Module.addAsmLi(tmpReg, ((Constant) operand1).getValue());
                 Module.addAsmAlu(op, resReg, tmpReg, tmpReg2, 0);
-            } else {
-                if (op == AsmAlu.OP.mul) {
-                    if (((Constant) operand1).getValue() == -1) {
-                        Module.addAsmAlu(AsmAlu.OP.subu, resReg, Register.zero, tmpReg2, 0);
-                    } else if (((Constant) operand1).getValue() != 1) {
-                        buildMulWithCons(tmpReg2, ((Constant) operand1).getValue(), resReg);
-                    }
+            } else if (op == AsmAlu.OP.mul) {
+                if (((Constant) operand1).getValue() == -1) {
+                    Module.addAsmAlu(AsmAlu.OP.subu, resReg, Register.zero, tmpReg2, 0);
+                } else {
+                    buildMulWithCons(tmpReg2, ((Constant) operand1).getValue(), resReg);
                 }
+            } else {
                 Module.addAsmAlu(op, resReg, tmpReg2, null, ((Constant) operand1).getValue());
             }
         } else if (operand2 instanceof Constant) {
@@ -350,6 +353,8 @@ public class Builder {
                 } else if (((Constant) operand2).getValue() != 1) {
                     buildMulWithCons(tmpReg, ((Constant) operand2).getValue(), resReg);
                 }
+            } else if (op == AsmAlu.OP.subu) {
+                Module.addAsmAlu(AsmAlu.OP.addi, resReg, tmpReg, null, -((Constant) operand2).getValue());
             } else {
                 Module.addAsmAlu(op, resReg, tmpReg, null, ((Constant) operand2).getValue());
             }

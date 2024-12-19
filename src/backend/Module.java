@@ -49,6 +49,18 @@ public class Module {
         return null;
     }
 
+    public static void changeInstr(AsmInstr instr, Register to, Register from) {
+        int loc = text.size();
+        for (int i = 0; i < text.size(); i++) {
+            if (text.get(i).equals(instr)) {
+                loc = i;
+                break;
+            }
+        }
+        AsmMove asmMove = new AsmMove(to, from);
+        text.set(loc, asmMove);
+    }
+
     public static void addAsmGlobal(AsmGlobal asmGlobal) {
         data.add(asmGlobal);
     }

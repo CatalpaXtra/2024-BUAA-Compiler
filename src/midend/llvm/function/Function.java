@@ -14,6 +14,7 @@ public class Function extends Symbol {
     private HashMap<Value, Register> var2reg;
     private boolean hasSideEffects;
     private HashSet<Function> call;
+    private ArrayList<Function> callList;
 
     public Function(String name, String irType, ArrayList<Param> params, IrBlock irBlock) {
         super(name, irType, new Value(null, null), -1, null);
@@ -21,6 +22,7 @@ public class Function extends Symbol {
         this.irBlock = irBlock;
         this.var2reg = new HashMap<>();
         this.call = new HashSet<>();
+        this.callList = new ArrayList<>();
     }
 
     public void setCall(HashSet<Function> call) {
@@ -29,6 +31,14 @@ public class Function extends Symbol {
 
     public HashSet<Function> getCall() {
         return call;
+    }
+
+    public void setCallList(ArrayList<Function> callList) {
+        this.callList = callList;
+    }
+
+    public ArrayList<Function> getCallList() {
+        return callList;
     }
 
     public void setSideEffects(boolean hasSideEffects) {

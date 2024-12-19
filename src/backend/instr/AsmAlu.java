@@ -4,11 +4,9 @@ import backend.Register;
 
 public class AsmAlu extends AsmInstr {
     public enum OP {
-        addu, addiu, subu,
-        mul, div,
-        mult,
-        andi,
-        srl, sra, sll, madd,
+        addi, addu, addiu, subu,
+        mul, mult, div,
+        srl, sra, sll, madd, andi,
     }
 
     private OP op;
@@ -23,6 +21,22 @@ public class AsmAlu extends AsmInstr {
         this.operand1 = operand1;
         this.operand2 = operand2;
         this.num = num;
+    }
+
+    public Register getOperand1() {
+        return operand1;
+    }
+
+    public void modifyOperand1(Register reg) {
+        operand1 = reg;
+    }
+
+    public Register getOperand2() {
+        return operand2;
+    }
+
+    public void modifyOperand2(Register reg) {
+        operand2 = reg;
     }
 
     public String toString() {

@@ -14,6 +14,7 @@ public class SideEffectsAnalyze {
         for (Function func : IrModule.getFunctions()) {
             boolean hasSideEffects = false;
             HashSet<Function> call = new HashSet<>();
+            ArrayList<Function> callList = new ArrayList<>();
             IrBlock block = func.getIrBlock();
             ArrayList<IrInstr> instrs = block.getInstructions();
             for (IrInstr instr : instrs) {
@@ -23,7 +24,7 @@ public class SideEffectsAnalyze {
                         hasSideEffects = true;
                         break;
                     }
-                    Function target= ((IrCall) instr).getFunction();
+                    Function target = ((IrCall) instr).getFunction();
                     call.add(target);
                 } else if (instr instanceof IrPutStr) {
                     hasSideEffects = true;
@@ -56,6 +57,16 @@ public class SideEffectsAnalyze {
             }
             func.setCall(call);
             func.setSideEffects(hasSideEffects);
+            for (IrInstr instr : instrs) {
+                if (instr instanceof IrCall) {
+                    String funcName = ((IrCall)instr).getFuncName();
+                    if (!(funcName.equals("getint") || funcName.equals("getchar") || funcName.equals("putint") || funcName.equals("putch"))) {
+                        Function target = ((IrCall) instr).getFunction();
+                        callList.add(target);
+                    }
+                }
+            }
+            func.setCallList(callList);
         }
         boolean change = true;
         while (change) {
