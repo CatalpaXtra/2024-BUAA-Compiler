@@ -23,6 +23,7 @@ import midend.llvm.instr.IrIcmp;
 import midend.llvm.instr.IrLabel;
 import midend.llvm.instr.IrZext;
 import midend.llvm.symbol.*;
+import midend.optimizer.Optimizer;
 
 import java.util.ArrayList;
 
@@ -280,20 +281,28 @@ public class Stmt {
         visitForStmt(stmtFor.getForStmt2(), symbolTable);
 
         /* Reach Loop Bottom */
-        if (stmtFor.getCond() != null) {
-            /* Branch to Stmt or Exit */
-            nextLabel = Register.allocReg();
-            irBlock.addInstrBr("%" + nextLabel);
-            irBlock.addInstrNull();
-            int optLeft = irBlock.getLoc() + 1;
-            visitCond(stmtFor.getCond(), symbolTable);
-            int optRight = irBlock.getLoc();
-            irBlock.addInstrLabel(nextLabel);
-            irBlock.replaceAndSwap(optLeft, optRight, "%" + stmtLabel, "<BLOCK2 OR STMT>");
+        if (Optimizer.optimize) {
+            if (stmtFor.getCond() != null) {
+                /* Branch to Stmt or Exit */
+                nextLabel = Register.allocReg();
+                irBlock.addInstrBr("%" + nextLabel);
+                irBlock.addInstrNull();
+                int optLeft = irBlock.getLoc() + 1;
+                visitCond(stmtFor.getCond(), symbolTable);
+                int optRight = irBlock.getLoc();
+                irBlock.addInstrLabel(nextLabel);
+                irBlock.replaceAndSwap(optLeft, optRight, "%" + stmtLabel, "<BLOCK2 OR STMT>");
+            } else {
+                /* Directly Branch to Stmt */
+                nextLabel = Register.allocReg();
+                irBlock.addInstrBr("%" + stmtLabel);
+                irBlock.addInstrNull();
+                irBlock.addInstrLabel(nextLabel);
+            }
         } else {
-            /* Directly Branch to Stmt */
+            /* Branch to Cond */
             nextLabel = Register.allocReg();
-            irBlock.addInstrBr("%" + stmtLabel);
+            irBlock.addInstrBr("%" + condLabel);
             irBlock.addInstrNull();
             irBlock.addInstrLabel(nextLabel);
         }

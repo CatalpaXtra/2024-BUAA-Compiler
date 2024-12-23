@@ -1,6 +1,6 @@
 package frontend.parser;
 
-import frontend.lexer.Error;
+import frontend.Error;
 import frontend.lexer.Token;
 import frontend.lexer.TokenIterator;
 

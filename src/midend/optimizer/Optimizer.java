@@ -5,8 +5,8 @@ public class Optimizer {
     public static boolean optimize = true;
 
     public static void optimize() {
-        SideEffectsAnalyze.analyzeSideEffects();
         if (optimize) {
+            SideEffectsAnalyze.analyzeSideEffects();
             DeadCodeRm.removeDeadCode();
 //            RegAlloc.allocReg();
         }

@@ -1,4 +1,4 @@
-import frontend.lexer.Error;
+import frontend.Error;
 
 import java.util.ArrayList;
 

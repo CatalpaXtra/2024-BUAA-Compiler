@@ -7,14 +7,16 @@ import java.util.ArrayList;
 import java.util.Iterator;
 
 public class PeepHole {
-//    private static final int cycle = 1; save
-    private static final int cycle = 3;
+//    private static final int cycle = 1; // save
+    private static final int cycle = 1;
 
     public static void optimize() {
-        for (int i = 0 ; i < cycle; i++) {
-            redundantInstr();
+        if (Optimizer.optimize) {
+            for (int i = 0 ; i < cycle; i++) {
+                redundantInstr();
+            }
+            jumpToNextStmt();
         }
-        jumpToNextStmt();
     }
 
     private static void redundantInstr() {

@@ -36,6 +36,16 @@ public class Compiler {
                 writer.println(compErrors.toString());
             } catch (FileNotFoundException ignored) {}
             return;
+        } else {
+            try (PrintWriter writer = new PrintWriter("lexer.txt")) {
+                writer.println(lexer.toString());
+            } catch (FileNotFoundException ignored) {}
+            try (PrintWriter writer = new PrintWriter("parser.txt")) {
+                writer.println(compUnit.toString());
+            } catch (FileNotFoundException ignored) {}
+            try (PrintWriter writer = new PrintWriter("symbol.txt")) {
+                writer.println(semantic.toString());
+            } catch (FileNotFoundException ignored) {}
         }
 
         IrBuilder irBuilder = new IrBuilder(compUnit);

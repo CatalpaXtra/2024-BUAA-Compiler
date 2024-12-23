@@ -1,5 +1,7 @@
 package frontend.lexer;
 
+import frontend.Error;
+
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Scanner;
@@ -214,5 +216,13 @@ public class Lexer {
 
     public ArrayList<Token> getTokens() {
         return tokens;
+    }
+
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        for (Token token : tokens) {
+            sb.append(token.toString());
+        }
+        return sb.toString();
     }
 }

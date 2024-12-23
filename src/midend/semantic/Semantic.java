@@ -55,7 +55,7 @@ public class Semantic {
         symbolTables.add(globalSymbolTable);
     }
 
-    public String getAllSymbolsAsString() {
+    public String toString() {
         StringBuilder sb = new StringBuilder();
         for (SymbolTable symbolTable : symbolTables) {
             ArrayList<Symbol> symbolList = symbolTable.getSymbolList();

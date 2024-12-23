@@ -16,6 +16,7 @@ import midend.llvm.global.initval.IrArray;
 import midend.llvm.global.initval.IrString;
 import midend.llvm.global.initval.IrVar;
 import midend.llvm.instr.*;
+import midend.optimizer.Optimizer;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -111,7 +112,11 @@ public class Builder {
         if (instr instanceof IrAlloca) {
             buildAlloca((IrAlloca) instr);
         } else if (instr instanceof IrBinary) {
-            buildBinary((IrBinary) instr);
+            if (Optimizer.optimize) {
+                buildBinaryOptimize((IrBinary) instr);
+            } else {
+                buildBinaryWithoutOptimize((IrBinary) instr);
+            }
         } else if (instr instanceof IrBr) {
             buildBr((IrBr) instr);
         } else if (instr instanceof IrCall) {
@@ -289,7 +294,82 @@ public class Builder {
         }
     }
 
-    private void buildBinary(IrBinary irBinary) {
+    private void buildBinaryWithoutOptimize(IrBinary irBinary) {
+        Value operand1 = irBinary.getOperands().get(0);
+        Value operand2 = irBinary.getOperands().get(1);
+        String operator = irBinary.getOperator();
+        AsmAlu.OP op = null;
+        switch (operator) {
+            case "add":
+                op = AsmAlu.OP.addu;
+                break;
+            case "sub":
+                op = AsmAlu.OP.subu;
+                break;
+            case "mul":
+                op = AsmAlu.OP.mul;
+                break;
+            case "sdiv":case "srem":
+                op = AsmAlu.OP.div;
+                break;
+            default:
+                break;
+        }
+
+        Register resReg = Register.k0;
+        Register tmpReg = Register.k0;
+        Register tmpReg2 = Register.k1;
+        if (operand1 instanceof Constant) {
+            if (regMap.containsKey(operand2)) {
+                Module.addAsmMove(tmpReg2, regMap.get(operand2));
+            } else {
+                Module.addAsmMem(AsmMem.Type.lw, tmpReg2, offsetMap.get(operand2), Register.sp);
+            }
+            if (op == AsmAlu.OP.div || op == AsmAlu.OP.subu) {
+                Module.addAsmLi(tmpReg, ((Constant) operand1).getValue());
+                Module.addAsmAlu(op, resReg, tmpReg, tmpReg2, 0);
+            } else {
+                Module.addAsmAlu(op, resReg, tmpReg2, null, ((Constant) operand1).getValue());
+            }
+        } else if (operand2 instanceof Constant) {
+            if (regMap.containsKey(operand1)) {
+                Module.addAsmMove(tmpReg, regMap.get(operand1));
+            } else {
+                Module.addAsmMem(AsmMem.Type.lw, tmpReg, offsetMap.get(operand1), Register.sp);
+            }
+            if (op == AsmAlu.OP.div) {
+                Module.addAsmLi(tmpReg2, ((Constant) operand2).getValue());
+                Module.addAsmAlu(op, resReg, tmpReg, tmpReg2, 0);
+            } else {
+                Module.addAsmAlu(op, resReg, tmpReg, null, ((Constant) operand2).getValue());
+            }
+        } else {
+            if (regMap.containsKey(operand1)) {
+                Module.addAsmMove(tmpReg, regMap.get(operand1));
+            } else {
+                Module.addAsmMem(AsmMem.Type.lw, tmpReg, offsetMap.get(operand1), Register.sp);
+            }
+            if (regMap.containsKey(operand2)) {
+                Module.addAsmMove(tmpReg2, regMap.get(operand2));
+            } else {
+                Module.addAsmMem(AsmMem.Type.lw, tmpReg2, offsetMap.get(operand2), Register.sp);
+            }
+            Module.addAsmAlu(op, resReg, tmpReg, tmpReg2, 0);
+        }
+        if (operator.equals("sdiv")) {
+            Module.addAsmMoveDiv(resReg, Register.lo);
+        } else if (operator.equals("srem")) {
+            Module.addAsmMoveDiv(resReg, Register.hi);
+        }
+
+        if (regMap.containsKey(irBinary)) {
+            Module.addAsmMove(regMap.get(irBinary), resReg);
+        } else {
+            Module.addAsmMem(AsmMem.Type.sw, resReg, offsetMap.get(irBinary), Register.sp);
+        }
+    }
+
+    private void buildBinaryOptimize(IrBinary irBinary) {
         Value operand1 = irBinary.getOperands().get(0);
         Value operand2 = irBinary.getOperands().get(1);
         String operator = irBinary.getOperator();
@@ -347,14 +427,6 @@ public class Builder {
             } else if (operator.equals("srem")) {
                 Module.addAsmLi(tmpReg2, ((Constant) operand2).getValue());
                 Module.addAsmAlu(op, resReg, tmpReg, tmpReg2, 0);
-//                Module.addAsmMove(tmpReg2, tmpReg);
-//                if (((Constant) operand2).getValue() == -1) {
-//                    Module.addAsmAlu(AsmAlu.OP.subu, resReg, Register.zero, tmpReg, 0);
-//                } else if (((Constant) operand2).getValue() != 1) {
-//                    buildDivWithCons(tmpReg, ((Constant) operand2).getValue(), resReg);
-//                }
-//                Module.addAsmAlu(AsmAlu.OP.mul, resReg, resReg, null, -((Constant) operand2).getValue());
-//                Module.addAsmAlu(AsmAlu.OP.addu, resReg, tmpReg2, resReg, 0);
             } else if (op == AsmAlu.OP.mul) {
                 if (((Constant) operand2).getValue() == -1) {
                     Module.addAsmAlu(AsmAlu.OP.subu, resReg, Register.zero, tmpReg, 0);
@@ -382,7 +454,6 @@ public class Builder {
         if (operator.equals("sdiv") && !(operand2 instanceof Constant)) {
             Module.addAsmMoveDiv(resReg, Register.lo);
         } else if (operator.equals("srem")) {
-//        } else if (operator.equals("srem") && !(operand2 instanceof Constant)) {
             Module.addAsmMoveDiv(resReg, Register.hi);
         }
 

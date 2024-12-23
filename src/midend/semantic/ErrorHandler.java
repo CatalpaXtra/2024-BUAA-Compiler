@@ -1,6 +1,6 @@
 package midend.semantic;
 
-import frontend.lexer.Error;
+import frontend.Error;
 import frontend.lexer.Token;
 import frontend.parser.block.BlockItem;
 import frontend.parser.block.BlockItemEle;
@@ -115,7 +115,7 @@ public class ErrorHandler {
     }
 
     public static void handleErrorF(Token.Type type, StmtReturn stmtReturn) {
-        if (type.equals(Token.Type.VOIDTK) &&  stmtReturn.existReturnValue()) {
+        if (type.equals(Token.Type.VOIDTK) && stmtReturn.existReturnValue()) {
             Error error = new Error(Error.Type.f, "f", stmtReturn.getLineNum());
             SemanticErrors.addError(error);
         }

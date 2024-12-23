@@ -1,6 +1,6 @@
 package frontend.parser.block.statement.stmtVariant;
 
-import frontend.lexer.Error;
+import frontend.Error;
 import frontend.parser.ErrorHandler;
 import frontend.lexer.Token;
 import frontend.lexer.TokenIterator;
