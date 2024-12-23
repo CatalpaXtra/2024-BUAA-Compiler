@@ -1,0 +1,23 @@
+int var_dec_arr[2] = {1, 2};
+const int con_dec_arr[4] = {};
+
+
+int func(int a[]) {
+    return 0;
+}
+
+
+int main() {
+    printf("22371216\n");
+    
+    int arr[2] = {};
+    arr[1] = 1;
+    func(arr);
+
+    {
+        int arr[1];
+        arr[0] = 1;
+        printf("%d\n", arr[0]);
+    }
+    return 0;
+}

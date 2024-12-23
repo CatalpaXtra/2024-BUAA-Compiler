@@ -1,0 +1,25 @@
+int func(int a) {
+    printf("%d ", a);
+    return 1;
+}
+
+
+int main() {
+    int a = 0;
+    
+    printf("22371216\n");
+    if (a != 0 && func(a)) {
+        a = 1;
+    }
+    if (a == 0 || func(a)) {
+        a = 10;
+    }
+    if (a == 10 && func(a)) {
+        a = 20;
+    }
+    if (a != 20 || func(a)) {
+        a = 10;
+    }
+    
+    return 0;
+}

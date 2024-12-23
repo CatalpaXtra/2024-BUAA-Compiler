@@ -1,0 +1,134 @@
+int var_dec;
+int var_dec_arr[2] = {1, 2};
+const int con_dec_1 = 0, con_dec_2 = 1;
+const int con_dec_arr[2] = {};
+
+const char con_dec_5[6] = "hello";
+char var_dec_8[6] = "hello";
+
+void func1() {
+    int a = 10086;
+    printf("%d ", a);
+    return;
+}
+
+int func2() {
+    return 1;
+}
+
+int func3(int a) {
+    return a;
+}
+
+int func4(int a, int b) {
+    return a + b;
+}
+
+int func5(int a, int b, int c) {
+    return a * b + c;
+}
+
+int func6(int a[]) {
+    return 0;
+}
+
+
+int main() {
+    int a;
+    a = getint();
+    
+    printf("22371216\n");
+    printf("%d ", a);
+    if (a > 10) {
+        a = 10;
+    }
+    printf("%d ", a);
+    if (a == 10) {
+        a = 10;
+    } else {
+        a = 20;
+    }
+    printf("%d ", a);
+    if (a >= 0) {
+        a = -1;
+    }
+    printf("%d ", a);
+    if (a < 0) {
+        a = 5;
+    }
+    printf("%d ", a);
+    if (a <= 0) {
+        a = 0;
+    }
+    printf("%d ", a);
+    if (a != 0) {
+        a = 0;
+    }
+    printf("%d\n", a);
+
+
+    a = 10;
+    for (;a > 0; a = a - 1) {
+        a = a - 1;
+        if (a == 9) {
+            continue;
+        }
+        if (a == 7) {
+            break;
+        }
+    }
+    printf("%d ", a);
+    for (;a > 0; a = a - 1) {
+    }
+    printf("%d\n", a);
+
+
+    a = a + a;
+    printf("%d ", a);
+    a = a - a + 10;
+    printf("%d ", a);
+    a = a * 10;
+    printf("%d ", a);
+    a = a / 10 + 1;
+    printf("%d ", a);
+    a = a % 10;
+    printf("%d\n", a);
+
+
+    func1();
+    printf("%d ", a);
+    a = func2();
+    printf("%d ", a);
+    printf("%d ", func3(1));
+    printf("%d ", func4(a, 1));
+    printf("%d\n", func5(a, a, 1));
+    int arr[2] = {};
+    arr[1] = 1;
+    func6(arr);
+
+
+    {
+
+    }
+
+    {
+        int a = 1;
+        a = 2;
+        a = +3;
+        a = -4;
+        a = !1;
+
+        if (!a) {
+            a = 10;
+        }
+        printf("%d ", a);
+        a = (1 + 1);
+        a = (1);
+        printf("%d ", a);
+
+        int arr[1];
+        arr[0] = 1;
+        printf("%d\n", arr[0]);
+    }
+    return 0;
+}

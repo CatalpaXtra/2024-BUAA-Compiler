@@ -1,10 +1,2 @@
 # 忽略非必要文件夹
 .idea/
-out/
-src/META-INF
-src/config.json
-src/*.zip
-
-# 忽略文件
-*.iml
-*.txt

@@ -1,0 +1,140 @@
+const int con_dec_1 = 0;
+const int con_dec_2 = 1, con_dec_3 = 2;
+const char con_dec_4 = 'a';
+
+int var_dec_1;
+int var_dec_2 = 1;
+int var_dec_3 = 'a', var_dec_4 = 4;
+char var_dec_5 = 3, var_dec_6 = 4;
+char var_dec_7 = 'a';
+
+
+
+void func1() {
+    int a;
+    a = 10086;
+    printf("%d ", a);
+    return;
+}
+
+char func2() {
+    return 1;
+}
+
+int func3(int a) {
+    return a;
+}
+
+int func4(int a, int b) {
+    return a + b;
+}
+
+int func5(int a, int b, int c) {
+    return a * b + c;
+}
+
+
+int main() {
+    int a;
+    a = getint();
+    
+    printf("22371216\n");
+    printf("%d ", a);
+    if (a > 10) {
+        a = 10;
+    }
+    printf("%d ", a);
+    if (a == 10) {
+        a = 10;
+    } else {
+        a = 20;
+    }
+    printf("%d ", a);
+    if (a >= 0) {
+        a = -1;
+    }
+    printf("%d ", a);
+    if (a < 0) {
+        a = 5;
+    }
+    printf("%d ", a);
+    if (a <= 0) {
+        a = 0;
+    }
+    printf("%d ", a);
+    if (a != 0) {
+        a = 0;
+    }
+    printf("%d\n", a);
+
+
+    int i;
+    for (;;) {
+        break;
+    }
+    for (i = 0;;) {
+        break;
+    }
+    for (; i > 0;) {
+        break;
+    }
+    for (;; i = i + 1) {
+        break;
+    }
+    for (i = 0; i > 0;) {
+        break;
+    }
+    for (; i > 0; i = i + 1) {
+        break;
+    }
+    for (i = 0;; i = i + 1) {
+        break;
+    }
+    for (i = 0; i > 0; i = i + 1) {
+        break;
+    }
+    
+
+    a = 0;
+    a = a + a;
+    printf("%d ", a);
+    a = a - a + 10;
+    printf("%d ", a);
+    a = a * 10;
+    printf("%d ", a);
+    a = a / 10 + 1;
+    printf("%d ", a);
+    a = a % 10;
+    printf("%d\n", a);
+
+
+    func1();
+    printf("%d ", a);
+    a = func2();
+    printf("%d ", a);
+    printf("%d ", func3(1));
+    printf("%d ", func4(a, 1));
+    printf("%d\n", func5(a, a, 1));
+
+
+    {
+
+    }
+
+    {
+        int a = 1;
+        a = 2;
+        a = +3;
+        a = -4;
+        a = !1;
+
+        if (!a) {
+            a = 10;
+        }
+        printf("%d ", a);
+        a = (1 + 1);
+        a = (1);
+        printf("%d\n", a);
+    }
+    return 0;
+}
