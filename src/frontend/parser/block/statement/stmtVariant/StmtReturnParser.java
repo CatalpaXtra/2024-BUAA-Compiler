@@ -29,7 +29,7 @@ public class StmtReturnParser {
             ParserErrors.addError(error);
             semicolon = new Token(Token.Type.SEMICN, ";", return1.getLine());
         } else {
-            if (!token.getType().equals(Token.Type.SEMICN)) {
+            if (isExp(token)) {
                 ExpParser expParser = new ExpParser(iterator);
                 exp = expParser.parseExp();
             }
@@ -38,5 +38,14 @@ public class StmtReturnParser {
         }
         StmtReturn stmtReturn = new StmtReturn(return1, exp, semicolon);
         return stmtReturn;
+    }
+
+    private boolean isExp(Token first) {
+        return first.getType().equals(Token.Type.PLUS) ||
+                first.getType().equals(Token.Type.MINU) ||
+                first.getType().equals(Token.Type.LPARENT) ||
+                first.getType().equals(Token.Type.IDENFR) ||
+                first.getType().equals(Token.Type.INTCON) ||
+                first.getType().equals(Token.Type.CHRCON);
     }
 }
